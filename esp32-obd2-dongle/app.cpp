@@ -1,38 +1,29 @@
 #include <Arduino.h>
-#include <ESP32CAN.h>
-#include <CAN_config.h>
 #include "a_ble.h"
+#include "a_uart.h"
+#include "a_can.h"
 #include "app.h"
-
-CAN_device_t CAN_cfg;
 
 void APP_Init(void)
 {
-    CAN_cfg.speed = CAN_SPEED_1000KBPS;
-    CAN_cfg.tx_pin_id = GPIO_NUM_5;
-    CAN_cfg.rx_pin_id = GPIO_NUM_4;
-    CAN_cfg.rx_queue = xQueueCreate(20, sizeof(CAN_frame_t));
-
-    //initialize CAN Module
-    ESP32Can.CANInit();
-    BLE_Init();
-
-    xTaskCreate(BLE_Task, "BLE_Task", 10000, NULL, 1, NULL);
 }
 
 void APP_Task(void *pvParameters)
 {
-    //UBaseType_t uxHighWaterMark;
+    UBaseType_t uxHighWaterMark;
     CAN_frame_t rx_frame;
     uint16_t frameCount = 0;
 
-    //uxHighWaterMark = uxTaskGetStackHighWaterMark(NULL);
-    //printf("uxHighWaterMark = %d\r\n", uxHighWaterMark);
+    Serial.println("APP_Task Started");
+
+    uxHighWaterMark = uxTaskGetStackHighWaterMark(NULL);
+    printf("APP uxHighWaterMark = %d\r\n", uxHighWaterMark);
+
 
     while (1)
     {
         //receive next CAN frame from queue
-        if (xQueueReceive(CAN_cfg.rx_queue, &rx_frame, 10 * portTICK_PERIOD_MS) == pdTRUE)
+        if (CAN_ReadFrame(&rx_frame) == pdTRUE)
         {
             //printf("%d", frameCount++);
             //do stuff!
@@ -63,7 +54,9 @@ void APP_Task(void *pvParameters)
             }
 
             //respond to sender
-            ESP32Can.CANWriteFrame(&rx_frame);
+            CAN_WriteFrame(&rx_frame);
         }
+
+        vTaskDelay(5 / portTICK_PERIOD_MS);
     }
 }

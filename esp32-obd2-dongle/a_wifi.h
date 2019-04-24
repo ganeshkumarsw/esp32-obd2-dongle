@@ -5,6 +5,8 @@
 extern "C" {
 #endif
 
+void WIFI_Init(void);
+void WIFI_Task(void *pvParameters);
 
 
 #ifdef __cplusplus
