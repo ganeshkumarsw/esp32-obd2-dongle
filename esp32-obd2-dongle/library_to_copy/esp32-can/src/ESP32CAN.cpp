@@ -12,5 +12,9 @@ int ESP32CAN::CANStop()
 {
     return CAN_stop();
 }
+void ESP32CAN::CANSetFilter(uint32_t mask)
+{
+    CAN_setFilter(mask);
+}
 
 ESP32CAN ESP32Can;

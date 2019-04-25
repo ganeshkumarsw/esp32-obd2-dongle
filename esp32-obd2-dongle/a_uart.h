@@ -7,6 +7,7 @@ extern "C" {
 
 void UART_Init(void);
 void UART_Task(void *pvParameters);
+void UART_Write(uint8_t *payLoad, uint16_t len);
 
 #ifdef __cplusplus
 }

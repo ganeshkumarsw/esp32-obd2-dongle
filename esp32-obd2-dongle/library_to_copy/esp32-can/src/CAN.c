@@ -217,7 +217,7 @@ int CAN_init(){
     MODULE_CAN->IER.U = 0xff;
 
     //no acceptance filtering, as we want to fetch all messages
-    MODULE_CAN->MBX_CTRL.ACC.CODE[0] = 0;
+    MODULE_CAN->MBX_CTRL.ACC.CODE[0] = 0x7e;
     MODULE_CAN->MBX_CTRL.ACC.CODE[1] = 0;
     MODULE_CAN->MBX_CTRL.ACC.CODE[2] = 0;
     MODULE_CAN->MBX_CTRL.ACC.CODE[3] = 0;
@@ -244,6 +244,18 @@ int CAN_init(){
     MODULE_CAN->MOD.B.RM = 0;
 
     return 0;
+}
+
+void CAN_setFilter(uint32_t mask)
+{
+    MODULE_CAN->MBX_CTRL.ACC.CODE[0] = (uint8_t)(mask >> 0);
+    MODULE_CAN->MBX_CTRL.ACC.CODE[1] = (uint8_t)(mask >> 8);
+    MODULE_CAN->MBX_CTRL.ACC.CODE[2] = (uint8_t)(mask >> 16);
+    MODULE_CAN->MBX_CTRL.ACC.CODE[3] = (uint8_t)(mask >> 24);
+    MODULE_CAN->MBX_CTRL.ACC.MASK[0] = (uint8_t)(mask >> 0);
+    MODULE_CAN->MBX_CTRL.ACC.MASK[1] = (uint8_t)(mask >> 8);
+    MODULE_CAN->MBX_CTRL.ACC.MASK[2] = (uint8_t)(mask >> 16);
+    MODULE_CAN->MBX_CTRL.ACC.MASK[3] = (uint8_t)(mask >> 24);
 }
 
 int CAN_stop(){

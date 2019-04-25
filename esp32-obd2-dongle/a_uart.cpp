@@ -14,7 +14,7 @@ void UART_Task(void *pvParameters)
     UBaseType_t uxHighWaterMark;
 
     Serial.println("UART_Task Started");
-    
+
     uxHighWaterMark = uxTaskGetStackHighWaterMark(NULL);
     printf("UART uxHighWaterMark = %d\r\n", uxHighWaterMark);
 
@@ -45,4 +45,9 @@ void UART_Task(void *pvParameters)
 
         vTaskDelay(5 / portTICK_PERIOD_MS);
     }
+}
+
+void UART_Write(uint8_t *payLoad, uint16_t len)
+{
+    Serial.write(payLoad, len);
 }

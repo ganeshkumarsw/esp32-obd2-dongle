@@ -23,10 +23,8 @@ void setup()
   Serial.begin(115200);
   printf("OBDII USB/Wifi/BT Dongle\r\n");
 
-  // WIFI_Init();
   GPIO_Init();
   CAN_Init();
-  // BLE_Init();
   APP_Init();
   MQTT_Init();
 
@@ -38,15 +36,8 @@ void setup()
 
 void loop()
 {
-  // if (xTaskCreate(BLE_Task, "BLE_Task", 10000, NULL, 8, NULL) != pdTRUE)
-  // {
-  //   configASSERT(0);
-  // }
-
   vTaskDelay(5 / portTICK_PERIOD_MS);
   vTaskDelete(NULL);
-
-  // WIFI_Task(NULL);
 }
 
 void CreateTask_Task(void *pvParameters)

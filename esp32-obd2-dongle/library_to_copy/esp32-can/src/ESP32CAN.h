@@ -9,6 +9,7 @@ class ESP32CAN
     public: 
         int CANInit();
         int CANWriteFrame(const CAN_frame_t* p_frame);
+        void CANSetFilter(uint32_t mask);
         int CANStop();
 };
 

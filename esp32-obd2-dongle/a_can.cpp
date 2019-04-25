@@ -33,6 +33,11 @@ void CAN_SetBaud(CAN_speed_t speed)
     ESP32Can.CANInit();
 }
 
+void CAN_SetFilterMask(uint32_t mask)
+{
+    ESP32Can.CANSetFilter(mask);
+}
+
 BaseType_t CAN_ReadFrame(CAN_frame_t *frame)
 {
     if (xQueueReceive(CAN_cfg.rx_queue, frame, 10 * portTICK_PERIOD_MS) == pdTRUE)

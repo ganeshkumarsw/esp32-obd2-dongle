@@ -90,6 +90,8 @@ int CAN_init(void);
  */
 int CAN_write_frame(const CAN_frame_t* p_frame);
 
+void CAN_setFilter(uint32_t mask);
+
 /**
  * \brief Stops the CAN Module
  *
