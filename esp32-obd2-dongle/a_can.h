@@ -10,6 +10,7 @@ extern "C" {
 
 void CAN_Init(void);
 void CAN_SetBaud(CAN_speed_t speed);
+void CAN_ConfigFilterterMask(CAN_filter_t *p_filter);
 void CAN_DeInit(void);
 BaseType_t CAN_ReadFrame(CAN_frame_t *frame);
 void CAN_WriteFrame(CAN_frame_t *frame);
