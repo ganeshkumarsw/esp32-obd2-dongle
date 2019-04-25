@@ -23,46 +23,72 @@ void setup()
   Serial.begin(115200);
   printf("OBDII USB/Wifi/BT Dongle\r\n");
 
+  // WIFI_Init();
   GPIO_Init();
-  CAN_Init(CAN_SPEED_1000KBPS);
-  BLE_Init();
+  CAN_Init();
+  // BLE_Init();
   APP_Init();
-  WIFI_Init();
-  //MQTT_Init();
+  MQTT_Init();
 
-  TASK_Init();
+  if (xTaskCreate(CreateTask_Task, "CreateTask_Task", 2000, NULL, 1, NULL) != pdTRUE)
+  {
+    configASSERT(0);
+  }
 }
 
 void loop()
 {
+  // if (xTaskCreate(BLE_Task, "BLE_Task", 10000, NULL, 8, NULL) != pdTRUE)
+  // {
+  //   configASSERT(0);
+  // }
+
+  vTaskDelay(5 / portTICK_PERIOD_MS);
+  vTaskDelete(NULL);
+
+  // WIFI_Task(NULL);
 }
 
-void TASK_Init(void)
+void CreateTask_Task(void *pvParameters)
 {
-  TaskHandle_t taskHandle = NULL;
+  UBaseType_t uxHighWaterMark;
 
-  xTaskCreate(HeartBeat_Task, "HeartBeat_Task", 1000, NULL, 1, &taskHandle);
-  configASSERT(taskHandle);
+  Serial.println("CreateTask_Task Started");
 
-  taskHandle = NULL;
-  xTaskCreate(APP_Task, "APP_Task", 10000, NULL, 1, &taskHandle);
-  configASSERT(taskHandle);
+  uxHighWaterMark = uxTaskGetStackHighWaterMark(NULL);
+  printf("CreateTask uxHighWaterMark = %d\r\n", uxHighWaterMark);
 
-  taskHandle = NULL;
-  xTaskCreate(BLE_Task, "BLE_Task", 10000, NULL, 8, &taskHandle);
-  configASSERT(taskHandle);
+  if (xTaskCreate(HeartBeat_Task, "HeartBeat_Task", 1000, NULL, 1, NULL) != pdTRUE)
+  {
+    configASSERT(0);
+  }
 
-  taskHandle = NULL;
-  xTaskCreate(UART_Task, "UART_Task", 10000, NULL, 8, &taskHandle);
-  configASSERT(taskHandle);
+  if (xTaskCreate(APP_Task, "APP_Task", 10000, NULL, 1, NULL) != pdTRUE)
+  {
+    configASSERT(0);
+  }
 
-  taskHandle = NULL;
-  xTaskCreate(WIFI_Task, "WIFI_Task", 30000, NULL, 5, &taskHandle);
-  configASSERT(taskHandle);
+  if (xTaskCreate(UART_Task, "UART_Task", 10000, NULL, 8, NULL) != pdTRUE)
+  {
+    configASSERT(0);
+  }
 
-  taskHandle = NULL;
-  //xTaskCreate(MQTT_Task, "MQTT_Task", 20000, NULL, 8, &taskHandle);
-  //configASSERT(taskHandle);
+  // if (xTaskCreate(BLE_Task, "BLE_Task", 30000, NULL, 5, NULL) != pdTRUE)
+  // {
+  //   configASSERT(0);
+  // }
+
+  if (xTaskCreate(WIFI_Task, "WIFI_Task", 30000, NULL, 5, NULL) != pdTRUE)
+  {
+    configASSERT(0);
+  }
+
+  if (xTaskCreate(MQTT_Task, "MQTT_Task", 20000, NULL, 8, NULL) != pdTRUE)
+  {
+    configASSERT(0);
+  }
+
+  vTaskDelete(NULL);
 }
 
 void HeartBeat_Task(void *pvParameters)

@@ -4,6 +4,7 @@
 #include "a_mqtt.h"
 
 char MQTT_Server[200] = "ec2-34-209-89-96.us-west-2.compute.amazonaws.com";
+//char MQTT_Server[200] = {13,126,50,237};
 
 /* create an instance of PubSubClient client */
 WiFiClient MQTT_WifiClient;
@@ -37,7 +38,7 @@ void MQTT_Task(void *pvParameters)
     UBaseType_t uxHighWaterMark;
 
     Serial.println("MQTT_Task Started");
-    
+
     uxHighWaterMark = uxTaskGetStackHighWaterMark(NULL);
     printf("MQTT uxHighWaterMark = %d\r\n", uxHighWaterMark);
 
@@ -55,7 +56,7 @@ void MQTT_Task(void *pvParameters)
             {
                 Serial.println("connected");
                 /* subscribe topic with default QoS 0*/
-                MQTT_Client.subscribe("REQUEST", MQTTQOS2);
+                MQTT_Client.subscribe("REQUEST");
             }
             else
             {
@@ -69,7 +70,9 @@ void MQTT_Task(void *pvParameters)
 
         MQTT_Client.loop();
 
-        vTaskDelay(5 * portTICK_PERIOD_MS);
+        vTaskDelay(200 * portTICK_PERIOD_MS);
+
+        MQTT_Write((uint8_t *)"Bills", 5);
     }
 }
 

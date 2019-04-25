@@ -17,9 +17,11 @@ void BLE_Task(void *pvParameters)
     UBaseType_t uxHighWaterMark;
 
     Serial.println("BLE_Task Started");
-    
+
     uxHighWaterMark = uxTaskGetStackHighWaterMark(NULL);
     printf("BLE uxHighWaterMark = %d\r\n", uxHighWaterMark);
+
+    BLE_Init();
 
     while (1)
     {

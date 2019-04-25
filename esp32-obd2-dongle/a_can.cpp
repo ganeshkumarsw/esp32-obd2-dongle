@@ -8,10 +8,9 @@ CAN_device_t CAN_cfg = {
     .rx_queue = NULL,
 };
 
-void CAN_Init(CAN_speed_t speed)
+void CAN_Init(void)
 {
     CAN_DeInit();
-    CAN_cfg.speed = speed;
 
     if (CAN_cfg.rx_queue == NULL)
     {
@@ -25,6 +24,13 @@ void CAN_Init(CAN_speed_t speed)
 void CAN_DeInit(void)
 {
     ESP32Can.CANStop();
+}
+
+void CAN_SetBaud(CAN_speed_t speed)
+{
+    CAN_DeInit();
+    CAN_cfg.speed = speed;
+    ESP32Can.CANInit();
 }
 
 BaseType_t CAN_ReadFrame(CAN_frame_t *frame)
@@ -49,7 +55,7 @@ void CAN_Task(void *pvParameters)
     UBaseType_t uxHighWaterMark;
 
     Serial.println("CAN_Task Started");
-    
+
     uxHighWaterMark = uxTaskGetStackHighWaterMark(NULL);
     printf("CAN uxHighWaterMark = %d\r\n", uxHighWaterMark);
 

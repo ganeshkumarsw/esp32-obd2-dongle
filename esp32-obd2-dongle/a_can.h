@@ -8,7 +8,8 @@
 extern "C" {
 #endif
 
-void CAN_Init(CAN_speed_t speed);
+void CAN_Init(void);
+void CAN_SetBaud(CAN_speed_t speed);
 void CAN_DeInit(void);
 BaseType_t CAN_ReadFrame(CAN_frame_t *frame);
 void CAN_WriteFrame(CAN_frame_t *frame);
