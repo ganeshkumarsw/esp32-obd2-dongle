@@ -13,10 +13,9 @@ PubSubClient MQTT_Client(MQTT_WifiClient);
 
 void MQTT_ReceivedCallback(char *topic, byte *payload, unsigned int length)
 {
-    Serial.print("Message received: ");
-    Serial.println(topic);
+    ESP_LOGI("MQTT", "Message received: %s", topic);
 
-    Serial.print("payload: ");
+    ESP_LOGI("MQTT", "payload: ");
     for (int i = 0; i < length; i++)
     {
         Serial.print((char)payload[i]);
@@ -37,32 +36,30 @@ void MQTT_Task(void *pvParameters)
 {
     UBaseType_t uxHighWaterMark;
 
-    Serial.println("MQTT_Task Started");
+    ESP_LOGI("MQTT", "Task Started");
 
     uxHighWaterMark = uxTaskGetStackHighWaterMark(NULL);
-    printf("MQTT uxHighWaterMark = %d\r\n", uxHighWaterMark);
+    ESP_LOGI("MQTT", "uxHighWaterMark = %d", uxHighWaterMark);
 
 
     while (1)
     {
         if (!MQTT_Client.connected())
         {
-            Serial.print("MQTT connecting ...");
+            ESP_LOGI("MQTT", "connecting ...");
             /* client ID */
             String clientId = "ESP32Client";
 
             /* connect now */
             if (MQTT_Client.connect(clientId.c_str(), NULL, NULL))
             {
-                Serial.println("connected");
+                ESP_LOGI("MQTT", "connected");
                 /* subscribe topic with default QoS 0*/
                 MQTT_Client.subscribe("REQUEST");
             }
             else
             {
-                Serial.print("failed, status code =");
-                Serial.print(MQTT_Client.state());
-                Serial.println("try again in 5 seconds");
+                ESP_LOGI("MQTT", "failed, status code = %d try again in 5 seconds", MQTT_Client.state());
                 /* Wait 5 seconds before retrying */
                 vTaskDelay(5000 / portTICK_PERIOD_MS);
             }

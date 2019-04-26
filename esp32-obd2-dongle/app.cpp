@@ -174,44 +174,46 @@ void APP_Init(void)
 void APP_Task(void *pvParameters)
 {
     UBaseType_t uxHighWaterMark;
-    CAN_frame_t rx_frame;
+    can_message_t rx_frame;
     uint16_t frameCount = 0;
 
-    Serial.println("APP_Task Started");
+    ESP_LOGI("APP", "Task Started");
 
     uxHighWaterMark = uxTaskGetStackHighWaterMark(NULL);
-    printf("APP uxHighWaterMark = %d\r\n", uxHighWaterMark);
+    ESP_LOGI("APP", "uxHighWaterMark = %d", uxHighWaterMark);
 
+
+    CAN_ConfigFilterterMask(0x00000031, true);
 
     while (1)
     {
         //receive next CAN frame from queue
-        if (CAN_ReadFrame(&rx_frame) == pdTRUE)
+        if (CAN_ReadFrame(&rx_frame) == ESP_OK)
         {
             //printf("%d", frameCount++);
             //do stuff!
-            if (rx_frame.FIR.B.FF == CAN_frame_std)
-            {
-                printf("New standard frame");
-            }
-            else
+            if (rx_frame.flags & CAN_MSG_FLAG_EXTD)
             {
                 printf("New extended frame");
             }
-
-            if (rx_frame.FIR.B.RTR == CAN_RTR)
+            else
             {
-                printf(" RTR from 0x%08x, DLC %d\r\n", rx_frame.MsgID, rx_frame.FIR.B.DLC);
+                printf("New standard frame");
+            }
+
+            if (rx_frame.flags & CAN_MSG_FLAG_RTR)
+            {
+                printf(" RTR from 0x%08x, DLC %d\r\n", rx_frame.identifier, rx_frame.data_length_code);
             }
             else
             {
-                printf(" from 0x%08x, DLC %d\n", rx_frame.MsgID, rx_frame.FIR.B.DLC);
+                printf(" from 0x%08x, DLC %d\n", rx_frame.identifier, rx_frame.data_length_code);
                 // convert to upper case and respond to sender
                 for (int i = 0; i < 8; i++)
                 {
-                    if (rx_frame.data.u8[i] >= 'a' && rx_frame.data.u8[i] <= 'z')
+                    if (rx_frame.data[i] >= 'a' && rx_frame.data[i] <= 'z')
                     {
-                        rx_frame.data.u8[i] = rx_frame.data.u8[i] - 32;
+                        rx_frame.data[i] = rx_frame.data[i] - 32;
                     }
                 }
             }

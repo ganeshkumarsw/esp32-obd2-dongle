@@ -44,10 +44,10 @@ void CreateTask_Task(void *pvParameters)
 {
   UBaseType_t uxHighWaterMark;
 
-  Serial.println("CreateTask_Task Started");
+  ESP_LOGI("CREATE", "Task Started");
 
   uxHighWaterMark = uxTaskGetStackHighWaterMark(NULL);
-  printf("CreateTask uxHighWaterMark = %d\r\n", uxHighWaterMark);
+  ESP_LOGI("CREATE", "uxHighWaterMark = %d", uxHighWaterMark);
 
   if (xTaskCreate(HeartBeat_Task, "HeartBeat_Task", 1000, NULL, 1, NULL) != pdTRUE)
   {
@@ -75,6 +75,11 @@ void CreateTask_Task(void *pvParameters)
   }
 
   if (xTaskCreate(MQTT_Task, "MQTT_Task", 20000, NULL, 8, NULL) != pdTRUE)
+  {
+    configASSERT(0);
+  }
+
+  if (xTaskCreate(CAN_Task, "CAN_Task", 10000, NULL, 5, NULL) != pdTRUE)
   {
     configASSERT(0);
   }

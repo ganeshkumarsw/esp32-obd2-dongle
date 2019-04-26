@@ -13,10 +13,10 @@ void UART_Task(void *pvParameters)
     uint16_t len;
     UBaseType_t uxHighWaterMark;
 
-    Serial.println("UART_Task Started");
+    ESP_LOGI("UART", "Task Started");
 
     uxHighWaterMark = uxTaskGetStackHighWaterMark(NULL);
-    printf("UART uxHighWaterMark = %d\r\n", uxHighWaterMark);
+    ESP_LOGI("UART", "uxHighWaterMark = %d", uxHighWaterMark);
 
     while (1)
     {

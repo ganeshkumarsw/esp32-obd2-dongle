@@ -7,7 +7,7 @@ uint8_t BLE_Buff[4096];
 
 void BLE_Init(void)
 {
-    SerialBT.begin("OBDII USB/Wifi/BT Dongle"); //Bluetooth device name
+    ESP_LOGI("BLE", "OBDII USB/Wifi/BT Dongle"); //Bluetooth device name
 }
 
 void BLE_Task(void *pvParameters)
@@ -16,10 +16,10 @@ void BLE_Task(void *pvParameters)
     uint16_t len;
     UBaseType_t uxHighWaterMark;
 
-    Serial.println("BLE_Task Started");
+    ESP_LOGI("BLE", "Task Started");
 
     uxHighWaterMark = uxTaskGetStackHighWaterMark(NULL);
-    printf("BLE uxHighWaterMark = %d\r\n", uxHighWaterMark);
+    ESP_LOGI("BLE", "uxHighWaterMark = %d", uxHighWaterMark);
 
     BLE_Init();
 
