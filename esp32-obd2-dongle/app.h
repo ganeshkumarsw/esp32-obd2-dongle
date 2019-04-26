@@ -9,8 +9,9 @@ extern "C" {
 typedef enum
 {
     APP_CHANNEL_UART = 0,
-    APP_CHANNEL_BLE,
     APP_CHANNEL_MQTT,
+    APP_CHANNEL_BLE,
+    APP_CHANNEL_MAX,
 }APP_CHANNEL_t;
 
 void APP_Init(void);

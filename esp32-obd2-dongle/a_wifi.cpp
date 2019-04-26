@@ -1,6 +1,11 @@
 #include <Arduino.h>
 #include <WiFi.h>
+#include "SPIFFS.h"
+#include "ESPmDNS.h"
+#include "ESPAsyncWebServer.h"
 #include "a_wifi.h"
+
+AsyncWebServer server(80);
 
 char WIFI_SSID[50] = "AndroidAP";
 char WIFI_Password[50] = "amct8022";
@@ -13,10 +18,37 @@ void WIFI_Init(void)
     WiFi.begin((char *)WIFI_SSID, (char *)WIFI_Password);
     WiFi.waitForConnectResult();
 
-    // WiFi.softAP("MyAP", "MasterSecond");
-    // WiFi.softAPsetHostname("MyAP");
+    WiFi.softAP("MyAP", "MasterSecond");
+
+    if (MDNS.begin("myap"))
+    {
+        ESP_LOGI("WIFI", "MDNS responder started");
+    }
 
     ESP_LOGI("WIFI", "MAC: %s", WiFi.macAddress().c_str());
+
+    if (!SPIFFS.begin())
+    {
+        ESP_LOGI("WIFI", "An Error has occurred while mounting SPIFFS");
+    }
+    else
+    {
+        server.on("/html", HTTP_GET, [](AsyncWebServerRequest *request) {
+            request->send(SPIFFS, "/test.html", "text/html");
+        });
+
+        server.on("/jquery-3.4.0.min.js", HTTP_GET, [](AsyncWebServerRequest *request) {
+            request->send(SPIFFS, "/jquery-3.4.0.min.js", "text/javascript");
+        });
+
+        server.on("/doc.txt", HTTP_GET, [](AsyncWebServerRequest *request) {
+            request->send(SPIFFS, "/doc.txt", "text/text");
+        });
+
+        server.begin();
+    }
+
+    ESP_LOGI("WIFI", "AP IP address: %s", WiFi.softAPIP().toString().c_str());
 }
 
 void WIFI_Task(void *pvParameters)

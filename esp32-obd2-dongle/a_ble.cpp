@@ -2,6 +2,7 @@
 #include "BluetoothSerial.h"
 #include "a_ble.h"
 
+#if 0
 BluetoothSerial SerialBT;
 uint8_t BLE_Buff[4096];
 
@@ -51,3 +52,4 @@ void BLE_Task(void *pvParameters)
         vTaskDelay(5 / portTICK_PERIOD_MS);
     }
 }
+#endif

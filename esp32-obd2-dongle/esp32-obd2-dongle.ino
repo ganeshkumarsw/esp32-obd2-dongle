@@ -55,7 +55,7 @@ void CreateTask_Task(void *pvParameters)
     configASSERT(0);
   }
 
-  if (xTaskCreate(APP_Task, "APP_Task", 10000, NULL, 1, NULL) != pdTRUE)
+  if (xTaskCreate(APP_Task, "APP_Task", 10000, NULL, 9, NULL) != pdTRUE)
   {
     configASSERT(0);
   }

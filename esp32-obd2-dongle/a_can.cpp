@@ -14,8 +14,7 @@ can_general_config_t CAN_g_config = {
     .clkout_divider = 0,
 };
 can_timing_config_t CAN_t_config = CAN_TIMING_CONFIG_500KBITS();
-can_filter_config_t CAN_f_config = {.acceptance_code = (0x00000029 << 3), .acceptance_mask = ~(CAN_EXTD_ID_MASK << 3), .single_filter = true};
-
+can_filter_config_t CAN_f_config = {.acceptance_code = 0x00000000, .acceptance_mask = 0xFFFFFFFF, .single_filter = true};
 
 void CAN_Init(void)
 {
@@ -28,6 +27,7 @@ void CAN_Init(void)
     {
         ESP_LOGE("CAN", "Failed to install driver");
     }
+    vTaskDelay(10 * portTICK_PERIOD_MS);
 
     //Start CAN driver
     if (can_start() == ESP_OK)
@@ -38,6 +38,7 @@ void CAN_Init(void)
     {
         ESP_LOGE("CAN", "Failed to start driver");
     }
+    vTaskDelay(10 * portTICK_PERIOD_MS);
 }
 
 void CAN_DeInit(void)
@@ -52,6 +53,7 @@ void CAN_DeInit(void)
         ESP_LOGE("CAN", "Failed to stop driver");
     }
 
+    vTaskDelay(10 * portTICK_PERIOD_MS);
     //Install CAN driver
     if (can_driver_uninstall() == ESP_OK)
     {
@@ -61,6 +63,7 @@ void CAN_DeInit(void)
     {
         ESP_LOGE("CAN", "Failed to uninstall driver");
     }
+    vTaskDelay(10 * portTICK_PERIOD_MS);
 }
 
 void CAN_SetBaud(CAN_speed_t speed)
@@ -69,17 +72,17 @@ void CAN_SetBaud(CAN_speed_t speed)
 
     switch (speed)
     {
-        case CAN_SPEED_250KBPS:
-            CAN_t_config = CAN_TIMING_CONFIG_250KBITS();
-            break;
+    case CAN_SPEED_250KBPS:
+        CAN_t_config = CAN_TIMING_CONFIG_250KBITS();
+        break;
 
-        case CAN_SPEED_500KBPS:
-            CAN_t_config = CAN_TIMING_CONFIG_500KBITS();
-            break;
+    case CAN_SPEED_500KBPS:
+        CAN_t_config = CAN_TIMING_CONFIG_500KBITS();
+        break;
 
-        case CAN_SPEED_1000KBPS:
-            CAN_t_config = CAN_TIMING_CONFIG_1MBITS();
-            break;
+    case CAN_SPEED_1000KBPS:
+        CAN_t_config = CAN_TIMING_CONFIG_1MBITS();
+        break;
     }
 
     CAN_Init();
@@ -89,14 +92,14 @@ void CAN_ConfigFilterterMask(uint32_t acceptance_code, bool extId)
 {
     CAN_DeInit();
 
-    if(acceptance_code == 0xFFFFFFFF)
+    if (acceptance_code == 0xFFFFFFFF)
     {
         // No filter
         CAN_f_config = {.acceptance_code = 0x00000000, .acceptance_mask = 0xFFFFFFFF, .single_filter = true};
     }
     else
     {
-        if(extId == true)
+        if (extId == true)
         {
             CAN_f_config = {.acceptance_code = (acceptance_code << (32 - 29)), .acceptance_mask = ~(CAN_EXTD_ID_MASK << (32 - 29)), .single_filter = true};
         }
@@ -105,9 +108,7 @@ void CAN_ConfigFilterterMask(uint32_t acceptance_code, bool extId)
             CAN_f_config = {.acceptance_code = (acceptance_code << (32 - 11)), .acceptance_mask = ~(CAN_STD_ID_MASK << (32 - 11)), .single_filter = true};
         }
     }
-    
-    
-    
+
     CAN_Init();
 }
 
@@ -132,7 +133,6 @@ esp_err_t CAN_ReadFrame(can_message_t *frame, TickType_t ticks_to_wait)
     }
     else
     {
-
     }
 
     return status;
@@ -150,7 +150,6 @@ esp_err_t CAN_WriteFrame(can_message_t *frame, TickType_t ticks_to_wait)
     }
     else
     {
-
     }
 
     return status;
