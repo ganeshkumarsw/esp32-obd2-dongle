@@ -6,48 +6,48 @@
 #include "a_mqtt.h"
 #include "app.h"
 
-#define APP_ISO_FC_WAIT_TIME    10000
+#define APP_ISO_FC_WAIT_TIME 10000
 
-#define RSTVC       1
-#define SPRCOL      2
-#define GPRCOL      3
-#define STXHDR      4
-#define GTXHDR      5
-#define SRXHDRMSK   6
-#define GRXHDRMSK   7
-#define SFCBLKL     8
-#define GFCBLKL     9
-#define SFCST       10
-#define GFCST       11
-#define SETP1MIN    12
-#define GETP1MIN    13
-#define SETP2MAX    14
-#define GETP2MAX    15
-#define TXTP        16
-#define STPTXTP     17
-#define TXPAD       18
-#define STPTXPAD    19
-#define GETFWVER    20
+#define RSTVC 1
+#define SPRCOL 2
+#define GPRCOL 3
+#define STXHDR 4
+#define GTXHDR 5
+#define SRXHDRMSK 6
+#define GRXHDRMSK 7
+#define SFCBLKL 8
+#define GFCBLKL 9
+#define SFCST 10
+#define GFCST 11
+#define SETP1MIN 12
+#define GETP1MIN 13
+#define SETP2MAX 14
+#define GETP2MAX 15
+#define TXTP 16
+#define STPTXTP 17
+#define TXPAD 18
+#define STPTXPAD 19
+#define GETFWVER 20
 
 //typedef void (*cb_APP_FrameType)(uint8_t *, uint16_t);
 
-#define ACK     0	    // Positive Response
-#define NACK    1	    // Negative Response
-#define NACK10  0x10	// Command Not Supported
-#define NACK12  0x12	// Input Not supported
-#define NACK13  0x13	// Invalid format or incorrect message length of input
-#define NACK14  0x14	// Invalid operation
-#define NACK15  0x15	// CRC failure
-#define NACK22  0x22	// Conditions not correct
-#define NACK31  0x31	// Request out of range
-#define NACK33  0x33	// security access denied
-#define NACK78  0x78	// response pending
-#define NACK24  0x24	// request sequence error
-#define NACK35  0x35	// Invalid Key
-#define NACK36  0x36	// exceeded number of attempts
-#define NACK37  0x37	// required time delay not expired
-#define NACK72  0x72	// General programming failure
-#define NACK7E  0x7E	// sub fn not supported in this diag session
+#define ACK 0       // Positive Response
+#define NACK 1      // Negative Response
+#define NACK10 0x10 // Command Not Supported
+#define NACK12 0x12 // Input Not supported
+#define NACK13 0x13 // Invalid format or incorrect message length of input
+#define NACK14 0x14 // Invalid operation
+#define NACK15 0x15 // CRC failure
+#define NACK22 0x22 // Conditions not correct
+#define NACK31 0x31 // Request out of range
+#define NACK33 0x33 // security access denied
+#define NACK78 0x78 // response pending
+#define NACK24 0x24 // request sequence error
+#define NACK35 0x35 // Invalid Key
+#define NACK36 0x36 // exceeded number of attempts
+#define NACK37 0x37 // required time delay not expired
+#define NACK72 0x72 // General programming failure
+#define NACK7E 0x7E // sub fn not supported in this diag session
 
 typedef enum
 {
@@ -55,7 +55,7 @@ typedef enum
     APP_CAN_PROTOCOL_ISO15765,
     APP_CAN_PROTOCOL_NORMAL,
     APP_CAN_PROTOCOL_OE_IVN,
-}CAN_PROTOCOL_t;
+} CAN_PROTOCOL_t;
 
 typedef enum
 {
@@ -66,7 +66,7 @@ typedef enum
     APP_ISO_STATE_FC_WAIT_TIME,
     APP_ISO_STATE_SEND_TO_APP,
     APP_ISO_STATE_IDLE,
-}APP_ISO_STATE_t;
+} APP_ISO_STATE_t;
 
 typedef enum
 {
@@ -74,7 +74,7 @@ typedef enum
     APP_ISO_TYPE_FIRST,
     APP_ISO_TYPE_CONSECUTIVE,
     APP_ISO_TYPE_FLOWCONTROL,
-}APP_ISO_TYPE_t;
+} APP_ISO_TYPE_t;
 
 typedef enum
 {
@@ -83,8 +83,8 @@ typedef enum
     APP_BUFF_LOCKED_BY_FRAME1,
     APP_BUFF_LOCKED_BY_FRAME4,
     APP_BUFF_LOCKED_BY_ISO_TP_RX_FF,
-    APP_BUFF_LOCKED_BY_ISO_TP_RX_CF,       
-}APP_BUFF_LOCKED_BY_t;
+    APP_BUFF_LOCKED_BY_ISO_TP_RX_CF,
+} APP_BUFF_LOCKED_BY_t;
 
 static void APP_Frame0(uint8_t *p_buff, uint16_t len, uint8_t channel);
 static void APP_Frame1(uint8_t *p_buff, uint16_t len, uint8_t channel);
@@ -94,20 +94,19 @@ static void APP_Frame4(uint8_t *p_buff, uint16_t len, uint8_t channel);
 static void APP_Frame5(uint8_t *p_buff, uint16_t len, uint8_t channel);
 static void APP_SendRespToFrame(uint8_t respType, uint8_t nackNo, uint8_t *p_buff, uint16_t dataLen, uint8_t channel, bool cache);
 
-void (*cb_APP_FrameType[])(uint8_t *, uint16_t, uint8_t) = 
-{
-    APP_Frame0,
-    APP_Frame1,
-    APP_Frame2,
-    APP_Frame3,
-    APP_Frame4,
-    APP_Frame5
-};
+void (*cb_APP_FrameType[])(uint8_t *, uint16_t, uint8_t) =
+    {
+        APP_Frame0,
+        APP_Frame1,
+        APP_Frame2,
+        APP_Frame3,
+        APP_Frame4,
+        APP_Frame5};
 
-void (*cb_APP_Send[])(uint8_t *, uint16_t) = 
-{
-    UART_Write,
-    MQTT_Write,
+void (*cb_APP_Send[])(uint8_t *, uint16_t) =
+    {
+        UART_Write,
+        MQTT_Write,
 };
 
 uint8_t APP_Buff[4130] = {0};
@@ -168,25 +167,524 @@ bool APP_Client_COMM_Flag;
 
 void APP_Init(void)
 {
-
 }
 
 void APP_Task(void *pvParameters)
 {
     UBaseType_t uxHighWaterMark;
     can_message_t rx_frame;
+    can_message_t tx_frame;
     uint16_t frameCount = 0;
+    uint8_t respType;
+    uint8_t respNo;
+    uint16_t respLen;
+    uint8_t respBuff[30];
+    uint16_t len;
+    bool canFrameSend;
+    uint8_t isoFrameType;
+    uint8_t delay;
+    uint16_t crc16;
+
+    respType = ACK;
+    respNo = ACK;
+    respLen = 0;
+    canFrameSend = false;
+    delay = 0;
 
     ESP_LOGI("APP", "Task Started");
 
     uxHighWaterMark = uxTaskGetStackHighWaterMark(NULL);
     ESP_LOGI("APP", "uxHighWaterMark = %d", uxHighWaterMark);
 
-
     // CAN_ConfigFilterterMask(0x00000031, true);
 
     while (1)
     {
+        tx_frame.identifier = APP_CAN_TxId;
+        tx_frame.flags = APP_CAN_TxIdType;
+
+        if ((APP_Frame01_TmeOutTmr && (APP_Frame01_TmeOutTmr < xTaskGetTickCount())) ||
+            (APP_RxResp_tmeOutTmr && (APP_RxResp_tmeOutTmr < xTaskGetTickCount())))
+        {
+            APP_BuffLockedBy = APP_BUFF_LOCKED_BY_NONE;
+            APP_BuffRxIndex = 0;
+
+            if (APP_Frame01_TmeOutTmr)
+            {
+                APP_Frame01_TmeOutTmr = 0;
+            }
+            else
+            {
+                APP_RxResp_tmeOutTmr = 0;
+                respLen = 0;
+                respBuff[respLen++] = 0x40;
+                respBuff[respLen++] = 2;
+
+                if ((APP_Channel < 2) && (cb_APP_Send[APP_Channel] != NULL))
+                {
+                    crc16 = UTIL_CRC16_CCITT(0xFFFF, respBuff, 0);
+                    respBuff[respLen++] = crc16 >> 8;
+                    respBuff[respLen++] = crc16;
+
+                    cb_APP_Send[APP_Channel](respBuff, respLen);
+                }
+            }
+
+            APP_BuffDataRdyFlag = false;
+        }
+
+        if ((APP_SecurityChk == false) && (APP_AmberLedTmr < xTaskGetTickCount()))
+        {
+            // BT_CON_IND_Toggle();
+            APP_AmberLedTmr = xTaskGetTickCount() + 100;
+        }
+        else if (APP_SecurityChk == true)
+        {
+            // BT_CON_IND_SetHigh();
+        }
+
+        if ((APP_Client_COMM_Flag || APP_YellowFlashCntr) && (APP_YellowLedTmr < xTaskGetTickCount()))
+        {
+            if (APP_Client_COMM_Flag)
+            {
+                APP_Client_COMM_Flag = 0;
+                APP_YellowFlashCntr = 8;
+            }
+
+            APP_YellowFlashCntr--;
+
+            // BT_COM_IND_Toggle();
+            APP_YellowLedTmr = xTaskGetTickCount() + 100;
+        }
+        else if (APP_YellowFlashCntr == 0)
+        {
+            // BT_COM_IND_SetLow();
+        }
+
+        if ((APP_CAN_COMM_Flag || APP_GreenFlashCntr) && (APP_GreenLedTmr < xTaskGetTickCount()))
+        {
+            if (APP_CAN_COMM_Flag)
+            {
+                APP_CAN_COMM_Flag = 0;
+                APP_GreenFlashCntr = 8;
+            }
+
+            APP_GreenFlashCntr--;
+
+            // CAN_IND_Toggle();
+            APP_GreenLedTmr = xTaskGetTickCount() + 100;
+        }
+        else if (APP_GreenFlashCntr == 0)
+        {
+            // CAN_IND_SetLow();
+        }
+
+        if (APP_SecurityChk == true)
+        {
+            switch (APP_CAN_Protocol)
+            {
+            case APP_CAN_PROTOCOL_NONE:
+
+                break;
+
+            case APP_CAN_PROTOCOL_ISO15765:
+                if (APP_CAN_Baud != 0)
+                {
+                    if (APP_BuffDataRdyFlag)
+                    {
+                        switch (APP_ISO_State)
+                        {
+                        case APP_ISO_STATE_SINGLE:
+                            tx_frame.data_length_code = APP_CAN_TxDataLen + 1;
+                            tx_frame.data[0] = 0x0F & (tx_frame.data_length_code - 1);
+                            memcpy((uint8_t *)&tx_frame.data[1], &APP_Buff[0], (tx_frame.data_length_code - 1));
+
+                            if ((tx_frame.data_length_code < 8) && (APP_CAN_PaddingByte & 0x0100))
+                            {
+                                memset(((uint8_t *)&tx_frame.data[0] + tx_frame.data_length_code),
+                                       (uint8_t)APP_CAN_PaddingByte,
+                                       (8 - tx_frame.data_length_code));
+                                tx_frame.data_length_code = 8;
+                            }
+
+                            canFrameSend = true;
+                            APP_BuffTxIndex = 0;
+                            APP_CAN_TxDataLen = 0;
+                            APP_BuffDataRdyFlag = false;
+                            APP_BuffLockedBy = APP_BUFF_LOCKED_BY_NONE;
+                            APP_ISO_State = APP_ISO_STATE_IDLE;
+                            break;
+
+                        case APP_ISO_STATE_FIRST:
+                            tx_frame.data_length_code = 8;
+                            tx_frame.data[0] = (0x0F & (uint8_t)(APP_CAN_TxDataLen >> 8)) | 0x10;
+                            tx_frame.data[1] = (uint8_t)APP_CAN_TxDataLen;
+                            memcpy((uint8_t *)&tx_frame.data[2], &APP_Buff[APP_BuffTxIndex], (tx_frame.data_length_code - 2));
+                            APP_BuffTxIndex = APP_BuffTxIndex + (tx_frame.data_length_code - 2);
+                            APP_CAN_TxDataLen = APP_CAN_TxDataLen - (tx_frame.data_length_code - 2);
+                            APP_ISO_FC_WaitTmr = xTaskGetTickCount() + APP_ISO_FC_WAIT_TIME;
+                            canFrameSend = true;
+                            APP_ISO_TxBlockCounter = 0;
+                            APP_ISO_TxFrameCounter = 1;
+                            APP_ISO_State = APP_ISO_STATE_FC_WAIT_TIME;
+                            break;
+
+                        case APP_ISO_STATE_CONSECUTIVE:
+                            if (APP_ISO_FC_TxFlag == 0)
+                            {
+                                if (APP_CAN_TxDataLen >= 7)
+                                {
+                                    tx_frame.data_length_code = 8;
+                                }
+                                else
+                                {
+                                    tx_frame.data_length_code = APP_CAN_TxDataLen + 1;
+                                }
+
+                                tx_frame.data[0] = (0x0F & APP_ISO_TxFrameCounter) | 0x20;
+                                memcpy((uint8_t *)&tx_frame.data[1], &APP_Buff[APP_BuffTxIndex], (tx_frame.data_length_code - 1));
+                                APP_BuffTxIndex = APP_BuffTxIndex + (tx_frame.data_length_code - 1);
+                                APP_CAN_TxDataLen = APP_CAN_TxDataLen - (tx_frame.data_length_code - 1);
+                                APP_ISO_TxFrameCounter++;
+                                APP_ISO_TxBlockCounter++;
+                                canFrameSend = true;
+
+                                if ((APP_ISO_FC_TxBlockSize) && (APP_ISO_TxBlockCounter == APP_ISO_FC_TxBlockSize))
+                                {
+                                    APP_ISO_FC_WaitTmr = xTaskGetTickCount() + APP_ISO_FC_WAIT_TIME;
+                                    APP_ISO_State = APP_ISO_STATE_FC_WAIT_TIME;
+                                    APP_ISO_TxBlockCounter = 0;
+                                }
+                                else if (APP_ISO_TxSepTime)
+                                {
+                                    APP_ISO_TxSepTmr = xTaskGetTickCount() + APP_ISO_TxSepTime;
+                                    APP_ISO_State = APP_ISO_STATE_SEP_TIME;
+                                }
+
+                                if (APP_CAN_TxDataLen == 0)
+                                {
+                                    if ((tx_frame.data_length_code < 8) && (APP_CAN_PaddingByte & 0x0100))
+                                    {
+                                        memset(((uint8_t *)&tx_frame.data[0] + tx_frame.data_length_code),
+                                               (uint8_t)APP_CAN_PaddingByte,
+                                               (8 - tx_frame.data_length_code));
+                                        tx_frame.data_length_code = 8;
+                                    }
+
+                                    APP_BuffTxIndex = 0;
+                                    APP_BuffDataRdyFlag = false;
+                                    APP_BuffLockedBy = APP_BUFF_LOCKED_BY_NONE;
+                                    APP_ISO_FC_WaitTmr = 0;
+                                    APP_ISO_TxSepTmr = 0;
+                                    APP_ISO_State = APP_ISO_STATE_IDLE;
+                                }
+
+                                delay = 1;
+                            }
+                            else if (APP_ISO_FC_TxFlag == 1)
+                            {
+                                APP_ISO_FC_WaitTmr = xTaskGetTickCount() + 100;
+                                APP_ISO_State = APP_ISO_STATE_FC_WAIT_TIME;
+                            }
+                            else if (APP_ISO_FC_TxFlag == 2)
+                            {
+                                APP_BuffTxIndex = 0;
+                                APP_CAN_TxDataLen = 0;
+                                APP_BuffDataRdyFlag = false;
+                                APP_BuffLockedBy = APP_BUFF_LOCKED_BY_NONE;
+                                APP_ISO_FC_WaitTmr = 0;
+                                APP_ISO_TxSepTmr = 0;
+                                APP_ISO_State = APP_ISO_STATE_IDLE;
+                            }
+                            break;
+
+                        case APP_ISO_STATE_SEP_TIME:
+                            if (APP_ISO_TxSepTmr && (APP_ISO_TxSepTmr < xTaskGetTickCount()))
+                            {
+                                APP_ISO_TxSepTmr = 0;
+                                APP_ISO_State = APP_ISO_STATE_CONSECUTIVE;
+                            }
+                            break;
+
+                        case APP_ISO_STATE_FC_WAIT_TIME:
+                            if (APP_ISO_FC_WaitTmr && (APP_ISO_FC_WaitTmr < xTaskGetTickCount()))
+                            {
+                                APP_ISO_FC_WaitTmr = 0;
+                                APP_BuffTxIndex = 0;
+                                APP_CAN_TxDataLen = 0;
+                                APP_BuffDataRdyFlag = false;
+                                APP_BuffLockedBy = APP_BUFF_LOCKED_BY_NONE;
+                                APP_ISO_State = APP_ISO_STATE_IDLE;
+                            }
+                            break;
+
+                        case APP_ISO_STATE_SEND_TO_APP:
+                            if ((APP_Channel == APP_CHANNEL_MQTT) || (APP_Channel == APP_CHANNEL_UART))
+                            {
+                                APP_CAN_COMM_Flag = true;
+
+                                respLen = 0;
+
+                                if (APP_ISO_SendToApp_FF_Flag == false)
+                                {
+                                    if (APP_CAN_RxDataLen < 1000)
+                                    {
+                                        APP_BuffRxIndex = 0;
+                                        APP_ISO_SendToApp_FF_Flag = true;
+                                        respBuff[respLen++] = 0x40 | (((APP_CAN_RxDataLen + 2) >> 8) & 0x0F);
+                                        respBuff[respLen++] = (APP_CAN_RxDataLen + 2);
+
+                                        if ((APP_Channel < 2) && (cb_APP_Send[APP_Channel] != NULL))
+                                        {
+                                            cb_APP_Send[APP_Channel](respBuff, respLen);
+
+                                            respLen = 0;
+                                            crc16 = UTIL_CRC16_CCITT(0xFFFF, &APP_Buff[APP_BuffRxIndex], APP_CAN_RxDataLen);
+                                            respBuff[respLen++] = crc16 >> 8;
+                                            respBuff[respLen++] = crc16;
+
+                                            cb_APP_Send[APP_Channel](&APP_Buff[APP_BuffRxIndex], APP_CAN_RxDataLen);
+                                            cb_APP_Send[APP_Channel](respBuff, respLen);
+                                        }
+
+                                        APP_CAN_RxDataLen = 0;
+                                        APP_ISO_State = APP_ISO_STATE_IDLE;
+                                        APP_BuffRxIndex = 0;
+                                        APP_BuffDataRdyFlag = false;
+                                        APP_BuffLockedBy = APP_BUFF_LOCKED_BY_NONE;
+                                        APP_SendToAppWaitTmr = 0;
+                                    }
+                                    else
+                                    {
+                                        if (APP_CAN_RxDataLen > 1000)
+                                        {
+                                            len = 1000;
+                                        }
+                                        else
+                                        {
+                                            len = APP_CAN_RxDataLen;
+                                        }
+
+                                        APP_SendToAppWaitTmr = xTaskGetTickCount() + 100;
+                                        APP_BuffRxIndex = 0;
+                                        APP_ISO_SendToApp_FF_Flag = true;
+                                        respBuff[respLen++] = 0x00 | (((len + 2 + 2) >> 8) & 0x0F);
+                                        respBuff[respLen++] = (len + 2 + 2);
+                                        respBuff[respLen++] = (APP_CAN_RxDataLen >> 8);
+                                        respBuff[respLen++] = APP_CAN_RxDataLen;
+
+                                        if ((APP_Channel < 2) && (cb_APP_Send[APP_Channel] != NULL))
+                                        {
+                                            cb_APP_Send[APP_Channel](respBuff, respLen);
+
+                                            respLen = 0;
+                                            crc16 = UTIL_CRC16_CCITT(0xFFFF, &respBuff[2], 2);
+                                            crc16 = UTIL_CRC16_CCITT(crc16, &APP_Buff[APP_BuffRxIndex], len);
+                                            respBuff[respLen++] = crc16 >> 8;
+                                            respBuff[respLen++] = crc16;
+
+                                            cb_APP_Send[APP_Channel](&APP_Buff[APP_BuffRxIndex], len);
+                                            cb_APP_Send[APP_Channel](respBuff, respLen);
+
+                                            APP_BuffRxIndex += len;
+                                            APP_CAN_RxDataLen -= len;
+                                        }
+                                    }
+                                }
+                                else
+                                {
+                                    if (APP_SendToAppWaitTmr < xTaskGetTickCount())
+                                    {
+                                        if (APP_CAN_RxDataLen > 1000)
+                                        {
+                                            len = 1000;
+                                        }
+                                        else
+                                        {
+                                            len = APP_CAN_RxDataLen;
+                                        }
+
+                                        respBuff[respLen++] = 0x10 | (((len + 2) >> 8) & 0x0F);
+                                        respBuff[respLen++] = (len + 2);
+
+                                        if (APP_CAN_RxDataLen && (APP_Channel < 2) && (cb_APP_Send[APP_Channel] != NULL))
+                                        {
+                                            cb_APP_Send[APP_Channel](respBuff, respLen);
+
+                                            respLen = 0;
+                                            crc16 = UTIL_CRC16_CCITT(0xFFFF, &APP_Buff[APP_BuffRxIndex], len);
+                                            respBuff[respLen++] = crc16 >> 8;
+                                            respBuff[respLen++] = crc16;
+
+                                            cb_APP_Send[APP_Channel](&APP_Buff[APP_BuffRxIndex], len);
+                                            cb_APP_Send[APP_Channel](respBuff, respLen);
+
+                                            APP_BuffRxIndex += len;
+                                            APP_CAN_RxDataLen -= len;
+                                        }
+
+                                        if (APP_CAN_RxDataLen == 0)
+                                        {
+                                            APP_ISO_State = APP_ISO_STATE_IDLE;
+                                            APP_BuffRxIndex = 0;
+                                            APP_BuffDataRdyFlag = false;
+                                            APP_BuffLockedBy = APP_BUFF_LOCKED_BY_NONE;
+                                            APP_SendToAppWaitTmr = 0;
+                                        }
+                                        else
+                                        {
+                                            APP_SendToAppWaitTmr = xTaskGetTickCount() + 100;
+                                        }
+                                    }
+                                }
+                            }
+                            break;
+
+                        case APP_ISO_STATE_IDLE:
+                            break;
+
+                        default:
+                            break;
+                        }
+                    }
+
+                    if (((APP_Channel == APP_CHANNEL_MQTT) || (APP_Channel == APP_CHANNEL_UART) || (APP_ISO_State == APP_ISO_STATE_FC_WAIT_TIME)) &&
+                        ((CAN_ReadFrame(&rx_frame, pdMS_TO_TICKS(0)) == true) && (rx_frame.flags != CAN_MSG_FLAG_RTR)))
+                    {
+                        APP_CAN_COMM_Flag = true;
+                        isoFrameType = rx_frame.data[0] >> 4;
+
+                        switch (isoFrameType)
+                        {
+                        case APP_ISO_TYPE_SINGLE:
+                            respLen = 0;
+                            respBuff[respLen++] = 0x40;
+                            respBuff[respLen++] = ((rx_frame.data[0] & 0x0F) + 2);
+
+                            memcpy(&respBuff[respLen], &rx_frame.data[1], (rx_frame.data[0] & 0x0F));
+                            respLen += (rx_frame.data[0] & 0x0F);
+
+                            if ((APP_Channel < 2) && (cb_APP_Send[APP_Channel] != NULL))
+                            {
+                                crc16 = UTIL_CRC16_CCITT(0xFFFF, &respBuff[2], (respLen - 2));
+                                respBuff[respLen++] = crc16 >> 8;
+                                respBuff[respLen++] = crc16;
+
+                                cb_APP_Send[APP_Channel](respBuff, respLen);
+                            }
+                            APP_RxResp_tmeOutTmr = 0;
+                            break;
+
+                        case APP_ISO_TYPE_FIRST:
+                            if ((APP_BuffLockedBy == APP_BUFF_LOCKED_BY_NONE) && (APP_BuffDataRdyFlag == false))
+                            {
+                                APP_BuffLockedBy = APP_BUFF_LOCKED_BY_ISO_TP_RX_FF;
+                                APP_CAN_RxDataLen = ((uint16_t)(0x0F & rx_frame.data[0]) << 8) | (uint16_t)rx_frame.data[1];
+                                APP_BuffRxIndex = 0;
+                                memcpy(&APP_Buff[APP_BuffRxIndex], &rx_frame.data[2], 6);
+                                APP_BuffRxIndex = APP_BuffRxIndex + 6;
+                                APP_RxResp_tmeOutTmr = xTaskGetTickCount() + APP_CAN_RqRspMaxTime;
+                                tx_frame.data[0] = 0x30;
+                            }
+                            else
+                            {
+                                // wait buffer is busy
+                                tx_frame.data[0] = 0x31;
+                            }
+
+                            tx_frame.identifier = APP_CAN_TxId;
+                            tx_frame.flags = APP_CAN_TxIdType;
+                            tx_frame.data_length_code = 3;
+                            tx_frame.data[1] = APP_ISO_FC_RxBlockSize;
+                            tx_frame.data[2] = APP_ISO_FC_RxSepTime;
+
+                            if ((tx_frame.data_length_code < 8) && (APP_CAN_PaddingByte & 0x0100))
+                            {
+                                memset(((uint8_t *)&tx_frame.data[0] + tx_frame.data_length_code),
+                                       (uint8_t)APP_CAN_PaddingByte,
+                                       (8 - tx_frame.data_length_code));
+                                tx_frame.data_length_code = 8;
+                            }
+                            canFrameSend = true;
+                            break;
+
+                        case APP_ISO_TYPE_CONSECUTIVE:
+
+                            if (APP_BuffLockedBy == APP_BUFF_LOCKED_BY_ISO_TP_RX_FF)
+                            {
+                                APP_RxResp_tmeOutTmr = xTaskGetTickCount() + APP_CAN_RqRspMaxTime;
+                                memcpy(&APP_Buff[APP_BuffRxIndex], &rx_frame.data[1], rx_frame.data_length_code - 1);
+                                APP_BuffRxIndex = APP_BuffRxIndex + (rx_frame.data_length_code - 1);
+                                APP_ISO_RxBlockCounter++;
+
+                                if (APP_BuffRxIndex >= APP_CAN_RxDataLen)
+                                {
+                                    APP_ISO_SendToApp_FF_Flag = false;
+                                    APP_RxResp_tmeOutTmr = 0;
+                                    APP_BuffDataRdyFlag = true;
+                                    APP_ISO_State = APP_ISO_STATE_SEND_TO_APP;
+                                }
+                                else if ((APP_ISO_FC_RxBlockSize) && (APP_ISO_RxBlockCounter == APP_ISO_FC_RxBlockSize))
+                                {
+                                    APP_ISO_RxBlockCounter = 0;
+                                    tx_frame.identifier = APP_CAN_TxId;
+                                    tx_frame.flags = APP_CAN_TxIdType;
+                                    tx_frame.data_length_code = 3;
+                                    tx_frame.data[0] = 0x30;
+                                    tx_frame.data[1] = APP_ISO_FC_RxBlockSize;
+                                    tx_frame.data[2] = APP_ISO_FC_RxSepTime;
+                                    canFrameSend = true;
+                                }
+                            }
+                            break;
+
+                        case APP_ISO_TYPE_FLOWCONTROL:
+                            APP_ISO_FC_TxFlag = rx_frame.data[0] & 0x0F;
+                            APP_ISO_FC_TxBlockSize = rx_frame.data[1];
+
+                            if (rx_frame.data[2] <= 127)
+                            {
+                                //                                    if(canMsg.frame.data2 == 0)
+                                //                                    {
+                                //                                        APP_ISO_TxSepTime = 1;
+                                //                                    }
+                                //                                    else
+                                {
+                                    APP_ISO_TxSepTime = rx_frame.data[2];
+                                }
+                            }
+                            else
+                            {
+                                APP_ISO_TxSepTime = 1;
+                            }
+
+                            APP_ISO_State = APP_ISO_STATE_CONSECUTIVE;
+                            APP_ISO_FC_WaitTmr = 0;
+                            APP_RxResp_tmeOutTmr = xTaskGetTickCount() + APP_CAN_RqRspMaxTime;
+                            break;
+
+                        default:
+                            break;
+                        }
+                    }
+
+                    if (canFrameSend)
+                    {
+                        APP_CAN_COMM_Flag = true;
+                        CAN_WriteFrame(&tx_frame, pdMS_TO_TICKS(0));
+
+                        if (delay)
+                        {
+                            // ~300.25us
+                            // _DELAY(22000);
+                        }
+                        canFrameSend = false;
+                    }
+                }
+                break;
+            }
+        }
+#if 0
         //receive next CAN frame from queue
         if (CAN_ReadFrame(&rx_frame, pdMS_TO_TICKS(5)) == ESP_OK)
         {
@@ -221,11 +719,12 @@ void APP_Task(void *pvParameters)
             //respond to sender
             CAN_WriteFrame(&rx_frame, pdMS_TO_TICKS(10));
         }
+#endif
     }
 }
 
 #if 1
-void APP_ProcessData(uint8_t *p_buff, uint16_t len, uint8_t channel)
+void APP_ProcessData(uint8_t *p_buff, uint16_t len, APP_CHANNEL_t channel)
 {
     uint8_t frameType;
     uint16_t frameLen;
@@ -235,45 +734,45 @@ void APP_ProcessData(uint8_t *p_buff, uint16_t len, uint8_t channel)
     uint16_t crc16Calc;
     uint16_t respLen;
     uint8_t respBuff[50];
-    
+
     APP_Client_COMM_Flag = true;
-    
+
     respLen = 0;
     respType = ACK;
     respNo = ACK;
-    
-    if(APP_ProcDataBusyFlag == false)
+
+    if (APP_ProcDataBusyFlag == false)
     {
         APP_Channel = channel;
         APP_ProcDataBusyFlag = true;
-        
+
         frameType = p_buff[0] >> 4;
         frameLen = ((uint16_t)(p_buff[0] & 0x0F) << 8) | (uint16_t)p_buff[1];
-        
-        if(frameLen == (len - 2))
+
+        if (frameLen == (len - 2))
         {
             crc16Act = ((uint16_t)p_buff[len - 2] << 8) | (uint16_t)p_buff[len - 1];
-            
+
             crc16Calc = UTIL_CRC16_CCITT(0xFFFF, &p_buff[2], (frameLen - 2));
-            
-            if(crc16Act == crc16Calc)
-            {        
-                if(frameType < (sizeof(cb_APP_FrameType) / sizeof(cb_APP_FrameType[0])))
+
+            if (crc16Act == crc16Calc)
+            {
+                if (frameType < (sizeof(cb_APP_FrameType) / sizeof(cb_APP_FrameType[0])))
                 {
-                    if(APP_SecurityChk == true)
+                    if (APP_SecurityChk == true)
                     {
-                        if(cb_APP_FrameType[frameType] != NULL)
+                        if (cb_APP_FrameType[frameType] != NULL)
                         {
-                            cb_APP_FrameType[frameType](&p_buff[2], (frameLen - 2), channel);
+                            cb_APP_FrameType[frameType](&p_buff[2], (frameLen - 2), (uint8_t)channel);
                         }
                     }
                     else
                     {
-                        if(frameType == 5)
+                        if (frameType == 5)
                         {
-                            if(cb_APP_FrameType[frameType] != NULL)
+                            if (cb_APP_FrameType[frameType] != NULL)
                             {
-                                cb_APP_FrameType[frameType](&p_buff[2], (frameLen - 2), channel);
+                                cb_APP_FrameType[frameType](&p_buff[2], (frameLen - 2), (uint8_t)channel);
                             }
                         }
                         else
@@ -293,7 +792,7 @@ void APP_ProcessData(uint8_t *p_buff, uint16_t len, uint8_t channel)
             {
                 respType = NACK;
                 respNo = NACK15;
-                
+
                 respBuff[respLen++] = crc16Act >> 8;
                 respBuff[respLen++] = crc16Act;
                 respBuff[respLen++] = crc16Calc >> 8;
@@ -314,10 +813,10 @@ void APP_ProcessData(uint8_t *p_buff, uint16_t len, uint8_t channel)
         respType = NACK;
         respNo = NACK14;
     }
-    
-    if(respType != ACK)
+
+    if (respType != ACK)
     {
-        APP_SendRespToFrame(respType, respNo, respBuff, respLen, channel, false);
+        APP_SendRespToFrame(respType, respNo, respBuff, respLen, (uint8_t)channel, false);
     }
 }
 
@@ -336,14 +835,14 @@ void APP_Frame0(uint8_t *p_buff, uint16_t len, uint8_t channel)
     respType = ACK;
     respNo = ACK;
     respLen = 0;
-    
-    if((APP_BuffLockedBy == APP_BUFF_LOCKED_BY_NONE) && (APP_BuffDataRdyFlag == false))
+
+    if ((APP_BuffLockedBy == APP_BUFF_LOCKED_BY_NONE) && (APP_BuffDataRdyFlag == false))
     {
         APP_BuffLockedBy = APP_BUFF_LOCKED_BY_FRAME0;
         APP_CAN_TxDataLen = ((uint16_t)p_buff[0] << 8) | (uint16_t)p_buff[1];
         APP_BuffRxIndex = 0;
-        
-        if(APP_CAN_TxDataLen > 4095)
+
+        if (APP_CAN_TxDataLen > 4095)
         {
             respType = NACK;
             respNo = NACK13;
@@ -361,10 +860,10 @@ void APP_Frame0(uint8_t *p_buff, uint16_t len, uint8_t channel)
         respType = NACK;
         respNo = NACK14;
     }
-    
+
     respBuff[respLen++] = APP_BuffRxIndex >> 8;
     respBuff[respLen++] = APP_BuffRxIndex;
-    
+
     APP_SendRespToFrame(respType, respNo, respBuff, respLen, channel, false);
 }
 
@@ -383,16 +882,16 @@ void APP_Frame1(uint8_t *p_buff, uint16_t len, uint8_t channel)
     respType = ACK;
     respNo = ACK;
     respLen = 0;
-    
-    if((APP_BuffLockedBy == APP_BUFF_LOCKED_BY_FRAME0) && (APP_BuffDataRdyFlag == false))
+
+    if ((APP_BuffLockedBy == APP_BUFF_LOCKED_BY_FRAME0) && (APP_BuffDataRdyFlag == false))
     {
-        if(APP_CAN_TxDataLen && ((APP_BuffRxIndex + len) <= 4095))
+        if (APP_CAN_TxDataLen && ((APP_BuffRxIndex + len) <= 4095))
         {
             APP_Frame01_TmeOutTmr = xTaskGetTickCount() + 10000;
             memcpy(&APP_Buff[APP_BuffRxIndex], p_buff, len);
             APP_BuffRxIndex += len;
-        
-            if(APP_BuffRxIndex >= APP_CAN_TxDataLen)
+
+            if (APP_BuffRxIndex >= APP_CAN_TxDataLen)
             {
                 APP_BuffRxIndex = 0;
                 APP_BuffTxIndex = 0;
@@ -400,9 +899,9 @@ void APP_Frame1(uint8_t *p_buff, uint16_t len, uint8_t channel)
                 APP_BuffLockedBy = APP_BUFF_LOCKED_BY_FRAME1;
                 APP_Frame01_TmeOutTmr = 0;
 
-                if(APP_CAN_Protocol == APP_CAN_PROTOCOL_ISO15765)
+                if (APP_CAN_Protocol == APP_CAN_PROTOCOL_ISO15765)
                 {
-                    if(APP_CAN_TxDataLen < 8)
+                    if (APP_CAN_TxDataLen < 8)
                     {
                         APP_ISO_State = APP_ISO_STATE_SINGLE;
                     }
@@ -411,11 +910,11 @@ void APP_Frame1(uint8_t *p_buff, uint16_t len, uint8_t channel)
                         APP_ISO_State = APP_ISO_STATE_FIRST;
                     }
                 }
-                else if(APP_CAN_Protocol == APP_CAN_PROTOCOL_NORMAL)
+                else if (APP_CAN_Protocol == APP_CAN_PROTOCOL_NORMAL)
                 {
                     APP_CAN_TxMinTmr = xTaskGetTickCount() + APP_CAN_TxMinTime;
                 }
-                
+
                 APP_RxResp_tmeOutTmr = xTaskGetTickCount() + APP_CAN_RqRspMaxTime;
             }
         }
@@ -434,10 +933,10 @@ void APP_Frame1(uint8_t *p_buff, uint16_t len, uint8_t channel)
         APP_BuffRxIndex = 0;
         APP_BuffLockedBy = APP_BUFF_LOCKED_BY_NONE;
     }
-    
+
     respBuff[respLen++] = APP_BuffRxIndex >> 8;
     respBuff[respLen++] = APP_BuffRxIndex;
-    
+
     APP_SendRespToFrame(respType, respNo, respBuff, respLen, channel, false);
 }
 
@@ -447,375 +946,375 @@ void APP_Frame1(uint8_t *p_buff, uint16_t len, uint8_t channel)
  * @param len
  */
 void APP_Frame2(uint8_t *p_buff, uint16_t len, uint8_t channel)
-{   
+{
     uint8_t offset;
     uint8_t respType;
     uint8_t respNo;
     uint16_t respLen;
     uint8_t respBuff[20];
     bool canFilterMask;
-    
+
     canFilterMask = true;
     APP_Channel = channel;
     respType = ACK;
     respNo = ACK;
     respLen = 0;
     offset = 0;
-    
-    if(len)
+
+    if (len)
     {
-        switch(p_buff[0])
+        switch (p_buff[0])
         {
-            case RSTVC:
-                if(len != 1)
-                {
-                    respType = NACK;
-                    respNo = NACK13;
-                    break;
-                }
-                
-                APP_CAN_Baud = CAN_SPEED_1000KBPS;
-                APP_CAN_Protocol = APP_CAN_PROTOCOL_NONE;
-                // Reset or disable CAN
-                CAN_DeInit();
-                break;
-
-            case SPRCOL:
-                if(len != 2)
-                {
-                    respType = NACK;
-                    respNo = NACK13;
-                    break;
-                }
-                
-                APP_SPRCOL = p_buff[1];
-
-                if(p_buff[1] < 6)
-                {
-                    offset = 0;
-                    APP_CAN_Protocol = APP_CAN_PROTOCOL_ISO15765;
-                }
-                else if(p_buff[1] < 0x0C)
-                {
-                    offset = 6;
-                    APP_CAN_Protocol = APP_CAN_PROTOCOL_NORMAL;
-                }
-                else if(p_buff[1] < 0x12)
-                {
-                    offset = 0x0C;
-                    APP_CAN_Protocol = APP_CAN_PROTOCOL_OE_IVN;
-                    // Accept all messages from any CAN ID
-                    canFilterMask = false;
-                }
-                else
-                {
-                    respType = NACK;
-                    respNo = NACK12;
-                }
-
-                if((p_buff[1] - offset) < 2)
-                {
-                    APP_CAN_Baud = CAN_SPEED_250KBPS;
-                }
-                else if((p_buff[1] - offset) < 4)
-                {
-                    APP_CAN_Baud = CAN_SPEED_500KBPS;
-                }
-                else if((p_buff[1] - offset) < 6)
-                {
-                    respType = NACK;
-                    respNo = NACK12;
-                }
-                else
-                {
-                    respType = NACK;
-                    respNo = NACK12;
-                }
-
-                if((p_buff[1] - offset) % 2)
-                {
-                    APP_CAN_TxIdType = CAN_MSG_FLAG_EXTD;
-                }
-                else
-                {
-                    APP_CAN_TxIdType = CAN_MSG_FLAG_NONE;   // Standard frame;
-                }
-
-                if(respType == ACK)
-                {
-                    APP_CAN_RqRspMaxTime = 500;
-                    APP_CAN_TxMinTime = 10;
-                    APP_ISO_TxSepTmr = 0;
-                    APP_ISO_FC_WaitTmr = 0;
-                    APP_Frame01_TmeOutTmr = 0;
-                    APP_RxResp_tmeOutTmr = 0;
-                    APP_BuffTxIndex = 0;
-                    APP_BuffRxIndex = 0;
-                    APP_CAN_TxDataLen = 0;
-                    APP_CAN_RxDataLen = 0;
-                    APP_BuffDataRdyFlag = false;
-                    APP_BuffLockedBy = APP_BUFF_LOCKED_BY_NONE;
-                    CAN_SetBaud(APP_CAN_Baud);
-                    CAN_ConfigFilterterMask(0xFFFFFFFF, true);
-                }
-                break;
-
-            case GPRCOL:
-                if(len != 1)
-                {
-                    respType = NACK;
-                    respNo = NACK13;
-                    break;
-                }
-                
-                respBuff[0] = APP_SPRCOL;
-                respLen = 1;
-                break;
-
-            case STXHDR:
-                if(len == 3)
-                {
-                    APP_CAN_TxIdType = CAN_MSG_FLAG_NONE;   // Standard frame
-                    APP_CAN_TxId = ((uint32_t)p_buff[1] << 8) | (uint32_t)p_buff[2];
-                }
-                else if(len == 5)
-                {
-                    APP_CAN_TxIdType = CAN_MSG_FLAG_EXTD;
-                    APP_CAN_TxId = ((uint32_t)p_buff[1] << 24) | ((uint32_t)p_buff[2] << 16) | ((uint32_t)p_buff[3] << 8) | (uint32_t)p_buff[4];
-                }
-                else
-                {
-                    respType = NACK;
-                    respNo = NACK13;
-                }
-                break;
-
-            case GTXHDR:
-                if(len != 1)
-                {
-                    respType = NACK;
-                    respNo = NACK13;
-                    break;
-                }
-                
-                // Standard frame
-                if(APP_CAN_TxIdType == CAN_MSG_FLAG_NONE)   
-                {
-                    respBuff[0] = (uint8_t)(APP_CAN_TxId >> 8);
-                    respBuff[1] = (uint8_t)APP_CAN_TxId;
-                    respLen = 2;
-                }
-                else
-                {
-                    respBuff[0] = (uint8_t)(APP_CAN_TxId >> 24);
-                    respBuff[1] = (uint8_t)(APP_CAN_TxId >> 16);
-                    respBuff[2] = (uint8_t)(APP_CAN_TxId >> 8);
-                    respBuff[3] = (uint8_t)APP_CAN_TxId;
-                    respLen = 4;
-                }
-                break;
-
-            case SRXHDRMSK:
-                if(len == 3)
-                {
-                    APP_CAN_FilterIdType = CAN_MSG_FLAG_NONE;   // Standard frame
-                    APP_CAN_FilterId = ((uint32_t)p_buff[1] << 8) | (uint32_t)p_buff[2];
-                }
-                else if(len == 5)
-                {
-                    APP_CAN_FilterIdType = CAN_MSG_FLAG_EXTD;
-                    APP_CAN_FilterId = ((uint32_t)p_buff[1] << 24) | ((uint32_t)p_buff[2] << 16) | ((uint32_t)p_buff[3] << 8) | (uint32_t)p_buff[4];
-                }
-                else
-                {
-                    respType = NACK;
-                    respNo = NACK13;
-                    break;
-                }
-
-                CAN_ConfigFilterterMask(APP_CAN_FilterId, (bool)APP_CAN_FilterIdType);
-                break;
-
-            case GRXHDRMSK:
-                if(len != 1)
-                {
-                    respType = NACK;
-                    respNo = NACK13;
-                    break;
-                }
-                
-                // Standard frame
-                if(APP_CAN_FilterIdType == CAN_MSG_FLAG_NONE)
-                {
-                    respBuff[0] = (uint8_t)(APP_CAN_FilterId >> 8);
-                    respBuff[1] = (uint8_t)APP_CAN_FilterId;
-                    respLen = 2;
-                }
-                else
-                {
-                    respBuff[0] = (uint8_t)(APP_CAN_FilterId >> 24);
-                    respBuff[1] = (uint8_t)(APP_CAN_FilterId >> 16);
-                    respBuff[2] = (uint8_t)(APP_CAN_FilterId >> 8);
-                    respBuff[3] = (uint8_t)APP_CAN_FilterId;
-                    respLen = 4;
-                }
-                break;
-
-            case SFCBLKL:
-                if(len != 2)
-                {
-                    respType = NACK;
-                    respNo = NACK13;
-                    break;
-                }
-                
-                APP_ISO_FC_RxBlockSize = p_buff[1];
-                break;
-
-            case GFCBLKL:
-                if(len != 1)
-                {
-                    respType = NACK;
-                    respNo = NACK13;
-                    break;
-                }
-                
-                respBuff[0] = APP_ISO_FC_RxBlockSize;
-                respLen = 1;
-                break;    
-
-            case SFCST:
-                if(len != 2)
-                {
-                    respType = NACK;
-                    respNo = NACK13;
-                    break;
-                }
-                
-                APP_ISO_FC_RxSepTime = p_buff[1];
-                break;
-
-            case GFCST:
-                if(len != 1)
-                {
-                    respType = NACK;
-                    respNo = NACK13;
-                    break;
-                }
-                
-                respBuff[0] = APP_ISO_FC_RxSepTime;
-                respLen = 1;
-                break;
-
-            case SETP1MIN:
-                if(len != 2)
-                {
-                    respType = NACK;
-                    respNo = NACK13;
-                    break;
-                }
-                
-                APP_CAN_TxMinTime = p_buff[1];
-                break;
-
-            case GETP1MIN:
-                if(len != 1)
-                {
-                    respType = NACK;
-                    respNo = NACK13;
-                    break;
-                }
-                
-                respBuff[0] = APP_CAN_TxMinTime;
-                respLen = 1;
-                break;
-
-            case SETP2MAX:
-                if(len != 3)
-                {
-                    respType = NACK;
-                    respNo = NACK13;
-                    break;
-                }
-                
-                APP_CAN_RqRspMaxTime = ((uint16_t)p_buff[1] << 8) | (uint16_t)p_buff[2];
-                break;
-
-            case GETP2MAX:
-                if(len != 1)
-                {
-                    respType = NACK;
-                    respNo = NACK13;
-                    break;
-                }
-                
-                respBuff[0] = APP_CAN_RqRspMaxTime >> 8;
-                respBuff[1] = APP_CAN_RqRspMaxTime;
-                respLen = 2;
-                break;
-
-            case TXTP:
-                if(len != 1)
-                {
-                    respType = NACK;
-                    respNo = NACK13;
-                    break;
-                }
-                
-                APP_CAN_TransmitTstrMsg = true;
-                break;
-
-            case STPTXTP:
-                if(len != 1)
-                {
-                    respType = NACK;
-                    respNo = NACK13;
-                    break;
-                }
-                
-                APP_CAN_TransmitTstrMsg = false;
-                break;
-
-            case TXPAD:
-                if(len != 2)
-                {
-                    respType = NACK;
-                    respNo = NACK13;
-                    break;
-                }
-                
-                APP_CAN_PaddingByte = 0x0100 | (uint16_t)p_buff[1];
-                break;
-
-            case STPTXPAD:
-                if(len != 1)
-                {
-                    respType = NACK;
-                    respNo = NACK13;
-                    break;
-                }
-                
-                APP_CAN_PaddingByte = 0x0000;
-                break;
-
-            case GETFWVER: 
-                if(len != 1) 
-                { 
-                    respType = NACK; 
-                    respNo = NACK13; 
-                    break; 
-                } 
-                 
-                respBuff[0] = 0; 
-                respBuff[1] = 0; 
-                respBuff[2] = 1; 
-                respLen = 3; 
-                break;
-                
-            default:
+        case RSTVC:
+            if (len != 1)
+            {
                 respType = NACK;
-                respNo = NACK10;
+                respNo = NACK13;
                 break;
+            }
+
+            APP_CAN_Baud = CAN_SPEED_1000KBPS;
+            APP_CAN_Protocol = APP_CAN_PROTOCOL_NONE;
+            // Reset or disable CAN
+            CAN_DeInit();
+            break;
+
+        case SPRCOL:
+            if (len != 2)
+            {
+                respType = NACK;
+                respNo = NACK13;
+                break;
+            }
+
+            APP_SPRCOL = p_buff[1];
+
+            if (p_buff[1] < 6)
+            {
+                offset = 0;
+                APP_CAN_Protocol = APP_CAN_PROTOCOL_ISO15765;
+            }
+            else if (p_buff[1] < 0x0C)
+            {
+                offset = 6;
+                APP_CAN_Protocol = APP_CAN_PROTOCOL_NORMAL;
+            }
+            else if (p_buff[1] < 0x12)
+            {
+                offset = 0x0C;
+                APP_CAN_Protocol = APP_CAN_PROTOCOL_OE_IVN;
+                // Accept all messages from any CAN ID
+                canFilterMask = false;
+            }
+            else
+            {
+                respType = NACK;
+                respNo = NACK12;
+            }
+
+            if ((p_buff[1] - offset) < 2)
+            {
+                APP_CAN_Baud = CAN_SPEED_250KBPS;
+            }
+            else if ((p_buff[1] - offset) < 4)
+            {
+                APP_CAN_Baud = CAN_SPEED_500KBPS;
+            }
+            else if ((p_buff[1] - offset) < 6)
+            {
+                respType = NACK;
+                respNo = NACK12;
+            }
+            else
+            {
+                respType = NACK;
+                respNo = NACK12;
+            }
+
+            if ((p_buff[1] - offset) % 2)
+            {
+                APP_CAN_TxIdType = CAN_MSG_FLAG_EXTD;
+            }
+            else
+            {
+                APP_CAN_TxIdType = CAN_MSG_FLAG_NONE; // Standard frame;
+            }
+
+            if (respType == ACK)
+            {
+                APP_CAN_RqRspMaxTime = 500;
+                APP_CAN_TxMinTime = 10;
+                APP_ISO_TxSepTmr = 0;
+                APP_ISO_FC_WaitTmr = 0;
+                APP_Frame01_TmeOutTmr = 0;
+                APP_RxResp_tmeOutTmr = 0;
+                APP_BuffTxIndex = 0;
+                APP_BuffRxIndex = 0;
+                APP_CAN_TxDataLen = 0;
+                APP_CAN_RxDataLen = 0;
+                APP_BuffDataRdyFlag = false;
+                APP_BuffLockedBy = APP_BUFF_LOCKED_BY_NONE;
+                CAN_SetBaud(APP_CAN_Baud);
+                CAN_ConfigFilterterMask(0xFFFFFFFF, true);
+            }
+            break;
+
+        case GPRCOL:
+            if (len != 1)
+            {
+                respType = NACK;
+                respNo = NACK13;
+                break;
+            }
+
+            respBuff[0] = APP_SPRCOL;
+            respLen = 1;
+            break;
+
+        case STXHDR:
+            if (len == 3)
+            {
+                APP_CAN_TxIdType = CAN_MSG_FLAG_NONE; // Standard frame
+                APP_CAN_TxId = ((uint32_t)p_buff[1] << 8) | (uint32_t)p_buff[2];
+            }
+            else if (len == 5)
+            {
+                APP_CAN_TxIdType = CAN_MSG_FLAG_EXTD;
+                APP_CAN_TxId = ((uint32_t)p_buff[1] << 24) | ((uint32_t)p_buff[2] << 16) | ((uint32_t)p_buff[3] << 8) | (uint32_t)p_buff[4];
+            }
+            else
+            {
+                respType = NACK;
+                respNo = NACK13;
+            }
+            break;
+
+        case GTXHDR:
+            if (len != 1)
+            {
+                respType = NACK;
+                respNo = NACK13;
+                break;
+            }
+
+            // Standard frame
+            if (APP_CAN_TxIdType == CAN_MSG_FLAG_NONE)
+            {
+                respBuff[0] = (uint8_t)(APP_CAN_TxId >> 8);
+                respBuff[1] = (uint8_t)APP_CAN_TxId;
+                respLen = 2;
+            }
+            else
+            {
+                respBuff[0] = (uint8_t)(APP_CAN_TxId >> 24);
+                respBuff[1] = (uint8_t)(APP_CAN_TxId >> 16);
+                respBuff[2] = (uint8_t)(APP_CAN_TxId >> 8);
+                respBuff[3] = (uint8_t)APP_CAN_TxId;
+                respLen = 4;
+            }
+            break;
+
+        case SRXHDRMSK:
+            if (len == 3)
+            {
+                APP_CAN_FilterIdType = CAN_MSG_FLAG_NONE; // Standard frame
+                APP_CAN_FilterId = ((uint32_t)p_buff[1] << 8) | (uint32_t)p_buff[2];
+            }
+            else if (len == 5)
+            {
+                APP_CAN_FilterIdType = CAN_MSG_FLAG_EXTD;
+                APP_CAN_FilterId = ((uint32_t)p_buff[1] << 24) | ((uint32_t)p_buff[2] << 16) | ((uint32_t)p_buff[3] << 8) | (uint32_t)p_buff[4];
+            }
+            else
+            {
+                respType = NACK;
+                respNo = NACK13;
+                break;
+            }
+
+            CAN_ConfigFilterterMask(APP_CAN_FilterId, (bool)APP_CAN_FilterIdType);
+            break;
+
+        case GRXHDRMSK:
+            if (len != 1)
+            {
+                respType = NACK;
+                respNo = NACK13;
+                break;
+            }
+
+            // Standard frame
+            if (APP_CAN_FilterIdType == CAN_MSG_FLAG_NONE)
+            {
+                respBuff[0] = (uint8_t)(APP_CAN_FilterId >> 8);
+                respBuff[1] = (uint8_t)APP_CAN_FilterId;
+                respLen = 2;
+            }
+            else
+            {
+                respBuff[0] = (uint8_t)(APP_CAN_FilterId >> 24);
+                respBuff[1] = (uint8_t)(APP_CAN_FilterId >> 16);
+                respBuff[2] = (uint8_t)(APP_CAN_FilterId >> 8);
+                respBuff[3] = (uint8_t)APP_CAN_FilterId;
+                respLen = 4;
+            }
+            break;
+
+        case SFCBLKL:
+            if (len != 2)
+            {
+                respType = NACK;
+                respNo = NACK13;
+                break;
+            }
+
+            APP_ISO_FC_RxBlockSize = p_buff[1];
+            break;
+
+        case GFCBLKL:
+            if (len != 1)
+            {
+                respType = NACK;
+                respNo = NACK13;
+                break;
+            }
+
+            respBuff[0] = APP_ISO_FC_RxBlockSize;
+            respLen = 1;
+            break;
+
+        case SFCST:
+            if (len != 2)
+            {
+                respType = NACK;
+                respNo = NACK13;
+                break;
+            }
+
+            APP_ISO_FC_RxSepTime = p_buff[1];
+            break;
+
+        case GFCST:
+            if (len != 1)
+            {
+                respType = NACK;
+                respNo = NACK13;
+                break;
+            }
+
+            respBuff[0] = APP_ISO_FC_RxSepTime;
+            respLen = 1;
+            break;
+
+        case SETP1MIN:
+            if (len != 2)
+            {
+                respType = NACK;
+                respNo = NACK13;
+                break;
+            }
+
+            APP_CAN_TxMinTime = p_buff[1];
+            break;
+
+        case GETP1MIN:
+            if (len != 1)
+            {
+                respType = NACK;
+                respNo = NACK13;
+                break;
+            }
+
+            respBuff[0] = APP_CAN_TxMinTime;
+            respLen = 1;
+            break;
+
+        case SETP2MAX:
+            if (len != 3)
+            {
+                respType = NACK;
+                respNo = NACK13;
+                break;
+            }
+
+            APP_CAN_RqRspMaxTime = ((uint16_t)p_buff[1] << 8) | (uint16_t)p_buff[2];
+            break;
+
+        case GETP2MAX:
+            if (len != 1)
+            {
+                respType = NACK;
+                respNo = NACK13;
+                break;
+            }
+
+            respBuff[0] = APP_CAN_RqRspMaxTime >> 8;
+            respBuff[1] = APP_CAN_RqRspMaxTime;
+            respLen = 2;
+            break;
+
+        case TXTP:
+            if (len != 1)
+            {
+                respType = NACK;
+                respNo = NACK13;
+                break;
+            }
+
+            APP_CAN_TransmitTstrMsg = true;
+            break;
+
+        case STPTXTP:
+            if (len != 1)
+            {
+                respType = NACK;
+                respNo = NACK13;
+                break;
+            }
+
+            APP_CAN_TransmitTstrMsg = false;
+            break;
+
+        case TXPAD:
+            if (len != 2)
+            {
+                respType = NACK;
+                respNo = NACK13;
+                break;
+            }
+
+            APP_CAN_PaddingByte = 0x0100 | (uint16_t)p_buff[1];
+            break;
+
+        case STPTXPAD:
+            if (len != 1)
+            {
+                respType = NACK;
+                respNo = NACK13;
+                break;
+            }
+
+            APP_CAN_PaddingByte = 0x0000;
+            break;
+
+        case GETFWVER:
+            if (len != 1)
+            {
+                respType = NACK;
+                respNo = NACK13;
+                break;
+            }
+
+            respBuff[0] = 0;
+            respBuff[1] = 0;
+            respBuff[2] = 1;
+            respLen = 3;
+            break;
+
+        default:
+            respType = NACK;
+            respNo = NACK10;
+            break;
         }
     }
     else
@@ -823,7 +1322,7 @@ void APP_Frame2(uint8_t *p_buff, uint16_t len, uint8_t channel)
         respType = NACK;
         respNo = NACK13;
     }
-    
+
     APP_SendRespToFrame(respType, respNo, respBuff, respLen, channel, false);
 }
 
@@ -834,7 +1333,6 @@ void APP_Frame2(uint8_t *p_buff, uint16_t len, uint8_t channel)
  */
 void APP_Frame3(uint8_t *p_buff, uint16_t len, uint8_t channel)
 {
-    
 }
 
 /**
@@ -852,28 +1350,28 @@ void APP_Frame4(uint8_t *p_buff, uint16_t len, uint8_t channel)
     respType = ACK;
     respNo = ACK;
     respLen = 0;
-    
-    if((APP_BuffLockedBy == APP_BUFF_LOCKED_BY_NONE) && (APP_BuffDataRdyFlag == false))
+
+    if ((APP_BuffLockedBy == APP_BUFF_LOCKED_BY_NONE) && (APP_BuffDataRdyFlag == false))
     {
-        if(len <= 1000)
+        if (len <= 1000)
         {
             memcpy(APP_Buff, p_buff, len);
             APP_CAN_TxDataLen = len;
-        
-            if(APP_CAN_Protocol == APP_CAN_PROTOCOL_ISO15765)
+
+            if (APP_CAN_Protocol == APP_CAN_PROTOCOL_ISO15765)
             {
                 APP_ISO_State = APP_ISO_STATE_FIRST;
-          
-                if(APP_CAN_TxDataLen < 8)
+
+                if (APP_CAN_TxDataLen < 8)
                 {
                     APP_ISO_State = APP_ISO_STATE_SINGLE;
                 }
             }
-            else if(APP_CAN_Protocol == APP_CAN_PROTOCOL_NORMAL)
+            else if (APP_CAN_Protocol == APP_CAN_PROTOCOL_NORMAL)
             {
                 APP_CAN_TxMinTmr = 1;
             }
-            
+
             APP_BuffRxIndex = 0;
             APP_BuffTxIndex = 0;
             APP_BuffDataRdyFlag = true;
@@ -893,7 +1391,7 @@ void APP_Frame4(uint8_t *p_buff, uint16_t len, uint8_t channel)
         respNo = NACK14;
         APP_BuffRxIndex = 0;
     }
-    
+
     APP_SendRespToFrame(respType, respNo, respBuff, respLen, channel, false);
 }
 
@@ -901,17 +1399,17 @@ void APP_Frame5(uint8_t *p_buff, uint16_t len, uint8_t channel)
 {
     uint8_t respType;
     uint8_t respNo;
-    
+
     respType = ACK;
     respNo = ACK;
-    
-    if(len != sizeof(APP_SecuityCode))
+
+    if (len != sizeof(APP_SecuityCode))
     {
         APP_SecurityChk = false;
     }
     else
     {
-        if(memcmp(p_buff, APP_SecuityCode, sizeof(APP_SecuityCode)) == 0)
+        if (memcmp(p_buff, APP_SecuityCode, sizeof(APP_SecuityCode)) == 0)
         {
             APP_SecurityChk = true;
         }
@@ -920,13 +1418,13 @@ void APP_Frame5(uint8_t *p_buff, uint16_t len, uint8_t channel)
             APP_SecurityChk = false;
         }
     }
-    
-    if(APP_SecurityChk == false)
+
+    if (APP_SecurityChk == false)
     {
         respType = NACK;
         respNo = NACK35;
     }
-    
+
     APP_SendRespToFrame(respType, respNo, NULL, 0, channel, false);
 }
 
@@ -935,12 +1433,12 @@ void APP_SendRespToFrame(uint8_t respType, uint8_t nackNo, uint8_t *p_buff, uint
     uint8_t len;
     uint8_t buff[30];
     uint16_t crc16;
-    
+
     len = 0;
     buff[len++] = 0x20;
-    
-    if(respType)
-    {    
+
+    if (respType)
+    {
         buff[len++] = 2 + 2;
         buff[len++] = respType;
         buff[len++] = nackNo;
@@ -950,21 +1448,21 @@ void APP_SendRespToFrame(uint8_t respType, uint8_t nackNo, uint8_t *p_buff, uint
         buff[len++] = 1 + 2;
         buff[len++] = respType;
     }
-    
-    if((channel < 2) && (cb_APP_Send[channel] != NULL))
+
+    if ((channel < 2) && (cb_APP_Send[channel] != NULL))
     {
-        if(dataLen && (p_buff != NULL))
+        if (dataLen && (p_buff != NULL))
         {
             memcpy(&buff[len], p_buff, dataLen);
             buff[1] += dataLen;
             len += dataLen;
         }
-        
+
         // Exclude header 2Bytes and CRC 2 Bytes
         crc16 = UTIL_CRC16_CCITT(0xFFFF, &buff[2], (len - 2));
         buff[len++] = crc16 >> 8;
         buff[len++] = crc16;
-        
+
         cb_APP_Send[channel](buff, len);
     }
 }

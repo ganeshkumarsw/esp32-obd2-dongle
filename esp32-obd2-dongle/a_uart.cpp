@@ -42,7 +42,7 @@ void UART_Task(void *pvParameters)
 
         if (len != 0)
         {
-            APP_ProcessData(UART_Buff, len, 0);
+            APP_ProcessData(UART_Buff, len, APP_CHANNEL_UART);
         }
 
         vTaskDelay(5 / portTICK_PERIOD_MS);

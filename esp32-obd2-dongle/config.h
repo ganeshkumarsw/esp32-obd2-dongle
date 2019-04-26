@@ -5,6 +5,7 @@
 extern "C" {
 #endif
 
+
 #define BLE_CONN_LED    GPIO_NUM_33     // Blue LED
 #define HEART_BEAT_LED  SECURITY_LED
 #define COMM_LED        GPIO_NUM_25     // Yellow LED
