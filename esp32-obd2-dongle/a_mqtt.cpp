@@ -1,6 +1,7 @@
 #include <Arduino.h>
 #include <WiFi.h>
 #include <PubSubClient.h>
+#include "app.h"
 #include "a_mqtt.h"
 
 char MQTT_Server[200] = "ec2-34-209-89-96.us-west-2.compute.amazonaws.com";
@@ -15,12 +16,14 @@ void MQTT_ReceivedCallback(char *topic, byte *payload, unsigned int length)
 {
     ESP_LOGI("MQTT", "Message received: %s", topic);
 
-    ESP_LOGI("MQTT", "payload: ");
-    for (int i = 0; i < length; i++)
-    {
-        Serial.print((char)payload[i]);
-    }
-    Serial.println();
+    // ESP_LOGI("MQTT", "payload: ");
+    // for (int i = 0; i < length; i++)
+    // {
+    //     Serial.print((char)payload[i]);
+    // }
+    // Serial.println();
+
+    APP_ProcessData(payload, length, 1);
 }
 
 void MQTT_Init(void)

@@ -183,12 +183,12 @@ void APP_Task(void *pvParameters)
     ESP_LOGI("APP", "uxHighWaterMark = %d", uxHighWaterMark);
 
 
-    CAN_ConfigFilterterMask(0x00000031, true);
+    // CAN_ConfigFilterterMask(0x00000031, true);
 
     while (1)
     {
         //receive next CAN frame from queue
-        if (CAN_ReadFrame(&rx_frame) == ESP_OK)
+        if (CAN_ReadFrame(&rx_frame, pdMS_TO_TICKS(5)) == ESP_OK)
         {
             //printf("%d", frameCount++);
             //do stuff!
@@ -219,14 +219,12 @@ void APP_Task(void *pvParameters)
             }
 
             //respond to sender
-            CAN_WriteFrame(&rx_frame);
+            CAN_WriteFrame(&rx_frame, pdMS_TO_TICKS(10));
         }
-
-        vTaskDelay(5 / portTICK_PERIOD_MS);
     }
 }
 
-#if 0
+#if 1
 void APP_ProcessData(uint8_t *p_buff, uint16_t len, uint8_t channel)
 {
     uint8_t frameType;
@@ -355,7 +353,7 @@ void APP_Frame0(uint8_t *p_buff, uint16_t len, uint8_t channel)
         {
             memcpy(&APP_Buff[APP_BuffRxIndex], &p_buff[2], (len - 2));
             APP_BuffRxIndex += (len - 2);
-            APP_Frame01_TmeOutTmr = TMR1_SoftwareCounterGet() + 10000;
+            APP_Frame01_TmeOutTmr = xTaskGetTickCount() + 10000;
         }
     }
     else
@@ -390,7 +388,7 @@ void APP_Frame1(uint8_t *p_buff, uint16_t len, uint8_t channel)
     {
         if(APP_CAN_TxDataLen && ((APP_BuffRxIndex + len) <= 4095))
         {
-            APP_Frame01_TmeOutTmr = TMR1_SoftwareCounterGet() + 10000;
+            APP_Frame01_TmeOutTmr = xTaskGetTickCount() + 10000;
             memcpy(&APP_Buff[APP_BuffRxIndex], p_buff, len);
             APP_BuffRxIndex += len;
         
@@ -415,10 +413,10 @@ void APP_Frame1(uint8_t *p_buff, uint16_t len, uint8_t channel)
                 }
                 else if(APP_CAN_Protocol == APP_CAN_PROTOCOL_NORMAL)
                 {
-                    APP_CAN_TxMinTmr = TMR1_SoftwareCounterGet() + APP_CAN_TxMinTime;
+                    APP_CAN_TxMinTmr = xTaskGetTickCount() + APP_CAN_TxMinTime;
                 }
                 
-                APP_RxResp_tmeOutTmr = TMR1_SoftwareCounterGet() + APP_CAN_RqRspMaxTime;
+                APP_RxResp_tmeOutTmr = xTaskGetTickCount() + APP_CAN_RqRspMaxTime;
             }
         }
         else
@@ -476,10 +474,10 @@ void APP_Frame2(uint8_t *p_buff, uint16_t len, uint8_t channel)
                     break;
                 }
                 
-                APP_CAN_Baud = 0;
+                APP_CAN_Baud = CAN_SPEED_1000KBPS;
                 APP_CAN_Protocol = APP_CAN_PROTOCOL_NONE;
                 // Reset or disable CAN
-                CAN_Disable();
+                CAN_DeInit();
                 break;
 
             case SPRCOL:
@@ -536,11 +534,11 @@ void APP_Frame2(uint8_t *p_buff, uint16_t len, uint8_t channel)
 
                 if((p_buff[1] - offset) % 2)
                 {
-                    APP_CAN_TxIdType = CAN1_FRAME_EXT;
+                    APP_CAN_TxIdType = CAN_MSG_FLAG_EXTD;
                 }
                 else
                 {
-                    APP_CAN_TxIdType = CAN1_FRAME_STD;
+                    APP_CAN_TxIdType = CAN_MSG_FLAG_NONE;   // Standard frame;
                 }
 
                 if(respType == ACK)
@@ -558,7 +556,7 @@ void APP_Frame2(uint8_t *p_buff, uint16_t len, uint8_t channel)
                     APP_BuffDataRdyFlag = false;
                     APP_BuffLockedBy = APP_BUFF_LOCKED_BY_NONE;
                     CAN_SetBaud(APP_CAN_Baud);
-                    CAN_SetFilterMask(canFilterMask);
+                    CAN_ConfigFilterterMask(0xFFFFFFFF, true);
                 }
                 break;
 
@@ -577,12 +575,12 @@ void APP_Frame2(uint8_t *p_buff, uint16_t len, uint8_t channel)
             case STXHDR:
                 if(len == 3)
                 {
-                    APP_CAN_TxIdType = CAN1_FRAME_STD;
+                    APP_CAN_TxIdType = CAN_MSG_FLAG_NONE;   // Standard frame
                     APP_CAN_TxId = ((uint32_t)p_buff[1] << 8) | (uint32_t)p_buff[2];
                 }
                 else if(len == 5)
                 {
-                    APP_CAN_TxIdType = CAN1_FRAME_EXT;
+                    APP_CAN_TxIdType = CAN_MSG_FLAG_EXTD;
                     APP_CAN_TxId = ((uint32_t)p_buff[1] << 24) | ((uint32_t)p_buff[2] << 16) | ((uint32_t)p_buff[3] << 8) | (uint32_t)p_buff[4];
                 }
                 else
@@ -600,7 +598,8 @@ void APP_Frame2(uint8_t *p_buff, uint16_t len, uint8_t channel)
                     break;
                 }
                 
-                if(APP_CAN_TxIdType == CAN1_FRAME_STD)
+                // Standard frame
+                if(APP_CAN_TxIdType == CAN_MSG_FLAG_NONE)   
                 {
                     respBuff[0] = (uint8_t)(APP_CAN_TxId >> 8);
                     respBuff[1] = (uint8_t)APP_CAN_TxId;
@@ -619,12 +618,12 @@ void APP_Frame2(uint8_t *p_buff, uint16_t len, uint8_t channel)
             case SRXHDRMSK:
                 if(len == 3)
                 {
-                    APP_CAN_FilterIdType = CAN1_FRAME_STD;
+                    APP_CAN_FilterIdType = CAN_MSG_FLAG_NONE;   // Standard frame
                     APP_CAN_FilterId = ((uint32_t)p_buff[1] << 8) | (uint32_t)p_buff[2];
                 }
                 else if(len == 5)
                 {
-                    APP_CAN_FilterIdType = CAN1_FRAME_EXT;
+                    APP_CAN_FilterIdType = CAN_MSG_FLAG_EXTD;
                     APP_CAN_FilterId = ((uint32_t)p_buff[1] << 24) | ((uint32_t)p_buff[2] << 16) | ((uint32_t)p_buff[3] << 8) | (uint32_t)p_buff[4];
                 }
                 else
@@ -634,7 +633,7 @@ void APP_Frame2(uint8_t *p_buff, uint16_t len, uint8_t channel)
                     break;
                 }
 
-                CAN_SetFilterId(APP_CAN_FilterId, APP_CAN_FilterIdType);
+                CAN_ConfigFilterterMask(APP_CAN_FilterId, (bool)APP_CAN_FilterIdType);
                 break;
 
             case GRXHDRMSK:
@@ -645,7 +644,8 @@ void APP_Frame2(uint8_t *p_buff, uint16_t len, uint8_t channel)
                     break;
                 }
                 
-                if(APP_CAN_FilterIdType == CAN1_FRAME_STD)
+                // Standard frame
+                if(APP_CAN_FilterIdType == CAN_MSG_FLAG_NONE)
                 {
                     respBuff[0] = (uint8_t)(APP_CAN_FilterId >> 8);
                     respBuff[1] = (uint8_t)APP_CAN_FilterId;
@@ -806,9 +806,9 @@ void APP_Frame2(uint8_t *p_buff, uint16_t len, uint8_t channel)
                     break; 
                 } 
                  
-                respBuff[0] = EZBL_appIDVer.appIDVerMajor; 
-                respBuff[1] = EZBL_appIDVer.appIDVerMinor; 
-                respBuff[2] = EZBL_appIDVer.appIDVerBuild; 
+                respBuff[0] = 0; 
+                respBuff[1] = 0; 
+                respBuff[2] = 1; 
                 respLen = 3; 
                 break;
                 
@@ -834,7 +834,7 @@ void APP_Frame2(uint8_t *p_buff, uint16_t len, uint8_t channel)
  */
 void APP_Frame3(uint8_t *p_buff, uint16_t len, uint8_t channel)
 {
-    ResetMCU(true);
+    
 }
 
 /**
@@ -878,7 +878,7 @@ void APP_Frame4(uint8_t *p_buff, uint16_t len, uint8_t channel)
             APP_BuffTxIndex = 0;
             APP_BuffDataRdyFlag = true;
             APP_BuffLockedBy = APP_BUFF_LOCKED_BY_FRAME4;
-            APP_RxResp_tmeOutTmr = TMR1_SoftwareCounterGet() + APP_CAN_RqRspMaxTime;
+            APP_RxResp_tmeOutTmr = xTaskGetTickCount() + APP_CAN_RqRspMaxTime;
         }
         else
         {
@@ -965,7 +965,7 @@ void APP_SendRespToFrame(uint8_t respType, uint8_t nackNo, uint8_t *p_buff, uint
         buff[len++] = crc16 >> 8;
         buff[len++] = crc16;
         
-        cb_APP_Send[channel](buff, len, cache);
+        cb_APP_Send[channel](buff, len);
     }
 }
 #endif

@@ -20,10 +20,10 @@ typedef enum {
 		
 void CAN_Init(void);
 void CAN_SetBaud(CAN_speed_t speed);
-void CAN_ConfigFilterterMask(uint32_t acceptance_code, bool stdId);
+void CAN_ConfigFilterterMask(uint32_t acceptance_code, bool extId);
 void CAN_DeInit(void);
-esp_err_t CAN_ReadFrame(can_message_t *frame);
-esp_err_t CAN_WriteFrame(can_message_t *frame);
+esp_err_t CAN_ReadFrame(can_message_t *frame, TickType_t ticks_to_wait);
+esp_err_t CAN_WriteFrame(can_message_t *frame, TickType_t ticks_to_wait);
 void CAN_Task(void *pvParameters);
 
 

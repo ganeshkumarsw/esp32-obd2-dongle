@@ -79,10 +79,10 @@ void CreateTask_Task(void *pvParameters)
     configASSERT(0);
   }
 
-  if (xTaskCreate(CAN_Task, "CAN_Task", 10000, NULL, 5, NULL) != pdTRUE)
-  {
-    configASSERT(0);
-  }
+  // if (xTaskCreate(CAN_Task, "CAN_Task", 10000, NULL, 5, NULL) != pdTRUE)
+  // {
+  //   configASSERT(0);
+  // }
 
   vTaskDelete(NULL);
 }

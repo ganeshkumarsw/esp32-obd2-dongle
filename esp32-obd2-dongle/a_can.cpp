@@ -85,27 +85,37 @@ void CAN_SetBaud(CAN_speed_t speed)
     CAN_Init();
 }
 
-void CAN_ConfigFilterterMask(uint32_t acceptance_code, bool stdId)
+void CAN_ConfigFilterterMask(uint32_t acceptance_code, bool extId)
 {
     CAN_DeInit();
 
-    if(stdId == true)
+    if(acceptance_code == 0xFFFFFFFF)
     {
-        CAN_f_config = {.acceptance_code = (acceptance_code << (32 - 11)), .acceptance_mask = ~(CAN_STD_ID_MASK << (32 - 11)), .single_filter = true};
+        // No filter
+        CAN_f_config = {.acceptance_code = 0x00000000, .acceptance_mask = 0xFFFFFFFF, .single_filter = true};
     }
     else
     {
-        CAN_f_config = {.acceptance_code = (acceptance_code << (32 - 29)), .acceptance_mask = ~(CAN_EXTD_ID_MASK << (32 - 29)), .single_filter = true};
+        if(extId == true)
+        {
+            CAN_f_config = {.acceptance_code = (acceptance_code << (32 - 29)), .acceptance_mask = ~(CAN_EXTD_ID_MASK << (32 - 29)), .single_filter = true};
+        }
+        else
+        {
+            CAN_f_config = {.acceptance_code = (acceptance_code << (32 - 11)), .acceptance_mask = ~(CAN_STD_ID_MASK << (32 - 11)), .single_filter = true};
+        }
     }
+    
+    
     
     CAN_Init();
 }
 
-esp_err_t CAN_ReadFrame(can_message_t *frame)
+esp_err_t CAN_ReadFrame(can_message_t *frame, TickType_t ticks_to_wait)
 {
     esp_err_t status;
 
-    status = can_receive(frame, pdMS_TO_TICKS(5));
+    status = can_receive(frame, ticks_to_wait);
 
     if (status == ESP_OK)
     {
@@ -128,11 +138,11 @@ esp_err_t CAN_ReadFrame(can_message_t *frame)
     return status;
 }
 
-esp_err_t CAN_WriteFrame(can_message_t *frame)
+esp_err_t CAN_WriteFrame(can_message_t *frame, TickType_t ticks_to_wait)
 {
     esp_err_t status;
 
-    status = can_transmit(frame, pdMS_TO_TICKS(10));
+    status = can_transmit(frame, ticks_to_wait);
     //Queue message for transmission
     if (status != ESP_OK)
     {

@@ -1,4 +1,5 @@
 #include <Arduino.h>
+#include "app.h"
 #include "a_uart.h"
 
 uint8_t UART_Buff[4096];
@@ -41,6 +42,7 @@ void UART_Task(void *pvParameters)
 
         if (len != 0)
         {
+            APP_ProcessData(UART_Buff, len, 0);
         }
 
         vTaskDelay(5 / portTICK_PERIOD_MS);
