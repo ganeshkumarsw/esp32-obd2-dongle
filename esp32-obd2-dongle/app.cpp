@@ -1,4 +1,5 @@
 #include <Arduino.h>
+#include "config.h"
 #include "util.h"
 #include "a_ble.h"
 #include "a_uart.h"
@@ -596,7 +597,6 @@ void APP_Task(void *pvParameters)
 
                     if (canFrameSend == true)
                     {
-                        ESP_LOGI("APP", "canFrameSend");
                         APP_CAN_COMM_Flag = true;
                         CAN_WriteFrame(&tx_frame, pdMS_TO_TICKS(10));
 

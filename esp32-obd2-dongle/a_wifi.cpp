@@ -1,4 +1,5 @@
 #include <Arduino.h>
+#include "config.h"
 #include <WiFi.h>
 #include "SPIFFS.h"
 #include "ESPmDNS.h"
@@ -7,8 +8,8 @@
 
 AsyncWebServer server(80);
 
-char WIFI_SSID[50] = "FRITZ!Box 7560 UU";
-char WIFI_Password[50] = "aksharaa9003755682";
+char WIFI_SSID[50] = STA_WIFI_SSID;
+char WIFI_Password[50] = STA_WIFI_PASSWORD;
 
 static void WIFI_EventCb(system_event_id_t event);
 

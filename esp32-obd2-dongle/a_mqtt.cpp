@@ -1,10 +1,11 @@
 #include <Arduino.h>
+#include "config.h"
 #include <WiFi.h>
 #include <PubSubClient.h>
 #include "app.h"
 #include "a_mqtt.h"
 
-char MQTT_Server[200] = "ec2-34-209-89-96.us-west-2.compute.amazonaws.com";
+char MQTT_Server[200] = MQTT_URL;
 //char MQTT_Server[200] = {13,126,50,237};
 
 /* create an instance of PubSubClient client */

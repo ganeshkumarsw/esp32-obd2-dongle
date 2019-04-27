@@ -5,7 +5,10 @@
 extern "C" {
 #endif
 
-#define VERSION         "00.00.01"
+#define VERSION             "00.00.01"
+#define STA_WIFI_SSID       "FRITZ!Box 7560 UU"
+#define STA_WIFI_PASSWORD   "aksharaa9003755682"
+#define MQTT_URL            "ec2-34-209-89-96.us-west-2.compute.amazonaws.com"
 
 #define BLE_CONN_LED    GPIO_NUM_33     // Blue LED
 #define HEART_BEAT_LED  SECURITY_LED
