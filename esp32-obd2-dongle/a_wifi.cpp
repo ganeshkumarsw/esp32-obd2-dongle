@@ -7,8 +7,8 @@
 
 AsyncWebServer server(80);
 
-char WIFI_SSID[50] = "AndroidAP";
-char WIFI_Password[50] = "amct8022";
+char WIFI_SSID[50] = "FRITZ!Box 7560 UU";
+char WIFI_Password[50] = "aksharaa9003755682";
 
 static void WIFI_EventCb(system_event_id_t event);
 
