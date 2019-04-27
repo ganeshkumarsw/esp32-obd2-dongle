@@ -55,7 +55,7 @@ void CreateTask_Task(void *pvParameters)
     configASSERT(0);
   }
 
-  if (xTaskCreate(APP_Task, "APP_Task", 10000, NULL, 9, NULL) != pdTRUE)
+  if (xTaskCreate(APP_Task, "APP_Task", 15000, NULL, 9, NULL) != pdTRUE)
   {
     configASSERT(0);
   }
@@ -80,10 +80,10 @@ void CreateTask_Task(void *pvParameters)
     configASSERT(0);
   }
 
-  if (xTaskCreate(CAN_Task, "CAN_Task", 10000, NULL, 5, NULL) != pdTRUE)
-  {
-    configASSERT(0);
-  }
+  // if (xTaskCreate(CAN_Task, "CAN_Task", 20000, NULL, 8, NULL) != pdTRUE)
+  // {
+  //   configASSERT(0);
+  // }
 
   vTaskDelete(NULL);
 }
