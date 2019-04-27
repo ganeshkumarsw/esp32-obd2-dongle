@@ -22,7 +22,7 @@ void setup()
 {
   Serial.begin(115200);
   Serial.setRxBufferSize(4096);
-  printf("OBDII USB/Wifi/BT Dongle\r\n");
+  printf("OBDII USB/Wifi/BT Dongle v%s\r\n", VERSION);
 
   GPIO_Init();
   CAN_Init();
