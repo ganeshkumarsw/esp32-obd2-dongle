@@ -36,7 +36,7 @@ void WIFI_Init(void)
     else
     {
         server.on("/html", HTTP_GET, [](AsyncWebServerRequest *request) {
-            request->send(SPIFFS, "/test.html", "text/html");
+            request->send(SPIFFS, "/index.html", "text/html");
         });
 
         server.on("/jquery-3.4.0.min.js", HTTP_GET, [](AsyncWebServerRequest *request) {
