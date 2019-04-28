@@ -1,11 +1,11 @@
 <!DOCTYPE html>
 <html>
 <head>
-<script src="jquery-3.4.0.min"></script>
+<script src="jquery-3.4.0.min.js"></script>
 <script>
 $(document).ready(function(){
   $("button").click(function(){
-    $("#div1").load("demo_test.txt", function(responseTxt, statusTxt, xhr){
+    $("#div1").load("doc.txt", function(responseTxt, statusTxt, xhr){
       if(statusTxt == "success")
         alert("External content loaded successfully!");
       if(statusTxt == "error")

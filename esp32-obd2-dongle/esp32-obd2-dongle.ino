@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include "config.h"
+#include "a_led.h"
 #include "a_ble.h"
 #include "a_uart.h"
 #include "a_can.h"
@@ -7,16 +8,6 @@
 #include "a_mqtt.h"
 #include "app.h"
 
-void GPIO_Init(void)
-{
-  pinMode(GPIO_NUM_18, OUTPUT);
-  pinMode(GPIO_NUM_19, OUTPUT);
-  pinMode(GPIO_NUM_25, OUTPUT);
-  pinMode(GPIO_NUM_26, OUTPUT);
-  pinMode(GPIO_NUM_27, OUTPUT);
-  pinMode(GPIO_NUM_32, OUTPUT);
-  pinMode(GPIO_NUM_33, OUTPUT);
-}
 
 void setup()
 {
@@ -24,7 +15,7 @@ void setup()
   Serial.setRxBufferSize(4096);
   printf("OBDII USB/Wifi/BT Dongle v%s\r\n", VERSION);
 
-  GPIO_Init();
+  LED_Init();
   CAN_Init();
   APP_Init();
   MQTT_Init();
@@ -50,7 +41,7 @@ void CreateTask_Task(void *pvParameters)
   uxHighWaterMark = uxTaskGetStackHighWaterMark(NULL);
   ESP_LOGI("CREATE", "uxHighWaterMark = %d", uxHighWaterMark);
 
-  if (xTaskCreate(HeartBeat_Task, "HeartBeat_Task", 1000, NULL, 1, NULL) != pdTRUE)
+  if (xTaskCreate(LED_Task, "LED_Task", 10000, NULL, 1, NULL) != pdTRUE)
   {
     configASSERT(0);
   }
@@ -86,27 +77,4 @@ void CreateTask_Task(void *pvParameters)
   // }
 
   vTaskDelete(NULL);
-}
-
-void HeartBeat_Task(void *pvParameters)
-{
-  uint8_t ledState = LOW;
-
-  while (1)
-  {
-    vTaskDelay(200 / portTICK_PERIOD_MS);
-
-    // if the LED is off turn it on and vice-versa:
-    if (ledState == LOW)
-    {
-      ledState = HIGH;
-    }
-    else
-    {
-      ledState = LOW;
-    }
-
-    // set the LED with the ledState of the variable:
-    digitalWrite(HEART_BEAT_LED, ledState);
-  }
 }

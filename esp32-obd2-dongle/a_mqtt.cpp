@@ -71,9 +71,7 @@ void MQTT_Task(void *pvParameters)
 
         MQTT_Client.loop();
 
-        vTaskDelay(200 * portTICK_PERIOD_MS);
-
-        MQTT_Write((uint8_t *)"Bills", 5);
+        vTaskDelay(10 * portTICK_PERIOD_MS);
     }
 }
 

@@ -2,6 +2,7 @@
 #include "config.h"
 #include "util.h"
 #include "a_ble.h"
+#include "a_led.h"
 #include "a_uart.h"
 #include "a_can.h"
 #include "a_mqtt.h"
@@ -247,32 +248,22 @@ void APP_Task(void *pvParameters)
             APP_BuffDataRdyFlag = false;
         }
 
-        if ((APP_SecurityChk == false) && (APP_AmberLedTmr < xTaskGetTickCount()))
-        {
-            // BT_CON_IND_Toggle();
-            APP_AmberLedTmr = xTaskGetTickCount() + 100;
-        }
-        else if (APP_SecurityChk == true)
-        {
-            // BT_CON_IND_SetHigh();
-        }
-
         if ((APP_Client_COMM_Flag || APP_YellowFlashCntr) && (APP_YellowLedTmr < xTaskGetTickCount()))
         {
             if (APP_Client_COMM_Flag)
             {
                 APP_Client_COMM_Flag = 0;
-                APP_YellowFlashCntr = 8;
+                APP_YellowFlashCntr = 4;
             }
 
             APP_YellowFlashCntr--;
 
-            // BT_COM_IND_Toggle();
-            APP_YellowLedTmr = xTaskGetTickCount() + 100;
+            LED_SetLedState(COMM_LED, GPIO_STATE_TOGGLE);
+            APP_YellowLedTmr = xTaskGetTickCount();
         }
         else if (APP_YellowFlashCntr == 0)
         {
-            // BT_COM_IND_SetLow();
+            LED_SetLedState(COMM_LED, GPIO_STATE_LOW);
         }
 
         if ((APP_CAN_COMM_Flag || APP_GreenFlashCntr) && (APP_GreenLedTmr < xTaskGetTickCount()))
@@ -280,7 +271,7 @@ void APP_Task(void *pvParameters)
             if (APP_CAN_COMM_Flag)
             {
                 APP_CAN_COMM_Flag = 0;
-                APP_GreenFlashCntr = 8;
+                APP_GreenFlashCntr = 4;
             }
 
             APP_GreenFlashCntr--;
@@ -1340,10 +1331,12 @@ void APP_Frame5(uint8_t *p_buff, uint16_t len, uint8_t channel)
         if (memcmp(p_buff, APP_SecuityCode, sizeof(APP_SecuityCode)) == 0)
         {
             APP_SecurityChk = true;
+            LED_SetLedState(SECURITY_LED, GPIO_STATE_HIGH);
         }
         else
         {
             APP_SecurityChk = false;
+            LED_SetLedState(SECURITY_LED, GPIO_STATE_TOGGLE);
         }
     }
 

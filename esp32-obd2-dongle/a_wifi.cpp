@@ -4,6 +4,7 @@
 #include "SPIFFS.h"
 #include "ESPmDNS.h"
 #include "ESPAsyncWebServer.h"
+#include "a_led.h"
 #include "a_wifi.h"
 
 AsyncWebServer server(80);
@@ -43,7 +44,7 @@ void WIFI_Init(void)
         });
 
         server.on("/doc.txt", HTTP_GET, [](AsyncWebServerRequest *request) {
-            request->send(SPIFFS, "/doc.txt", "text/text");
+            request->send(SPIFFS, "/doc.txt", "text/html");
         });
 
         server.begin();
@@ -71,7 +72,13 @@ void WIFI_Task(void *pvParameters)
             if (WiFi.status() == WL_CONNECTED)
             {
                 ESP_LOGI("WIFI", "WiFi connected; IP address: %s", WiFi.localIP().toString().c_str());
+                LED_SetLedState(WIFI_CONN_LED, GPIO_STATE_HIGH);
             }
+            else
+            {
+                LED_SetLedState(WIFI_CONN_LED, GPIO_STATE_TOGGLE);
+            }
+            
         }
 
         wifiStatus = WiFi.status();
