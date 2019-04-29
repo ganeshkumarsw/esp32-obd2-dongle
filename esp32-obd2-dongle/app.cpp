@@ -206,7 +206,7 @@ void APP_Task(void *pvParameters)
     uxHighWaterMark = uxTaskGetStackHighWaterMark(NULL);
     ESP_LOGI("APP", "uxHighWaterMark = %d", uxHighWaterMark);
 
-    // CAN_ConfigFilterterMask(0x00000031, true);
+    // CAN_ConfigFilterterMask(0x00000000, true);
 
     while (1)
     {
@@ -259,7 +259,7 @@ void APP_Task(void *pvParameters)
             APP_YellowFlashCntr--;
 
             LED_SetLedState(COMM_LED, GPIO_STATE_TOGGLE);
-            APP_YellowLedTmr = xTaskGetTickCount();
+            APP_YellowLedTmr = xTaskGetTickCount() + 100;
         }
         else if (APP_YellowFlashCntr == 0)
         {
@@ -466,7 +466,9 @@ void APP_Task(void *pvParameters)
                     }
 
                     if (((APP_Channel == APP_CHANNEL_MQTT) || (APP_Channel == APP_CHANNEL_UART) || (APP_ISO_State == APP_ISO_STATE_FC_WAIT_TIME)) &&
-                        ((CAN_ReadFrame(&rx_frame, pdMS_TO_TICKS(5)) == ESP_OK) && 
+                        ((CAN_ReadFrame(&rx_frame, pdMS_TO_TICKS(0)) == ESP_OK) && 
+                        (rx_frame.identifier == APP_CAN_FilterId) &&
+                        (rx_frame.flags == APP_CAN_FilterIdType) &&
                         (rx_frame.flags != CAN_MSG_FLAG_RTR)))
                     {
                         APP_CAN_COMM_Flag = true;
@@ -482,7 +484,7 @@ void APP_Task(void *pvParameters)
                             memcpy(&respBuff[respLen], &rx_frame.data[1], (rx_frame.data[0] & 0x0F));
                             respLen += (rx_frame.data[0] & 0x0F);
 
-                            if ((APP_Channel < 2) && (cb_APP_Send[APP_Channel] != NULL))
+                            if ((APP_Channel < APP_CHANNEL_MAX) && (cb_APP_Send[APP_Channel] != NULL))
                             {
                                 crc16 = UTIL_CRC16_CCITT(0xFFFF, &respBuff[2], (respLen - 2));
                                 respBuff[respLen++] = crc16 >> 8;
@@ -562,11 +564,11 @@ void APP_Task(void *pvParameters)
 
                             if (rx_frame.data[2] <= 127)
                             {
-                                //                                    if(canMsg.frame.data2 == 0)
-                                //                                    {
-                                //                                        APP_ISO_TxSepTime = 1;
-                                //                                    }
-                                //                                    else
+                                // if(rx_frame.data[2] == 0)
+                                // {
+                                //     APP_ISO_TxSepTime = 1;
+                                // }
+                                // else
                                 {
                                     APP_ISO_TxSepTime = rx_frame.data[2];
                                 }
@@ -589,7 +591,7 @@ void APP_Task(void *pvParameters)
                     if (canFrameSend == true)
                     {
                         APP_CAN_COMM_Flag = true;
-                        CAN_WriteFrame(&tx_frame, pdMS_TO_TICKS(10));
+                        CAN_WriteFrame(&tx_frame, pdMS_TO_TICKS(0));
 
                         if (delay)
                         {
@@ -895,7 +897,7 @@ void APP_Frame2(uint8_t *p_buff, uint16_t len, uint8_t channel)
             APP_CAN_Baud = CAN_SPEED_1000KBPS;
             APP_CAN_Protocol = APP_CAN_PROTOCOL_NONE;
             // Reset or disable CAN
-            CAN_DeInit();
+            // CAN_DeInit();
             break;
 
         case SPRCOL:
@@ -973,8 +975,8 @@ void APP_Frame2(uint8_t *p_buff, uint16_t len, uint8_t channel)
                 APP_CAN_RxDataLen = 0;
                 APP_BuffDataRdyFlag = false;
                 APP_BuffLockedBy = APP_BUFF_LOCKED_BY_NONE;
-                CAN_SetBaud(APP_CAN_Baud);
-                CAN_ConfigFilterterMask(0xFFFFFFFF, true);
+                // CAN_SetBaud(APP_CAN_Baud);
+                // CAN_ConfigFilterterMask(0xFFFFFFFF, true);
             }
             break;
 
@@ -1051,7 +1053,7 @@ void APP_Frame2(uint8_t *p_buff, uint16_t len, uint8_t channel)
                 break;
             }
 
-            CAN_ConfigFilterterMask(APP_CAN_FilterId, (bool)APP_CAN_FilterIdType);
+            // CAN_ConfigFilterterMask(APP_CAN_FilterId, (bool)APP_CAN_FilterIdType);
             break;
 
         case GRXHDRMSK:

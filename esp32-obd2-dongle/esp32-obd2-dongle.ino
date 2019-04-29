@@ -51,7 +51,7 @@ void CreateTask_Task(void *pvParameters)
     configASSERT(0);
   }
 
-  if (xTaskCreate(UART_Task, "UART_Task", 10000, NULL, 8, NULL) != pdTRUE)
+  if (xTaskCreate(UART_Task, "UART_Task", 15000, NULL, 8, NULL) != pdTRUE)
   {
     configASSERT(0);
   }

@@ -5,7 +5,7 @@
 extern "C" {
 #endif
 
-#define VERSION             "00.00.02"
+#define VERSION             "00.00.03"
 #define STA_WIFI_SSID       "FRITZ!Box 7560 UU"
 #define STA_WIFI_PASSWORD   "aksharaa9003755682"
 #define MQTT_URL            "ec2-13-232-102-99.ap-south-1.compute.amazonaws.com"

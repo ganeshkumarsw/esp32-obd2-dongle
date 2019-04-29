@@ -27,7 +27,6 @@ void CAN_Init(void)
     {
         ESP_LOGE("CAN", "Failed to install driver");
     }
-    vTaskDelay(10 * portTICK_PERIOD_MS);
 
     //Start CAN driver
     if (can_start() == ESP_OK)
@@ -38,11 +37,13 @@ void CAN_Init(void)
     {
         ESP_LOGE("CAN", "Failed to start driver");
     }
-    vTaskDelay(10 * portTICK_PERIOD_MS);
 }
 
 void CAN_DeInit(void)
 {
+    can_message_t message;
+    can_status_info_t status_info;
+
     //Start CAN driver
     if (can_stop() == ESP_OK)
     {
@@ -53,8 +54,13 @@ void CAN_DeInit(void)
         ESP_LOGE("CAN", "Failed to stop driver");
     }
 
-    vTaskDelay(10 * portTICK_PERIOD_MS);
-    //Install CAN driver
+    // while (can_receive(&message, 0) == ESP_OK);
+    // while ((can_get_status_info(&status_info) == ESP_OK) && ((status_info.msgs_to_tx != 0) || (status_info.msgs_to_rx != 0)))
+    // {
+    //     vTaskDelay(2 / portTICK_PERIOD_MS);
+    // }
+
+    //Uninstall CAN driver
     if (can_driver_uninstall() == ESP_OK)
     {
         ESP_LOGI("CAN", "Driver uninstalled");
@@ -63,7 +69,6 @@ void CAN_DeInit(void)
     {
         ESP_LOGE("CAN", "Failed to uninstall driver");
     }
-    vTaskDelay(10 * portTICK_PERIOD_MS);
 }
 
 void CAN_SetBaud(CAN_speed_t speed)
