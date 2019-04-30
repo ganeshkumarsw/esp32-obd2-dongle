@@ -14,7 +14,7 @@ can_general_config_t CAN_g_config = {
     .clkout_divider = 0,
 };
 can_timing_config_t CAN_t_config = CAN_TIMING_CONFIG_500KBITS();
-can_filter_config_t CAN_f_config = {.acceptance_code = 0x00000000, .acceptance_mask = 0xFFFFFFFF, .single_filter = true};
+can_filter_config_t CAN_f_config = CAN_FILTER_CONFIG_ACCEPT_ALL();
 
 void CAN_Init(void)
 {
@@ -100,7 +100,7 @@ void CAN_ConfigFilterterMask(uint32_t acceptance_code, bool extId)
     if (acceptance_code == 0xFFFFFFFF)
     {
         // No filter
-        CAN_f_config = {.acceptance_code = 0x00000000, .acceptance_mask = 0xFFFFFFFF, .single_filter = true};
+        CAN_f_config = CAN_FILTER_CONFIG_ACCEPT_ALL();
     }
     else
     {
@@ -171,53 +171,55 @@ void CAN_Task(void *pvParameters)
     uxHighWaterMark = uxTaskGetStackHighWaterMark(NULL);
     ESP_LOGI("CAN", "uxHighWaterMark = %d", uxHighWaterMark);
 
+    CAN_Init();
+
     while (1)
     {
-        message.identifier = 0xAAAA;
-        message.flags = CAN_MSG_FLAG_EXTD;
-        message.data_length_code = 4;
-        for (int i = 0; i < 4; i++)
-        {
-            message.data[i] = 0;
-        }
+        // message.identifier = 0xAAAA;
+        // message.flags = CAN_MSG_FLAG_EXTD;
+        // message.data_length_code = 4;
+        // for (int i = 0; i < 4; i++)
+        // {
+        //     message.data[i] = 0;
+        // }
 
-        //Queue message for transmission
-        if (can_transmit(&message, pdMS_TO_TICKS(10)) != ESP_OK)
-        {
-            ESP_LOGE("CAN", "Failed to queue message for transmission");
-        }
-        else
-        {
-        }
+        // //Queue message for transmission
+        // if (can_transmit(&message, pdMS_TO_TICKS(10)) != ESP_OK)
+        // {
+        //     ESP_LOGE("CAN", "Failed to queue message for transmission");
+        // }
+        // else
+        // {
+        // }
 
-        //Wait for message to be received
-        can_message_t message;
-        if (can_receive(&message, pdMS_TO_TICKS(5)) == ESP_OK)
-        {
-            ESP_LOGD("CAN", "Message received; ID is %d", message.identifier);
-            //Process received message
-            if (message.flags & CAN_MSG_FLAG_EXTD)
-            {
-                ESP_LOGD("CAN", "Message is in Extended Format");
-            }
-            else
-            {
-                ESP_LOGD("CAN", "Message is in Standard Format");
-            }
+        // //Wait for message to be received
+        // can_message_t message;
+        // if (can_receive(&message, pdMS_TO_TICKS(5)) == ESP_OK)
+        // {
+        //     ESP_LOGD("CAN", "Message received; ID is %d", message.identifier);
+        //     //Process received message
+        //     if (message.flags & CAN_MSG_FLAG_EXTD)
+        //     {
+        //         ESP_LOGD("CAN", "Message is in Extended Format");
+        //     }
+        //     else
+        //     {
+        //         ESP_LOGD("CAN", "Message is in Standard Format");
+        //     }
 
-            if (!(message.flags & CAN_MSG_FLAG_RTR))
-            {
-                for (int i = 0; i < message.data_length_code; i++)
-                {
-                    Serial.print("ID is ");
-                    ("Data byte %d = %d\n", i, message.data[i]);
-                    Serial.print(message.identifier);
-                }
-            }
-        }
-        else
-        {
-        }
+        //     if (!(message.flags & CAN_MSG_FLAG_RTR))
+        //     {
+        //         for (int i = 0; i < message.data_length_code; i++)
+        //         {
+        //             Serial.print("ID is ");
+        //             ("Data byte %d = %d\n", i, message.data[i]);
+        //             Serial.print(message.identifier);
+        //         }
+        //     }
+        // }
+        // else
+        // {
+        // }
 
         vTaskDelay(100 / portTICK_PERIOD_MS);
     }

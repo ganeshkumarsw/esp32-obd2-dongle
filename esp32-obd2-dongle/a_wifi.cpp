@@ -16,6 +16,7 @@ static void WIFI_EventCb(system_event_id_t event);
 
 void WIFI_Init(void)
 {
+    WiFi.mode(WIFI_AP_STA);  //Both hotspot and client are enabled
     WiFi.onEvent(WIFI_EventCb, SYSTEM_EVENT_MAX);
     WiFi.begin((char *)WIFI_SSID, (char *)WIFI_Password);
     WiFi.waitForConnectResult();
@@ -35,7 +36,7 @@ void WIFI_Init(void)
     }
     else
     {
-        server.on("/html", HTTP_GET, [](AsyncWebServerRequest *request) {
+        server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
             request->send(SPIFFS, "/index.html", "text/html");
         });
 
@@ -44,7 +45,7 @@ void WIFI_Init(void)
         });
 
         server.on("/doc.txt", HTTP_GET, [](AsyncWebServerRequest *request) {
-            request->send(SPIFFS, "/doc.txt", "text/html");
+            request->send(SPIFFS, "/doc.txt", "text/plain");
         });
 
         server.begin();

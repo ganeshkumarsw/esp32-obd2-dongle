@@ -975,8 +975,8 @@ void APP_Frame2(uint8_t *p_buff, uint16_t len, uint8_t channel)
                 APP_CAN_RxDataLen = 0;
                 APP_BuffDataRdyFlag = false;
                 APP_BuffLockedBy = APP_BUFF_LOCKED_BY_NONE;
-                // CAN_SetBaud(APP_CAN_Baud);
-                // CAN_ConfigFilterterMask(0xFFFFFFFF, true);
+                CAN_SetBaud(APP_CAN_Baud);
+                CAN_ConfigFilterterMask(0xFFFFFFFF, true);
             }
             break;
 
@@ -1053,7 +1053,7 @@ void APP_Frame2(uint8_t *p_buff, uint16_t len, uint8_t channel)
                 break;
             }
 
-            // CAN_ConfigFilterterMask(APP_CAN_FilterId, (bool)APP_CAN_FilterIdType);
+            CAN_ConfigFilterterMask(APP_CAN_FilterId, (bool)APP_CAN_FilterIdType);
             break;
 
         case GRXHDRMSK:

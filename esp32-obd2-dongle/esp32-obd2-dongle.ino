@@ -16,7 +16,6 @@ void setup()
   printf("OBDII USB/Wifi/BT Dongle v%s\r\n", VERSION);
 
   LED_Init();
-  CAN_Init();
   APP_Init();
   MQTT_Init();
 
@@ -41,7 +40,7 @@ void CreateTask_Task(void *pvParameters)
   uxHighWaterMark = uxTaskGetStackHighWaterMark(NULL);
   ESP_LOGI("CREATE", "uxHighWaterMark = %d", uxHighWaterMark);
 
-  if (xTaskCreate(LED_Task, "LED_Task", 10000, NULL, 1, NULL) != pdTRUE)
+  if (xTaskCreate(LED_Task, "LED_Task", 8000, NULL, 1, NULL) != pdTRUE)
   {
     configASSERT(0);
   }
@@ -71,10 +70,10 @@ void CreateTask_Task(void *pvParameters)
     configASSERT(0);
   }
 
-  // if (xTaskCreate(CAN_Task, "CAN_Task", 20000, NULL, 8, NULL) != pdTRUE)
-  // {
-  //   configASSERT(0);
-  // }
+  if (xTaskCreate(CAN_Task, "CAN_Task", 10000, NULL, 8, NULL) != pdTRUE)
+  {
+    configASSERT(0);
+  }
 
   vTaskDelete(NULL);
 }
