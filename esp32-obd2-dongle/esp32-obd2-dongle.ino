@@ -35,12 +35,14 @@ void CreateTask_Task(void *pvParameters)
 {
   UBaseType_t uxHighWaterMark;
 
+  LED_SetLedState(HEART_BEAT_LED, GPIO_STATE_TOGGLE, GPIO_TOGGLE_1HZ);
+
   ESP_LOGI("CREATE", "Task Started");
 
   uxHighWaterMark = uxTaskGetStackHighWaterMark(NULL);
   ESP_LOGI("CREATE", "uxHighWaterMark = %d", uxHighWaterMark);
 
-  if (xTaskCreate(LED_Task, "LED_Task", 8000, NULL, 1, NULL) != pdTRUE)
+  if (xTaskCreate(LED_Task, "LED_Task", 8000, NULL, 9, NULL) != pdTRUE)
   {
     configASSERT(0);
   }

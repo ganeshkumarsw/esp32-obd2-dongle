@@ -176,7 +176,9 @@ void APP_Init(void)
     APP_CAN_TxIdType = CAN_MSG_FLAG_NONE;
     APP_ISO_State = APP_ISO_STATE_IDLE;
     APP_CAN_Protocol = APP_CAN_PROTOCOL_ISO15765;
-    APP_CAN_RqRspMaxTime = 100;
+    APP_CAN_RqRspMaxTime = 500;
+
+    LED_SetLedState(SECURITY_LED, GPIO_STATE_TOGGLE, GPIO_TOGGLE_1HZ);
 }
 
 void APP_Task(void *pvParameters)
@@ -218,8 +220,8 @@ void APP_Task(void *pvParameters)
 
         // CAN_WriteFrame(&tx_frame, pdMS_TO_TICKS(10));
 
-        if ((APP_Frame01_TmeOutTmr && (APP_Frame01_TmeOutTmr < xTaskGetTickCount())) ||
-            (APP_RxResp_tmeOutTmr && (APP_RxResp_tmeOutTmr < xTaskGetTickCount())))
+        if ((APP_Frame01_TmeOutTmr && (APP_Frame01_TmeOutTmr < (xTaskGetTickCount() / portTICK_PERIOD_MS))) ||
+            (APP_RxResp_tmeOutTmr && (APP_RxResp_tmeOutTmr < (xTaskGetTickCount() / portTICK_PERIOD_MS))))
         {
             APP_BuffLockedBy = APP_BUFF_LOCKED_BY_NONE;
             APP_BuffRxIndex = 0;
@@ -248,7 +250,7 @@ void APP_Task(void *pvParameters)
             APP_BuffDataRdyFlag = false;
         }
 
-        if ((APP_Client_COMM_Flag || APP_YellowFlashCntr) && (APP_YellowLedTmr < xTaskGetTickCount()))
+        if ((APP_Client_COMM_Flag || APP_YellowFlashCntr) && (APP_YellowLedTmr < (xTaskGetTickCount() / portTICK_PERIOD_MS)))
         {
             if (APP_Client_COMM_Flag)
             {
@@ -258,15 +260,15 @@ void APP_Task(void *pvParameters)
 
             APP_YellowFlashCntr--;
 
-            LED_SetLedState(COMM_LED, GPIO_STATE_TOGGLE);
-            APP_YellowLedTmr = xTaskGetTickCount() + 100;
+            LED_SetLedState(COMM_LED, GPIO_STATE_TOGGLE, GPIO_TOGGLE_1HZ);
+            APP_YellowLedTmr = (xTaskGetTickCount() / portTICK_PERIOD_MS) + 100;
         }
         else if (APP_YellowFlashCntr == 0)
         {
-            LED_SetLedState(COMM_LED, GPIO_STATE_LOW);
+            LED_SetLedState(COMM_LED, GPIO_STATE_LOW, GPIO_TOGGLE_NONE);
         }
 
-        if ((APP_CAN_COMM_Flag || APP_GreenFlashCntr) && (APP_GreenLedTmr < xTaskGetTickCount()))
+        if ((APP_CAN_COMM_Flag || APP_GreenFlashCntr) && (APP_GreenLedTmr < (xTaskGetTickCount() / portTICK_PERIOD_MS)))
         {
             if (APP_CAN_COMM_Flag)
             {
@@ -277,7 +279,7 @@ void APP_Task(void *pvParameters)
             APP_GreenFlashCntr--;
 
             // CAN_IND_Toggle();
-            APP_GreenLedTmr = xTaskGetTickCount() + 100;
+            APP_GreenLedTmr = (xTaskGetTickCount() / portTICK_PERIOD_MS) + 100;
         }
         else if (APP_GreenFlashCntr == 0)
         {
@@ -330,7 +332,7 @@ void APP_Task(void *pvParameters)
                             memcpy((uint8_t *)&tx_frame.data[2], &APP_RxBuff[APP_BuffTxIndex], (tx_frame.data_length_code - 2));
                             APP_BuffTxIndex = APP_BuffTxIndex + (tx_frame.data_length_code - 2);
                             APP_CAN_TxDataLen = APP_CAN_TxDataLen - (tx_frame.data_length_code - 2);
-                            APP_ISO_FC_WaitTmr = xTaskGetTickCount() + APP_ISO_FC_WAIT_TIME;
+                            APP_ISO_FC_WaitTmr = (xTaskGetTickCount() / portTICK_PERIOD_MS) + APP_ISO_FC_WAIT_TIME;
                             canFrameSend = true;
                             APP_ISO_TxBlockCounter = 0;
                             APP_ISO_TxFrameCounter = 1;
@@ -359,13 +361,13 @@ void APP_Task(void *pvParameters)
 
                                 if ((APP_ISO_FC_TxBlockSize) && (APP_ISO_TxBlockCounter == APP_ISO_FC_TxBlockSize))
                                 {
-                                    APP_ISO_FC_WaitTmr = xTaskGetTickCount() + APP_ISO_FC_WAIT_TIME;
+                                    APP_ISO_FC_WaitTmr = (xTaskGetTickCount() / portTICK_PERIOD_MS) + APP_ISO_FC_WAIT_TIME;
                                     APP_ISO_State = APP_ISO_STATE_FC_WAIT_TIME;
                                     APP_ISO_TxBlockCounter = 0;
                                 }
                                 else if (APP_ISO_TxSepTime)
                                 {
-                                    APP_ISO_TxSepTmr = xTaskGetTickCount() + APP_ISO_TxSepTime;
+                                    APP_ISO_TxSepTmr = (xTaskGetTickCount() / portTICK_PERIOD_MS) + APP_ISO_TxSepTime;
                                     APP_ISO_State = APP_ISO_STATE_SEP_TIME;
                                 }
 
@@ -391,7 +393,7 @@ void APP_Task(void *pvParameters)
                             }
                             else if (APP_ISO_FC_TxFlag == 1)
                             {
-                                APP_ISO_FC_WaitTmr = xTaskGetTickCount() + 100;
+                                APP_ISO_FC_WaitTmr = (xTaskGetTickCount() / portTICK_PERIOD_MS) + 100;
                                 APP_ISO_State = APP_ISO_STATE_FC_WAIT_TIME;
                             }
                             else if (APP_ISO_FC_TxFlag == 2)
@@ -407,7 +409,7 @@ void APP_Task(void *pvParameters)
                             break;
 
                         case APP_ISO_STATE_SEP_TIME:
-                            if (APP_ISO_TxSepTmr && (APP_ISO_TxSepTmr < xTaskGetTickCount()))
+                            if (APP_ISO_TxSepTmr && (APP_ISO_TxSepTmr < (xTaskGetTickCount() / portTICK_PERIOD_MS)))
                             {
                                 APP_ISO_TxSepTmr = 0;
                                 APP_ISO_State = APP_ISO_STATE_CONSECUTIVE;
@@ -415,7 +417,7 @@ void APP_Task(void *pvParameters)
                             break;
 
                         case APP_ISO_STATE_FC_WAIT_TIME:
-                            if (APP_ISO_FC_WaitTmr && (APP_ISO_FC_WaitTmr < xTaskGetTickCount()))
+                            if (APP_ISO_FC_WaitTmr && (APP_ISO_FC_WaitTmr < (xTaskGetTickCount() / portTICK_PERIOD_MS)))
                             {
                                 APP_ISO_FC_WaitTmr = 0;
                                 APP_BuffTxIndex = 0;
@@ -439,7 +441,7 @@ void APP_Task(void *pvParameters)
                                     APP_TxBuff[respLen++] = 0x40 | (((APP_CAN_RxDataLen + 2) >> 8) & 0x0F);
                                     APP_TxBuff[respLen++] = (APP_CAN_RxDataLen + 2);
 
-                                    memcpy(&APP_TxBuff[respLen], &APP_RxBuff[APP_BuffRxIndex], APP_CAN_RxDataLen);
+                                    memcpy(&APP_TxBuff[respLen], APP_RxBuff, APP_CAN_RxDataLen);
 
                                     respLen = respLen + APP_CAN_RxDataLen;
                                     APP_TxBuff[respLen++] = crc16 >> 8;
@@ -467,8 +469,8 @@ void APP_Task(void *pvParameters)
 
                     if (((APP_Channel == APP_CHANNEL_MQTT) || (APP_Channel == APP_CHANNEL_UART) || (APP_ISO_State == APP_ISO_STATE_FC_WAIT_TIME)) &&
                         ((CAN_ReadFrame(&rx_frame, pdMS_TO_TICKS(0)) == ESP_OK) && 
-                        (rx_frame.identifier == APP_CAN_FilterId) &&
-                        (rx_frame.flags == APP_CAN_FilterIdType) &&
+                        // (rx_frame.identifier == APP_CAN_FilterId) &&
+                        // (rx_frame.flags == APP_CAN_FilterIdType) &&
                         (rx_frame.flags != CAN_MSG_FLAG_RTR)))
                     {
                         APP_CAN_COMM_Flag = true;
@@ -503,7 +505,7 @@ void APP_Task(void *pvParameters)
                                 APP_BuffRxIndex = 0;
                                 memcpy(&APP_RxBuff[APP_BuffRxIndex], &rx_frame.data[2], 6);
                                 APP_BuffRxIndex = APP_BuffRxIndex + 6;
-                                APP_RxResp_tmeOutTmr = xTaskGetTickCount() + APP_CAN_RqRspMaxTime;
+                                APP_RxResp_tmeOutTmr = (xTaskGetTickCount() / portTICK_PERIOD_MS) + APP_CAN_RqRspMaxTime;
                                 tx_frame.data[0] = 0x30;
                             }
                             else
@@ -532,7 +534,7 @@ void APP_Task(void *pvParameters)
 
                             if (APP_BuffLockedBy == APP_BUFF_LOCKED_BY_ISO_TP_RX_FF)
                             {
-                                APP_RxResp_tmeOutTmr = xTaskGetTickCount() + APP_CAN_RqRspMaxTime;
+                                APP_RxResp_tmeOutTmr = (xTaskGetTickCount() / portTICK_PERIOD_MS) + APP_CAN_RqRspMaxTime;
                                 memcpy(&APP_RxBuff[APP_BuffRxIndex], &rx_frame.data[1], rx_frame.data_length_code - 1);
                                 APP_BuffRxIndex = APP_BuffRxIndex + (rx_frame.data_length_code - 1);
                                 APP_ISO_RxBlockCounter++;
@@ -580,7 +582,7 @@ void APP_Task(void *pvParameters)
 
                             APP_ISO_State = APP_ISO_STATE_CONSECUTIVE;
                             APP_ISO_FC_WaitTmr = 0;
-                            APP_RxResp_tmeOutTmr = xTaskGetTickCount() + APP_CAN_RqRspMaxTime;
+                            APP_RxResp_tmeOutTmr = (xTaskGetTickCount() / portTICK_PERIOD_MS) + APP_CAN_RqRspMaxTime;
                             break;
 
                         default:
@@ -773,7 +775,7 @@ void APP_Frame0(uint8_t *p_buff, uint16_t len, uint8_t channel)
         {
             memcpy(&APP_RxBuff[APP_BuffRxIndex], &p_buff[2], (len - 2));
             APP_BuffRxIndex += (len - 2);
-            APP_Frame01_TmeOutTmr = xTaskGetTickCount() + 10000;
+            APP_Frame01_TmeOutTmr = (xTaskGetTickCount() / portTICK_PERIOD_MS) + 10000;
         }
     }
     else
@@ -808,7 +810,7 @@ void APP_Frame1(uint8_t *p_buff, uint16_t len, uint8_t channel)
     {
         if (APP_CAN_TxDataLen && ((APP_BuffRxIndex + len) <= 4095))
         {
-            APP_Frame01_TmeOutTmr = xTaskGetTickCount() + 10000;
+            APP_Frame01_TmeOutTmr = (xTaskGetTickCount() / portTICK_PERIOD_MS) + 10000;
             memcpy(&APP_RxBuff[APP_BuffRxIndex], p_buff, len);
             APP_BuffRxIndex += len;
 
@@ -833,10 +835,10 @@ void APP_Frame1(uint8_t *p_buff, uint16_t len, uint8_t channel)
                 }
                 else if (APP_CAN_Protocol == APP_CAN_PROTOCOL_NORMAL)
                 {
-                    APP_CAN_TxMinTmr = xTaskGetTickCount() + APP_CAN_TxMinTime;
+                    APP_CAN_TxMinTmr = (xTaskGetTickCount() / portTICK_PERIOD_MS) + APP_CAN_TxMinTime;
                 }
 
-                APP_RxResp_tmeOutTmr = xTaskGetTickCount() + APP_CAN_RqRspMaxTime;
+                APP_RxResp_tmeOutTmr = (xTaskGetTickCount() / portTICK_PERIOD_MS) + APP_CAN_RqRspMaxTime;
             }
         }
         else
@@ -1297,7 +1299,7 @@ void APP_Frame4(uint8_t *p_buff, uint16_t len, uint8_t channel)
             APP_BuffTxIndex = 0;
             APP_BuffDataRdyFlag = true;
             APP_BuffLockedBy = APP_BUFF_LOCKED_BY_FRAME4;
-            APP_RxResp_tmeOutTmr = xTaskGetTickCount() + APP_CAN_RqRspMaxTime;
+            APP_RxResp_tmeOutTmr = (xTaskGetTickCount() / portTICK_PERIOD_MS) + APP_CAN_RqRspMaxTime;
         }
         else
         {
@@ -1333,12 +1335,12 @@ void APP_Frame5(uint8_t *p_buff, uint16_t len, uint8_t channel)
         if (memcmp(p_buff, APP_SecuityCode, sizeof(APP_SecuityCode)) == 0)
         {
             APP_SecurityChk = true;
-            LED_SetLedState(SECURITY_LED, GPIO_STATE_HIGH);
+            LED_SetLedState(SECURITY_LED, GPIO_STATE_HIGH, GPIO_TOGGLE_NONE);
         }
         else
         {
             APP_SecurityChk = false;
-            LED_SetLedState(SECURITY_LED, GPIO_STATE_TOGGLE);
+            LED_SetLedState(SECURITY_LED, GPIO_STATE_TOGGLE, GPIO_TOGGLE_5HZ);
         }
     }
 

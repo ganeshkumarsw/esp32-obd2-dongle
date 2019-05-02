@@ -26,6 +26,12 @@ typedef enum {
     GPIO_STATE_TOGGLE,
 }gpio_state_t;
 
+typedef enum {
+    GPIO_TOGGLE_NONE = 0,
+    GPIO_TOGGLE_5HZ = 10,
+    GPIO_TOGGLE_1HZ = 50,
+}gpio_toggle_t;
+
 #ifdef __cplusplus
 }
 #endif
