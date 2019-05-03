@@ -10,7 +10,7 @@ extern "C" {
 // #define STA_WIFI_PASSWORD   "aksharaa9003755682"
 #define STA_WIFI_SSID       "AndroidAP"
 #define STA_WIFI_PASSWORD   "amct8022"
-#define MQTT_URL            "ec2-13-126-50-237.ap-south-1.compute.amazonaws.com"
+#define MQTT_URL            "http://ec2-13-126-50-237.ap-south-1.compute.amazonaws.com"
 
 
 #define BLE_CONN_LED    GPIO_NUM_33     // Blue LED

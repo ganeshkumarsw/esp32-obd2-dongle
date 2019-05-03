@@ -17,7 +17,7 @@ static void WIFI_EventCb(system_event_id_t event);
 void WIFI_Init(void)
 {
     LED_SetLedState(WIFI_CONN_LED, GPIO_STATE_TOGGLE, GPIO_TOGGLE_1HZ);
-    
+
     WiFi.mode(WIFI_AP_STA);  //Both hotspot and client are enabled
     WiFi.onEvent(WIFI_EventCb, SYSTEM_EVENT_MAX);
     WiFi.begin((char *)WIFI_SSID, (char *)WIFI_Password);
