@@ -46,6 +46,18 @@ void WIFI_Init(void)
             request->send(SPIFFS, "/jquery-3.4.0.min.js", "text/javascript");
         });
 
+        server.on("/bootstrap.min.css", HTTP_GET, [](AsyncWebServerRequest *request) {
+            request->send(SPIFFS, "/bootstrap.min.css", "text/plain");
+        });
+
+        server.on("/bootstrap.min.js", HTTP_GET, [](AsyncWebServerRequest *request) {
+            request->send(SPIFFS, "/bootstrap.min.js", "text/javascript");
+        });
+
+        server.on("/autopeepal.png", HTTP_GET, [](AsyncWebServerRequest *request) {
+            request->send(SPIFFS, "/autopeepal.png", "text/javascript");
+        });
+
         server.on("/doc.txt", HTTP_GET, [](AsyncWebServerRequest *request) {
             request->send(SPIFFS, "/doc.txt", "text/plain");
         });
