@@ -20,10 +20,11 @@ void WIFI_Init(void)
     
     WiFi.mode(WIFI_AP_STA);  //Both hotspot and client are enabled
     WiFi.onEvent(WIFI_EventCb, SYSTEM_EVENT_MAX);
+
+    WiFi.softAP("MyAP", "password");
     WiFi.begin((char *)WIFI_SSID, (char *)WIFI_Password);
     WiFi.waitForConnectResult();
 
-    WiFi.softAP("MyAP", "MasterSecond");
 
     if (MDNS.begin("myap"))
     {
@@ -42,12 +43,16 @@ void WIFI_Init(void)
             request->send(SPIFFS, "/index.html", "text/html");
         });
 
-        server.on("/jquery-3.4.0.min.js", HTTP_GET, [](AsyncWebServerRequest *request) {
-            request->send(SPIFFS, "/jquery-3.4.0.min.js", "text/javascript");
+        server.on("/fsexplorer.html", HTTP_GET, [](AsyncWebServerRequest *request) {
+            request->send(SPIFFS, "/fsexplorer.html", "text/html");
+        });
+
+        server.on("/jquery.min.js", HTTP_GET, [](AsyncWebServerRequest *request) {
+            request->send(SPIFFS, "/jquery.min.js", "text/javascript");
         });
 
         server.on("/bootstrap.min.css", HTTP_GET, [](AsyncWebServerRequest *request) {
-            request->send(SPIFFS, "/bootstrap.min.css", "text/plain");
+            request->send(SPIFFS, "/bootstrap.min.css", "text/css");
         });
 
         server.on("/bootstrap.min.js", HTTP_GET, [](AsyncWebServerRequest *request) {
