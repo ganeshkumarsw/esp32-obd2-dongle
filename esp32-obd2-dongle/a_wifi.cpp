@@ -17,14 +17,13 @@ static void WIFI_EventCb(system_event_id_t event);
 void WIFI_Init(void)
 {
     LED_SetLedState(WIFI_CONN_LED, GPIO_STATE_TOGGLE, GPIO_TOGGLE_1HZ);
-    
-    WiFi.mode(WIFI_AP_STA);  //Both hotspot and client are enabled
-    WiFi.onEvent(WIFI_EventCb, SYSTEM_EVENT_MAX);
+
+    // WiFi.mode(WIFI_AP_STA);  //Both hotspot and client are enabled
+    // WiFi.onEvent(WIFI_EventCb, SYSTEM_EVENT_MAX);
 
     WiFi.softAP("MyAP", "password");
-    WiFi.begin((char *)WIFI_SSID, (char *)WIFI_Password);
-    WiFi.waitForConnectResult();
-
+    // WiFi.begin((char *)WIFI_SSID, (char *)WIFI_Password);
+    // WiFi.waitForConnectResult();
 
     if (MDNS.begin("myap"))
     {
@@ -42,6 +41,33 @@ void WIFI_Init(void)
         server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
             request->send(SPIFFS, "/index.html", "text/html");
         });
+
+        server.on(
+            "/login",
+            HTTP_POST,
+            [](AsyncWebServerRequest *request) {
+                Serial.println("Received post request");
+                //List all parameters (Compatibility)
+                int args = request->args();
+                for (int i = 0; i < args; i++)
+                {
+                    Serial.printf("ARG[%s]: %s\n", request->argName(i).c_str(), request->arg(i).c_str());
+                }
+
+                request->send(200);
+            },
+            NULL,
+            [](AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total) {
+                Serial.println("Received body request");
+                //List all parameters (Compatibility)
+                int args = request->args();
+                for (int i = 0; i < args; i++)
+                {
+                    Serial.printf("ARG[%s]: %s\n", request->argName(i).c_str(), request->arg(i).c_str());
+                }
+
+                request->send(200);
+            });
 
         server.on("/fsexplorer.html", HTTP_GET, [](AsyncWebServerRequest *request) {
             request->send(SPIFFS, "/fsexplorer.html", "text/html");
@@ -98,7 +124,6 @@ void WIFI_Task(void *pvParameters)
             {
                 LED_SetLedState(WIFI_CONN_LED, GPIO_STATE_TOGGLE, GPIO_TOGGLE_1HZ);
             }
-            
         }
 
         wifiStatus = WiFi.status();
