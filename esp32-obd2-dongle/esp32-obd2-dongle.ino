@@ -17,7 +17,7 @@ void setup()
 
   LED_Init();
   APP_Init();
-  MQTT_Init();
+  // MQTT_Init();
 
   if (xTaskCreate(CreateTask_Task, "CreateTask_Task", 2000, NULL, 1, NULL) != pdTRUE)
   {
@@ -67,10 +67,10 @@ void CreateTask_Task(void *pvParameters)
     configASSERT(0);
   }
 
-  if (xTaskCreate(MQTT_Task, "MQTT_Task", 20000, NULL, 8, NULL) != pdTRUE)
-  {
-    configASSERT(0);
-  }
+  // if (xTaskCreate(MQTT_Task, "MQTT_Task", 20000, NULL, 8, NULL) != pdTRUE)
+  // {
+  //   configASSERT(0);
+  // }
 
   if (xTaskCreate(CAN_Task, "CAN_Task", 10000, NULL, 8, NULL) != pdTRUE)
   {

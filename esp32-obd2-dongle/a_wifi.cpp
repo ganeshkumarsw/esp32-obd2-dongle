@@ -7,7 +7,8 @@
 #include "a_led.h"
 #include "a_wifi.h"
 
-AsyncWebServer server(80);
+AsyncWebServer HttpServer(80);
+WiFiServer SocketServer(6888);
 
 char WIFI_SSID[50] = STA_WIFI_SSID;
 char WIFI_Password[50] = STA_WIFI_PASSWORD;
@@ -25,10 +26,10 @@ void WIFI_Init(void)
     // WiFi.begin((char *)WIFI_SSID, (char *)WIFI_Password);
     // WiFi.waitForConnectResult();
 
-    if (MDNS.begin("myap"))
-    {
-        ESP_LOGI("WIFI", "MDNS responder started");
-    }
+    // if (MDNS.begin("myap"))
+    // {
+    //     ESP_LOGI("WIFI", "MDNS responder started");
+    // }
 
     ESP_LOGI("WIFI", "MAC: %s", WiFi.macAddress().c_str());
 
@@ -38,11 +39,11 @@ void WIFI_Init(void)
     }
     else
     {
-        server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
+        HttpServer.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
             request->send(SPIFFS, "/index.html", "text/html");
         });
 
-        server.on(
+        HttpServer.on(
             "/login",
             HTTP_POST,
             [](AsyncWebServerRequest *request) {
@@ -54,49 +55,42 @@ void WIFI_Init(void)
                     Serial.printf("ARG[%s]: %s\n", request->argName(i).c_str(), request->arg(i).c_str());
                 }
 
-                request->send(200);
-            },
-            NULL,
-            [](AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total) {
-                Serial.println("Received body request");
-                //List all parameters (Compatibility)
-                int args = request->args();
-                for (int i = 0; i < args; i++)
-                {
-                    Serial.printf("ARG[%s]: %s\n", request->argName(i).c_str(), request->arg(i).c_str());
-                }
-
-                request->send(200);
+                request->send(SPIFFS, "/doc.txt", "text/plain");
             });
 
-        server.on("/fsexplorer.html", HTTP_GET, [](AsyncWebServerRequest *request) {
+        HttpServer.on("/fsexplorer.html", HTTP_GET, [](AsyncWebServerRequest *request) {
             request->send(SPIFFS, "/fsexplorer.html", "text/html");
         });
 
-        server.on("/jquery.min.js", HTTP_GET, [](AsyncWebServerRequest *request) {
+        HttpServer.on("/favicon-32x32.png", HTTP_GET, [](AsyncWebServerRequest *request) {
+            request->send(SPIFFS, "/favicon-32x32.png", "image/png");
+        });
+
+        HttpServer.on("/jquery.min.js", HTTP_GET, [](AsyncWebServerRequest *request) {
             request->send(SPIFFS, "/jquery.min.js", "text/javascript");
         });
 
-        server.on("/bootstrap.min.css", HTTP_GET, [](AsyncWebServerRequest *request) {
+        HttpServer.on("/bootstrap.min.css", HTTP_GET, [](AsyncWebServerRequest *request) {
             request->send(SPIFFS, "/bootstrap.min.css", "text/css");
         });
 
-        server.on("/bootstrap.min.js", HTTP_GET, [](AsyncWebServerRequest *request) {
+        HttpServer.on("/bootstrap.min.js", HTTP_GET, [](AsyncWebServerRequest *request) {
             request->send(SPIFFS, "/bootstrap.min.js", "text/javascript");
         });
 
-        server.on("/autopeepal.png", HTTP_GET, [](AsyncWebServerRequest *request) {
-            request->send(SPIFFS, "/autopeepal.png", "text/javascript");
+        HttpServer.on("/autopeepal.png", HTTP_GET, [](AsyncWebServerRequest *request) {
+            request->send(SPIFFS, "/autopeepal.png", "image/png");
         });
 
-        server.on("/doc.txt", HTTP_GET, [](AsyncWebServerRequest *request) {
-            request->send(SPIFFS, "/doc.txt", "text/plain");
-        });
+        // HttpServer.on("/doc.txt", HTTP_GET, [](AsyncWebServerRequest *request) {
+        //     request->send(SPIFFS, "/doc.txt", "text/plain");
+        // });
 
-        server.begin();
+        HttpServer.begin();
     }
 
     ESP_LOGI("WIFI", "AP IP address: %s", WiFi.softAPIP().toString().c_str());
+    SocketServer.begin();
 }
 
 void WIFI_Task(void *pvParameters)
@@ -113,21 +107,39 @@ void WIFI_Task(void *pvParameters)
 
     while (1)
     {
-        if (wifiStatus != WiFi.status())
-        {
-            if (WiFi.status() == WL_CONNECTED)
-            {
-                ESP_LOGI("WIFI", "WiFi connected; IP address: %s", WiFi.localIP().toString().c_str());
-                LED_SetLedState(WIFI_CONN_LED, GPIO_STATE_HIGH, GPIO_TOGGLE_NONE);
-            }
-            else
-            {
-                LED_SetLedState(WIFI_CONN_LED, GPIO_STATE_TOGGLE, GPIO_TOGGLE_1HZ);
-            }
-        }
+        WiFiClient client = SocketServer.available();
 
-        wifiStatus = WiFi.status();
-        vTaskDelay(500 / portTICK_PERIOD_MS);
+        if (client)
+        {
+            if (client.connected())
+            {
+                Serial.println("Client connected");
+
+                while (client.available() > 0)
+                {
+                    char c = client.read();
+                    client.write(c);
+                }
+            }
+
+            client.stop();
+            Serial.println("Client disconnected");
+        }
+        // if (wifiStatus != WiFi.status())
+        // {
+        //     if (WiFi.status() == WL_CONNECTED)
+        //     {
+        //         ESP_LOGI("WIFI", "WiFi connected; IP address: %s", WiFi.localIP().toString().c_str());
+        //         LED_SetLedState(WIFI_CONN_LED, GPIO_STATE_HIGH, GPIO_TOGGLE_NONE);
+        //     }
+        //     else
+        //     {
+        //         LED_SetLedState(WIFI_CONN_LED, GPIO_STATE_TOGGLE, GPIO_TOGGLE_1HZ);
+        //     }
+        // }
+
+        // wifiStatus = WiFi.status();
+        vTaskDelay(1 / portTICK_PERIOD_MS);
     }
 }
 
