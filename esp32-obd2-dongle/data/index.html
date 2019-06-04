@@ -36,18 +36,7 @@
   .form-signin input[type="password"] {
     margin-bottom: 10px;
   }
-  .bd-placeholder-img {
-    font-size: 1.125rem;
-    text-anchor: middle;
-    -webkit-user-select: none;
-    -moz-user-select: none;
-    -ms-user-select: none;
-    user-select: none;
-  }
   @media (min-width: 768px) {
-    .bd-placeholder-img-lg {
-      font-size: 3.5rem;
-    }
   }
 </style>
 <head>
@@ -73,6 +62,7 @@
       });
     });
     </script>
+    
 </head>
 <body>
   <body class="text-center">
@@ -84,8 +74,7 @@
       <label for="inputPassword" class="sr-only">Password</label> 
       <input type="password" id="inputPassword" class="form-control" placeholder="Password" required>
       <button class="btn btn-lg btn-primary btn-block" id="login">Sign in</button>
-      <p></p>
-      <div id="div2" class="alert alert-danger" role="alert">
+      <div id="div2" class="alert alert-danger mt-2" role="alert">
         This is a danger alert—check it out!
       </div>
       <p class="mt-5 mb-3 text-muted">&copy; 2017-2019</p>

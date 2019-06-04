@@ -1,4 +1,5 @@
 #include <Arduino.h>
+#include <Preferences.h>
 #include "config.h"
 #include <WiFi.h>
 #include "SPIFFS.h"
@@ -17,21 +18,44 @@ static void WIFI_EventCb(system_event_id_t event);
 
 void WIFI_Init(void)
 {
+    char apSSID[50];
+    char apPass[50];
+
+    Preferences preferences;
+    preferences.begin("config", false);
+
     LED_SetLedState(WIFI_CONN_LED, GPIO_STATE_TOGGLE, GPIO_TOGGLE_1HZ);
+    ESP_LOGI("WIFI", "MAC: %s", WiFi.macAddress().c_str());
+
+    unsigned int len = preferences.getString("apSSID", apSSID, sizeof(apSSID));
+    if (!len)
+    {
+        sprintf(apSSID, "%s_%s", AP_WIFI_SSID, WiFi.macAddress().c_str());
+        Serial.println(apSSID);
+        preferences.putString("apSSID", apSSID);
+        preferences.getString("apSSID", apSSID, sizeof(apSSID));
+    }
+    Serial.println(apSSID);
+
+    len = preferences.getString("apPASS", apPass, sizeof(apPass));
+    if (!len)
+    {
+        preferences.putString("apPASS", AP_WIFI_PASSWORD);
+        preferences.getString("apPASS", apPass, sizeof(apPass));
+    }
+    Serial.println(apPass);
 
     // WiFi.mode(WIFI_AP_STA);  //Both hotspot and client are enabled
     // WiFi.onEvent(WIFI_EventCb, SYSTEM_EVENT_MAX);
 
-    WiFi.softAP("MyAP", "password");
     // WiFi.begin((char *)WIFI_SSID, (char *)WIFI_Password);
     // WiFi.waitForConnectResult();
+    WiFi.softAP(apSSID, apPass);
 
     // if (MDNS.begin("myap"))
     // {
     //     ESP_LOGI("WIFI", "MDNS responder started");
     // }
-
-    ESP_LOGI("WIFI", "MAC: %s", WiFi.macAddress().c_str());
 
     if (!SPIFFS.begin())
     {
@@ -39,6 +63,17 @@ void WIFI_Init(void)
     }
     else
     {
+        // File root = SPIFFS.open("/");
+        // File file = root.openNextFile();
+
+        // while (file)
+        // {
+        //     Serial.print("FILE: ");
+        //     Serial.println(file.name());
+        //     file.close();
+        //     file = root.openNextFile();
+        // }
+
         HttpServer.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
             request->send(SPIFFS, "/index.html", "text/html");
         });
