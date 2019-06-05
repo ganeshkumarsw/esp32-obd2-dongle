@@ -13,37 +13,49 @@ WiFiServer SocketServer(6888);
 
 char WIFI_SSID[50] = STA_WIFI_SSID;
 char WIFI_Password[50] = STA_WIFI_PASSWORD;
+uint8_t WIFI_RxBuff[4096];
 
 static void WIFI_EventCb(system_event_id_t event);
 
 void WIFI_Init(void)
 {
-    char apSSID[50];
-    char apPass[50];
-
+    char apSSID[32];
+    char apPass[63];
+    char mac[6];
     Preferences preferences;
+
     preferences.begin("config", false);
 
     LED_SetLedState(WIFI_CONN_LED, GPIO_STATE_TOGGLE, GPIO_TOGGLE_1HZ);
     ESP_LOGI("WIFI", "MAC: %s", WiFi.macAddress().c_str());
 
-    unsigned int len = preferences.getString("apSSID", apSSID, sizeof(apSSID));
-    if (!len)
-    {
-        sprintf(apSSID, "%s_%s", AP_WIFI_SSID, WiFi.macAddress().c_str());
-        Serial.println(apSSID);
-        preferences.putString("apSSID", apSSID);
-        preferences.getString("apSSID", apSSID, sizeof(apSSID));
-    }
-    Serial.println(apSSID);
+    // WiFi.macAddress((uint8_t *)mac);
+    // sprintf(apSSID, "%s %x%x%x%x%x%x", AP_WIFI_SSID, mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+    // preferences.putBytes("apSSID", apSSID, sizeof(apSSID));
 
-    len = preferences.getString("apPASS", apPass, sizeof(apPass));
-    if (!len)
+    // sprintf(apPass, "%s", AP_WIFI_PASSWORD);
+    // preferences.putBytes("apPASS", apPass, sizeof(apPass));
+
+    unsigned int len = preferences.getBytes("apSSID", apSSID, sizeof(apSSID));
+    if (len != sizeof(apSSID))
     {
-        preferences.putString("apPASS", AP_WIFI_PASSWORD);
-        preferences.getString("apPASS", apPass, sizeof(apPass));
+        WiFi.macAddress((uint8_t *)mac);
+        sprintf(apSSID, "%s %x%x%x%x%x%x", AP_WIFI_SSID, mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+        preferences.putBytes("apSSID", apSSID, sizeof(apSSID));
+        preferences.getBytes("apSSID", apSSID, sizeof(apSSID));
     }
-    Serial.println(apPass);
+    // Serial.println(apSSID);
+
+    len = preferences.getBytes("apPASS", apPass, sizeof(apPass));
+    if (len != sizeof(apPass))
+    {
+        sprintf(apPass, "%s", AP_WIFI_PASSWORD);
+        preferences.putBytes("apPASS", apPass, sizeof(apPass));
+        preferences.getBytes("apPASS", apPass, sizeof(apPass));
+    }
+    // Serial.println(apPass);
+
+    preferences.end();
 
     // WiFi.mode(WIFI_AP_STA);  //Both hotspot and client are enabled
     // WiFi.onEvent(WIFI_EventCb, SYSTEM_EVENT_MAX);
@@ -126,6 +138,7 @@ void WIFI_Init(void)
 
     ESP_LOGI("WIFI", "AP IP address: %s", WiFi.softAPIP().toString().c_str());
     SocketServer.begin();
+    SocketServer.setTimeout(2);
 }
 
 void WIFI_Task(void *pvParameters)
@@ -146,19 +159,28 @@ void WIFI_Task(void *pvParameters)
 
         if (client)
         {
-            if (client.connected())
+            while (client.connected())
             {
-                Serial.println("Client connected");
 
-                while (client.available() > 0)
+                if (client.available())
                 {
-                    char c = client.read();
-                    client.write(c);
+                    // Serial.println("Client connected");
+                    uint16_t len = client.read(WIFI_RxBuff, sizeof(WIFI_RxBuff));
+
+                    if (len)
+                    {
+                        client.write(WIFI_RxBuff, len);
+                    }
+
+                    // client.stop();
+                    Serial.println("Client disconnected");
                 }
             }
-
+            // else
+            // {
             client.stop();
             Serial.println("Client disconnected");
+            // }
         }
         // if (wifiStatus != WiFi.status())
         // {
