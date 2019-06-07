@@ -19,50 +19,53 @@ static void WIFI_EventCb(system_event_id_t event);
 
 void WIFI_Init(void)
 {
-    char apSSID[32];
-    char apPass[63];
-    char mac[6];
-    Preferences preferences;
+    // char apSSID[32];
+    // char apPass[63];
+    // char mac[6];
+    // Preferences preferences;
 
-    preferences.begin("config", false);
+    // preferences.begin("config", false);
 
     LED_SetLedState(WIFI_CONN_LED, GPIO_STATE_TOGGLE, GPIO_TOGGLE_1HZ);
     ESP_LOGI("WIFI", "MAC: %s", WiFi.macAddress().c_str());
 
-    // WiFi.macAddress((uint8_t *)mac);
-    // sprintf(apSSID, "%s %x%x%x%x%x%x", AP_WIFI_SSID, mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
-    // preferences.putBytes("apSSID", apSSID, sizeof(apSSID));
+    // // WiFi.macAddress((uint8_t *)mac);
+    // // sprintf(apSSID, "%s %x%x%x%x%x%x", AP_WIFI_SSID, mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+    // // preferences.putBytes("apSSID", apSSID, sizeof(apSSID));
 
-    // sprintf(apPass, "%s", AP_WIFI_PASSWORD);
-    // preferences.putBytes("apPASS", apPass, sizeof(apPass));
+    // // sprintf(apPass, "%s", AP_WIFI_PASSWORD);
+    // // preferences.putBytes("apPASS", apPass, sizeof(apPass));
 
-    unsigned int len = preferences.getBytes("apSSID", apSSID, sizeof(apSSID));
-    if (len != sizeof(apSSID))
-    {
-        WiFi.macAddress((uint8_t *)mac);
-        sprintf(apSSID, "%s %x%x%x%x%x%x", AP_WIFI_SSID, mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
-        preferences.putBytes("apSSID", apSSID, sizeof(apSSID));
-        preferences.getBytes("apSSID", apSSID, sizeof(apSSID));
-    }
-    // Serial.println(apSSID);
+    // unsigned int len = preferences.getBytes("apSSID", apSSID, sizeof(apSSID));
+    // if (len != sizeof(apSSID))
+    // {
+        // WiFi.macAddress((uint8_t *)mac);
+        // sprintf(apSSID, "%s %x%x%x%x%x%x", AP_WIFI_SSID, mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+    //     preferences.putBytes("apSSID", apSSID, sizeof(apSSID));
+    //     preferences.getBytes("apSSID", apSSID, sizeof(apSSID));
+    // }
+    // // Serial.println(apSSID);
 
-    len = preferences.getBytes("apPASS", apPass, sizeof(apPass));
-    if (len != sizeof(apPass))
-    {
-        sprintf(apPass, "%s", AP_WIFI_PASSWORD);
-        preferences.putBytes("apPASS", apPass, sizeof(apPass));
-        preferences.getBytes("apPASS", apPass, sizeof(apPass));
-    }
-    // Serial.println(apPass);
+    // len = preferences.getBytes("apPASS", apPass, sizeof(apPass));
+    // if (len != sizeof(apPass))
+    // {
+        // sprintf(apPass, "%s", AP_WIFI_PASSWORD);
+    //     preferences.putBytes("apPASS", apPass, sizeof(apPass));
+    //     preferences.getBytes("apPASS", apPass, sizeof(apPass));
+    // }
+    // // Serial.println(apPass);
 
-    preferences.end();
+    // preferences.end();
 
     // WiFi.mode(WIFI_AP_STA);  //Both hotspot and client are enabled
     // WiFi.onEvent(WIFI_EventCb, SYSTEM_EVENT_MAX);
+    // const IPAddress apIP = IPAddress(192, 168, 5, 1);
 
-    // WiFi.begin((char *)WIFI_SSID, (char *)WIFI_Password);
     // WiFi.waitForConnectResult();
-    WiFi.softAP(apSSID, apPass);
+    WiFi.mode(WIFI_AP);
+    WiFi.softAPConfig(IPAddress(192, 168, 5, 1), IPAddress(192, 168, 5, 1), IPAddress(255, 255, 255, 0));
+    WiFi.softAP("MyAp_Test", "password1");
+    // WiFi.begin((char *)WIFI_SSID, (char *)WIFI_Password);
 
     // if (MDNS.begin("myap"))
     // {
@@ -138,7 +141,6 @@ void WIFI_Init(void)
 
     ESP_LOGI("WIFI", "AP IP address: %s", WiFi.softAPIP().toString().c_str());
     SocketServer.begin();
-    SocketServer.setTimeout(2);
 }
 
 void WIFI_Task(void *pvParameters)
@@ -161,7 +163,6 @@ void WIFI_Task(void *pvParameters)
         {
             while (client.connected())
             {
-
                 if (client.available())
                 {
                     // Serial.println("Client connected");
@@ -171,16 +172,10 @@ void WIFI_Task(void *pvParameters)
                     {
                         client.write(WIFI_RxBuff, len);
                     }
-
-                    // client.stop();
-                    Serial.println("Client disconnected");
                 }
             }
-            // else
-            // {
             client.stop();
             Serial.println("Client disconnected");
-            // }
         }
         // if (wifiStatus != WiFi.status())
         // {

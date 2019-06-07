@@ -1,10 +1,10 @@
 {
-  "squadName": "Super hero squad",
-  "homeTown": "Metro City",
-  "formed": 2016,
-  "secretBase": "Super tower",
-  "active": true,
-  "members": [
+  squadName: "Super hero squad",
+  homeTown: "Metro City",
+  formed: 2016,
+  secretBase: "Super tower",
+  active: true,
+  members: [
     {
       "name": "Molecule Man",
       "age": 29,

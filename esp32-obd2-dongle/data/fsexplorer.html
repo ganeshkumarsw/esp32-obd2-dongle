@@ -1,31 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
-<style>
-  .form-signin {
-    width: 100%;
-    max-width: 330px;
-    padding: 15px;
-    margin: auto;
-  }
-  .form-signin .form-control {
-    position: relative;
-    box-sizing: border-box;
-    height: auto;
-    padding: 10px;
-    font-size: 16px;
-  }
-  .form-signin .form-control:focus {
-    z-index: 2;
-  }
-  .form-signin input[type="email"] {
-    margin-bottom: 10px;
-  }
-  .form-signin input[type="password"] {
-    margin-bottom: 10px;
-  }
-</style>
+
 <head>
-  <title>Dongle Login</title>
+  <title>Dongle File Explorer</title>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" href="bootstrap.min.css">
@@ -33,37 +10,109 @@
   <script src="jquery.min.js"></script>
   <script src="bootstrap.min.js"></script>
   <script>
-    $(document).ready(function(){
-      $("#login").click(function(){
-        $.post("login", {name: $("#inputEmail").val(), pass: $("#inputPassword").val()}, function(result){
+    $(document).ready(function () {
+
+      $("#login").click(function () {
+        $.post("login", { name: $("#inputEmail").val(), pass: $("#inputPassword").val() }, function (result) {
           $("input").val("");
           $("#div2").removeClass("alert-danger");
           $("#div2").addClass("alert-success");
           $("#div2").html("");
-          $.each( JSON.parse(result), function( key, value ) {
+          $.each(JSON.parse(result), function (key, value) {
             $("#div2").append(key + ": " + value);
           });
         });
       });
+
+      $('#exampleModal').on('show.bs.modal', function (event) {
+        var button = $(event.relatedTarget) // Button that triggered the modal
+        var recipient = button.data('whatever') // Extract info from data-* attributes
+        // If necessary, you could initiate an AJAX request here (and then do the updating in a callback).
+        // Update the modal's content. We'll use jQuery here, but you could use a data binding library or other methods instead.
+        var modal = $(this)
+        modal.find('.modal-title').text('New message to ' + recipient)
+        modal.find('.modal-body input').val(recipient)
+      })
     });
-    </script>
-    
+  </script>
+
 </head>
-<body>
-  <body class="text-center">
-    <div id="div1" class="form-signin">
-      <img class="mb-4" src="autopeepal.png" alt="" width="auto" height="auto">
-      <h1 class="h3 mb-3 font-weight-normal">Please sign in</h1>
-      <label for="inputEmail" class="sr-only">Email address</label>
-      <input type="email" id="inputEmail" class="form-control" placeholder="Email address" required autofocus>
-      <label for="inputPassword" class="sr-only">Password</label> 
-      <input type="password" id="inputPassword" class="form-control" placeholder="Password" required>
-      <button class="btn btn-lg btn-primary btn-block" id="login">Sign in</button>
-      <div id="div2" class="alert alert-danger mt-2" role="alert">
-        This is a danger alert—check it out!
+
+<body class="m-2">
+  <div>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+      <a class="navbar-brand" href="#">Navbar</a>
+      <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNavAltMarkup"
+        aria-controls="navbarNavAltMarkup" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
+        <div class="navbar-nav">
+          <a class="nav-item nav-link active" href="#">Home <span class="sr-only">(current)</span></a>
+          <a class="nav-item nav-link" href="#">Features</a>
+          <a class="nav-item nav-link" href="#">Pricing</a>
+          <a class="nav-item nav-link disabled" href="#">Disabled</a>
+        </div>
       </div>
-      <p class="mt-5 mb-3 text-muted">&copy; 2017-2019</p>
+    </nav>
+  </div>
+  <div><button type="button" class="mt-2 mb-2 btn btn-primary float-right" data-toggle="modal" data-target="#exampleModal" data-whatever="@mdo">Add</button></div>
+  <div class="table-responsive-sm">
+    <table class="table table-hover">
+      <thead>
+        <tr>
+          <th scope="col">#</th>
+          <th scope="col">FileName</th>
+          <th scope="col">Otions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <th scope="row">1</th>
+          <td>Mark</td>
+          <td>Otto</td>
+        </tr>
+        <tr>
+          <th scope="row">2</th>
+          <td>Jacob</td>
+          <td>Thornton</td>
+        </tr>
+        <tr>
+          <th scope="row">3</th>
+          <td>@twitter</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="modal fade" id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="exampleModalLabel">New message</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <form>
+            <div class="form-group">
+              <label for="recipient-name" class="col-form-label">Recipient:</label>
+              <input type="text" class="form-control" id="recipient-name">
+            </div>
+            <div class="form-group">
+              <label for="message-text" class="col-form-label">Message:</label>
+              <textarea class="form-control" id="message-text"></textarea>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+          <button type="button" class="btn btn-primary">Send message</button>
+        </div>
+      </div>
     </div>
-  </body>
+  </div>
 </body>
+
 </html>
