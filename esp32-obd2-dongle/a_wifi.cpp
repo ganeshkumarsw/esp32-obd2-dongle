@@ -97,7 +97,7 @@ void WIFI_Init(void)
             "/login",
             HTTP_POST,
             [](AsyncWebServerRequest *request) {
-                Serial.println("Received post request");
+                // Serial.println("Received post request");
                 //List all parameters (Compatibility)
                 int args = request->args();
                 for (int i = 0; i < args; i++)
@@ -105,7 +105,7 @@ void WIFI_Init(void)
                     Serial.printf("ARG[%s]: %s\n", request->argName(i).c_str(), request->arg(i).c_str());
                 }
 
-                request->send(SPIFFS, "/doc.txt", "text/plain");
+                request->send(200);
             });
 
         HttpServer.on("/fsexplorer.html", HTTP_GET, [](AsyncWebServerRequest *request) {

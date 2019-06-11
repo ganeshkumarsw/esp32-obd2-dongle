@@ -12,17 +12,9 @@
   <script>
     $(document).ready(function () {
 
-      $("#login").click(function () {
-        $.post("login", { name: $("#inputEmail").val(), pass: $("#inputPassword").val() }, function (result) {
-          $("input").val("");
-          $("#div2").removeClass("alert-danger");
-          $("#div2").addClass("alert-success");
-          $("#div2").html("");
-          $.each(JSON.parse(result), function (key, value) {
-            $("#div2").append(key + ": " + value);
-          });
-        });
-      });
+      $('table').children('tbody').empty().append('<tr><th scope="row">1</th><td>Mark</td><td>Otto</td></tr>' +
+                                          '<tr><th scope="row">2</th><td>Jacob</td><td>Thornton</td></tr>' + 
+                                          '<tr><th scope="row">3</th><td>@twitter</td></tr>');
 
       $('#exampleModal').on('show.bs.modal', function (event) {
         var button = $(event.relatedTarget) // Button that triggered the modal
@@ -32,7 +24,9 @@
         var modal = $(this)
         modal.find('.modal-title').text('New message to ' + recipient)
         modal.find('.modal-body input').val(recipient)
-      })
+      });
+      
+
     });
   </script>
 
@@ -63,24 +57,11 @@
         <tr>
           <th scope="col">#</th>
           <th scope="col">FileName</th>
-          <th scope="col">Otions</th>
+          <th scope="col">Options</th>
         </tr>
       </thead>
       <tbody>
-        <tr>
-          <th scope="row">1</th>
-          <td>Mark</td>
-          <td>Otto</td>
-        </tr>
-        <tr>
-          <th scope="row">2</th>
-          <td>Jacob</td>
-          <td>Thornton</td>
-        </tr>
-        <tr>
-          <th scope="row">3</th>
-          <td>@twitter</td>
-        </tr>
+        
       </tbody>
     </table>
   </div>

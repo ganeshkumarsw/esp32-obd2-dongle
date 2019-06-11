@@ -41,15 +41,7 @@
   <script>
     $(document).ready(function(){
       $("#login").click(function(){
-        $.post("login", {name: $("#inputEmail").val(), pass: $("#inputPassword").val()}, function(result){
-          $("input").val("");
-          $("#div2").removeClass("alert-danger");
-          $("#div2").addClass("alert-success");
-          $("#div2").html("");
-          $.each( JSON.parse(result), function( key, value ) {
-            $("#div2").append(key + ": " + value);
-          });
-        });
+        $.post("login", {name: $("#inputEmail").val(), pass: $("#inputPassword").val()});
       });
     });
     </script>
