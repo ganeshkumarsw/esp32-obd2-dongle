@@ -4,6 +4,7 @@
 #include <WiFi.h>
 #include "SPIFFS.h"
 #include "ESPmDNS.h"
+#include <ArduinoJson.h>
 #include "ESPAsyncWebServer.h"
 #include "a_led.h"
 #include "a_wifi.h"
@@ -39,8 +40,8 @@ void WIFI_Init(void)
     // unsigned int len = preferences.getBytes("apSSID", apSSID, sizeof(apSSID));
     // if (len != sizeof(apSSID))
     // {
-        // WiFi.macAddress((uint8_t *)mac);
-        // sprintf(apSSID, "%s %x%x%x%x%x%x", AP_WIFI_SSID, mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+    // WiFi.macAddress((uint8_t *)mac);
+    // sprintf(apSSID, "%s %x%x%x%x%x%x", AP_WIFI_SSID, mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
     //     preferences.putBytes("apSSID", apSSID, sizeof(apSSID));
     //     preferences.getBytes("apSSID", apSSID, sizeof(apSSID));
     // }
@@ -49,7 +50,7 @@ void WIFI_Init(void)
     // len = preferences.getBytes("apPASS", apPass, sizeof(apPass));
     // if (len != sizeof(apPass))
     // {
-        // sprintf(apPass, "%s", AP_WIFI_PASSWORD);
+    // sprintf(apPass, "%s", AP_WIFI_PASSWORD);
     //     preferences.putBytes("apPASS", apPass, sizeof(apPass));
     //     preferences.getBytes("apPASS", apPass, sizeof(apPass));
     // }
@@ -106,6 +107,36 @@ void WIFI_Init(void)
                 }
 
                 request->send(200);
+            });
+
+        HttpServer.on(
+            "/fsread",
+            HTTP_POST,
+            [](AsyncWebServerRequest *request) {
+                DynamicJsonDocument doc(8000);
+
+                // Add an array.
+                //
+                // JsonArray data = doc.createNestedArray("data");
+
+                File root = SPIFFS.open("/");
+                File file = root.openNextFile();
+
+                while (file)
+                {
+                    doc.add(file.name());
+                    file.close();
+                    file = root.openNextFile();
+                }
+                // Serial.println("Received post request");
+                //List all parameters (Compatibility)
+                // int args = request->args();
+                // for (int i = 0; i < args; i++)
+                // {
+                //     Serial.printf("ARG[%s]: %s\n", request->argName(i).c_str(), request->arg(i).c_str());
+                // }
+
+                request->send(200, doc.as<String>(), "application/json");
             });
 
         HttpServer.on("/fsexplorer.html", HTTP_GET, [](AsyncWebServerRequest *request) {
