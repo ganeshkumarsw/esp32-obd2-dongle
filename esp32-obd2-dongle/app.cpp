@@ -6,6 +6,7 @@
 #include "a_uart.h"
 #include "a_can.h"
 #include "a_mqtt.h"
+#include "a_wifi.h"
 #include "app.h"
 
 #define APP_ISO_FC_WAIT_TIME 10000
@@ -1375,7 +1376,7 @@ void APP_SendRespToFrame(uint8_t respType, uint8_t nackNo, uint8_t *p_buff, uint
         buff[len++] = respType;
     }
 
-    if ((channel < 2) && (cb_APP_Send[channel] != NULL))
+    if ((channel < APP_CHANNEL_MAX) && (cb_APP_Send[channel] != NULL))
     {
         if (dataLen && (p_buff != NULL))
         {

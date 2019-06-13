@@ -17,6 +17,7 @@ char WIFI_SSID[50] = STA_WIFI_SSID;
 char WIFI_Password[50] = STA_WIFI_PASSWORD;
 uint8_t WIFI_RxBuff[4130];
 uint8_t WIFI_TxBuff[4130];
+uint16_t WIFI_TxLen;
 
 static void WIFI_EventCb(system_event_id_t event);
 
@@ -201,6 +202,12 @@ void WIFI_Task(void *pvParameters)
                     len = 0;
                 }
 
+                if (WIFI_TxLen)
+                {
+                    client.write(WIFI_TxBuff, WIFI_TxLen);
+                    WIFI_TxLen = 0;
+                }
+
                 vTaskDelay(1 / portTICK_PERIOD_MS);
             }
 
@@ -227,14 +234,15 @@ void WIFI_Task(void *pvParameters)
 
 void WIFI_Write(uint8_t *payLoad, uint16_t len)
 {
-    WiFiClient client = SocketServer.available();
+    Serial.println("App processed");
+    // WiFiClient client = SocketServer.available();
 
-    if (client)
+    if (!WIFI_TxLen)
     {
-        if (client.connected())
+        // if (client.connected())
         {
-            client.write(WIFI_TxBuff, len);
-            len = 0;
+            memcpy(WIFI_TxBuff, payLoad, len);
+            WIFI_TxLen = len;
         }
     }
 }
