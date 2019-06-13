@@ -11,9 +11,6 @@
   <script src="bootstrap.min.js"></script>
   <script>
     $(document).ready(function () {
-
-      
-
       $('#exampleModal').on('show.bs.modal', function (event) {
         var button = $(event.relatedTarget) // Button that triggered the modal
         var recipient = button.data('whatever') // Extract info from data-* attributes
@@ -24,16 +21,22 @@
         modal.find('.modal-body input').val(recipient)
       });
       
-      $('#refresh').on('click', function(event) {
+      $('#refresh').click(function() {
         $.post("fsread", {}, function(result) {
-          var i = 0;
-          $.each($.parseJSON(result), function(key, value) {
-            $('table').children('tbody').empty().append('<tr><th scope="row">' + i++ + '</th><td>' + value + '</td>' + 
-                                                        '<td><button type="button" id="refresh" class="mt-2 mb-2 btn btn-primary">Delete</button></td></tr>');
+          $('table').children('tbody').empty();
+          $.each($.parseJSON(result).data, function(key, value) {
+            if(value != 'end')
+            {
+              $('table').children('tbody').append('<tr><th scope="row">'+ key+'</th><td>'+value.replace('/','')+'</td>'+'<td><button type="button" id="delete" class="btn btn-danger">Delete</button></td></tr>');
+            }
           });
         });
       });
 
+      $('tbody').on('click', 'button', function(event) {
+        $.post("fsdelete", {file:$(this).parents()[1].children[1].innerHTML}, function(result) {
+          });
+      });
     });
   </script>
 
@@ -58,7 +61,7 @@
     </nav>
   </div>
   <div>
-    <button type="button" id="add" class="mt-2 mb-2 btn btn-primary float-right" data-toggle="modal" data-target="#exampleModal" data-whatever="@mdo">Add</button>
+    <button type="button" id="add" class="mt-2 mb-2 btn btn-success float-right" data-toggle="modal" data-target="#exampleModal" data-whatever="@mdo">Add</button>
     <button type="button" id="refresh" class="mt-2 mb-2 mr-2 btn btn-primary float-right">Refresh</button>
   </div>
   <div class="table-responsive-sm">
@@ -71,7 +74,6 @@
         </tr>
       </thead>
       <tbody>
-        
       </tbody>
     </table>
   </div>

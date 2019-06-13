@@ -6,6 +6,7 @@
 #include "ESPmDNS.h"
 #include <ArduinoJson.h>
 #include "ESPAsyncWebServer.h"
+#include "app.h"
 #include "a_led.h"
 #include "a_wifi.h"
 
@@ -14,7 +15,8 @@ WiFiServer SocketServer(6888);
 
 char WIFI_SSID[50] = STA_WIFI_SSID;
 char WIFI_Password[50] = STA_WIFI_PASSWORD;
-uint8_t WIFI_RxBuff[4096];
+uint8_t WIFI_RxBuff[4130];
+uint8_t WIFI_TxBuff[4130];
 
 static void WIFI_EventCb(system_event_id_t event);
 
@@ -79,17 +81,6 @@ void WIFI_Init(void)
     }
     else
     {
-        // File root = SPIFFS.open("/");
-        // File file = root.openNextFile();
-
-        // while (file)
-        // {
-        //     Serial.print("FILE: ");
-        //     Serial.println(file.name());
-        //     file.close();
-        //     file = root.openNextFile();
-        // }
-
         HttpServer.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
             request->send(SPIFFS, "/index.html", "text/html");
         });
@@ -113,30 +104,31 @@ void WIFI_Init(void)
             "/fsread",
             HTTP_POST,
             [](AsyncWebServerRequest *request) {
-                DynamicJsonDocument doc(8000);
-
+                // DynamicJsonDocument doc(8000);
+                String json;
                 // Add an array.
                 //
                 // JsonArray data = doc.createNestedArray("data");
 
                 File root = SPIFFS.open("/");
                 File file = root.openNextFile();
-
+                json = "{\"data\":[";
                 while (file)
                 {
-                    doc.add(file.name());
+                    json = json + "\"" + file.name() + "\",";
                     file.close();
                     file = root.openNextFile();
                 }
-                // Serial.println("Received post request");
-                //List all parameters (Compatibility)
-                // int args = request->args();
-                // for (int i = 0; i < args; i++)
-                // {
-                //     Serial.printf("ARG[%s]: %s\n", request->argName(i).c_str(), request->arg(i).c_str());
-                // }
 
-                request->send(200, doc.as<String>(), "application/json");
+                json = json + "\"end\"]}";
+                request->send(200, "text/plain", json);
+            });
+
+        HttpServer.on(
+            "/fsdelete",
+            HTTP_POST,
+            [](AsyncWebServerRequest *request) {
+                request->send(200);
             });
 
         HttpServer.on("/fsexplorer.html", HTTP_GET, [](AsyncWebServerRequest *request) {
@@ -192,20 +184,27 @@ void WIFI_Task(void *pvParameters)
 
         if (client)
         {
+            uint16_t len = 0;
+            Serial.println("Client connected");
+
             while (client.connected())
             {
-                if (client.available())
+                while (client.available())
                 {
-                    // Serial.println("Client connected");
-                    uint16_t len = client.read(WIFI_RxBuff, sizeof(WIFI_RxBuff));
-
-                    if (len)
-                    {
-                        client.write(WIFI_RxBuff, len);
-                    }
+                    len = client.read(WIFI_RxBuff, sizeof(WIFI_RxBuff));
                 }
+
+                if (len)
+                {
+                    APP_ProcessData(&WIFI_RxBuff[11], (len - 13), APP_CHANNEL_TCP_SOC);
+                    client.write(WIFI_RxBuff, len);
+                    len = 0;
+                }
+
+                vTaskDelay(1 / portTICK_PERIOD_MS);
             }
-            client.stop();
+
+            // client.stop();
             Serial.println("Client disconnected");
         }
         // if (wifiStatus != WiFi.status())
@@ -223,6 +222,20 @@ void WIFI_Task(void *pvParameters)
 
         // wifiStatus = WiFi.status();
         vTaskDelay(1 / portTICK_PERIOD_MS);
+    }
+}
+
+void WIFI_Write(uint8_t *payLoad, uint16_t len)
+{
+    WiFiClient client = SocketServer.available();
+
+    if (client)
+    {
+        if (client.connected())
+        {
+            client.write(WIFI_TxBuff, len);
+            len = 0;
+        }
     }
 }
 

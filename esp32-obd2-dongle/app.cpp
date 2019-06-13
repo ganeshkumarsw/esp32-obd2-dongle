@@ -110,6 +110,7 @@ void (*cb_APP_Send[])(uint8_t *, uint16_t) =
         UART_Write,
         MQTT_Write,
         NULL,
+        WIFI_Write,
 };
 
 uint8_t APP_RxBuff[4130] = {0};
