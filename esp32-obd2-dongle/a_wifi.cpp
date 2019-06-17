@@ -66,9 +66,11 @@ void WIFI_Init(void)
     // const IPAddress apIP = IPAddress(192, 168, 5, 1);
 
     // WiFi.waitForConnectResult();
-    WiFi.mode(WIFI_AP);
-    WiFi.softAPConfig(IPAddress(192, 168, 5, 1), IPAddress(192, 168, 5, 1), IPAddress(255, 255, 255, 0));
-    WiFi.softAP("MyAp_Test", "password1");
+    // WiFi.mode(WIFI_AP);
+    // WiFi.softAPConfig(IPAddress(192, 168, 5, 1), IPAddress(192, 168, 5, 1), IPAddress(255, 255, 255, 0));
+    configASSERT(WiFi.softAP("MyAp_Test", "password1"));
+
+    vTaskDelay(500 / portTICK_PERIOD_MS);
     // WiFi.begin((char *)WIFI_SSID, (char *)WIFI_Password);
 
     // if (MDNS.begin("myap"))
