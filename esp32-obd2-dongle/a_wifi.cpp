@@ -11,6 +11,7 @@
 #include "a_wifi.h"
 
 AsyncWebServer HttpServer(80);
+AsyncWebSocket WebSocket("/ws"); // access at ws://[esp ip]/ws
 WiFiServer SocketServer(6888);
 
 char WIFI_SSID[50] = STA_WIFI_SSID;
@@ -84,6 +85,30 @@ void WIFI_Init(void)
     }
     else
     {
+        // attach AsyncWebSocket
+        WebSocket.onEvent([](AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type, void *arg, uint8_t *data, size_t len) {
+            if (type == WS_EVT_CONNECT)
+            {
+                Serial.println("Websocket client connection received");
+            }
+            else if (type == WS_EVT_DISCONNECT)
+            {
+                Serial.println("Client disconnected");
+            }
+            else if (type == WS_EVT_DATA)
+            {
+                Serial.println("Data received: ");
+
+                for (int i = 0; i < len; i++)
+                {
+                    Serial.print((char)data[i]);
+                }
+
+                Serial.println();
+            }
+        });
+        HttpServer.addHandler(&WebSocket);
+
         HttpServer.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
             request->send(SPIFFS, "/index.html", "text/html");
         });
@@ -134,8 +159,16 @@ void WIFI_Init(void)
                 request->send(200);
             });
 
-        HttpServer.on("/fsexplorer.html", HTTP_GET, [](AsyncWebServerRequest *request) {
-            request->send(SPIFFS, "/fsexplorer.html", "text/html");
+        HttpServer.on("/fsexplorer", HTTP_GET, [](AsyncWebServerRequest *request) {
+            AsyncWebServerResponse *response = request->beginResponse(SPIFFS, "/fsexplorer.html.gz", "text/html");
+            response->addHeader("Content-Encoding", "gzip");
+            request->send(response);
+        });
+
+        HttpServer.on("/terminal", HTTP_GET, [](AsyncWebServerRequest *request) {
+            AsyncWebServerResponse *response = request->beginResponse(SPIFFS, "/terminal.html", "text/html");
+            // response->addHeader("Content-Encoding", "gzip");
+            request->send(response);
         });
 
         HttpServer.on("/favicon-32x32.png", HTTP_GET, [](AsyncWebServerRequest *request) {
@@ -143,15 +176,21 @@ void WIFI_Init(void)
         });
 
         HttpServer.on("/jquery.min.js", HTTP_GET, [](AsyncWebServerRequest *request) {
-            request->send(SPIFFS, "/jquery.min.js", "text/javascript");
+            AsyncWebServerResponse *response = request->beginResponse(SPIFFS, "/jquery.min.js.gz", "text/javascript");
+            response->addHeader("Content-Encoding", "gzip");
+            request->send(response);
         });
 
         HttpServer.on("/bootstrap.min.css", HTTP_GET, [](AsyncWebServerRequest *request) {
-            request->send(SPIFFS, "/bootstrap.min.css", "text/css");
+            AsyncWebServerResponse *response = request->beginResponse(SPIFFS, "/bootstrap.min.css.gz", "text/css");
+            response->addHeader("Content-Encoding", "gzip");
+            request->send(response);
         });
 
         HttpServer.on("/bootstrap.min.js", HTTP_GET, [](AsyncWebServerRequest *request) {
-            request->send(SPIFFS, "/bootstrap.min.js", "text/javascript");
+            AsyncWebServerResponse *response = request->beginResponse(SPIFFS, "/bootstrap.min.js.gz", "text/javascript");
+            response->addHeader("Content-Encoding", "gzip");
+            request->send(response);
         });
 
         HttpServer.on("/autopeepal.png", HTTP_GET, [](AsyncWebServerRequest *request) {
@@ -276,4 +315,9 @@ void WIFI_EventCb(system_event_id_t event)
 
         break;
     }
+}
+
+static void WIFI_WebSocketOnEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type, void *arg, uint8_t *data, size_t len)
+{
+    //Handle WebSocket event
 }
