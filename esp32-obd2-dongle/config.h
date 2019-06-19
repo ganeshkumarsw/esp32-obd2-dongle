@@ -5,7 +5,7 @@
 extern "C" {
 #endif
 
-#define VERSION             "00.00.05"
+#define VERSION             "00.00.06"
 // #define STA_WIFI_SSID       "FRITZ!Box 7560 UU"
 // #define STA_WIFI_PASSWORD   "aksharaa9003755682"
 #define STA_WIFI_SSID       "AndroidAP"
