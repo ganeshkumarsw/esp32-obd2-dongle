@@ -7,6 +7,18 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" href="bootstrap.min.css">
   <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+  <style>
+    html,
+    body {
+      height: 100%;
+    }
+
+    textarea {
+      min-height: 90vh;
+      width: 100%;
+    }
+  </style>
+
   <script src="jquery.min.js"></script>
   <script src="bootstrap.min.js"></script>
   <script>
@@ -45,7 +57,7 @@
 
 </head>
 
-<body class="m-2">
+<body class="m-2" height="auto">
   <div class="input-group">
     <input type="text" class="form-control" id="send" placeholder="Send">
     <div class="input-group-append ml=2">

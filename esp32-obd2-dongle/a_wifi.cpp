@@ -107,6 +107,7 @@ void WIFI_Init(void)
                 Serial.println();
             }
         });
+        
         HttpServer.addHandler(&WebSocket);
 
         HttpServer.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
