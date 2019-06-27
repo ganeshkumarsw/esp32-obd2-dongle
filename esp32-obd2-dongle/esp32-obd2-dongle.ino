@@ -47,6 +47,11 @@ void CreateTask_Task(void *pvParameters)
     configASSERT(0);
   }
 
+  if (xTaskCreate(WIFI_Task, "WIFI_Task", 30000, NULL, 5, NULL) != pdTRUE)
+  {
+    configASSERT(0);
+  }
+  
   if (xTaskCreate(APP_Task, "APP_Task", 15000, NULL, 9, NULL) != pdTRUE)
   {
     configASSERT(0);
@@ -61,11 +66,6 @@ void CreateTask_Task(void *pvParameters)
   // {
   //   configASSERT(0);
   // }
-
-  if (xTaskCreate(WIFI_Task, "WIFI_Task", 30000, NULL, 5, NULL) != pdTRUE)
-  {
-    configASSERT(0);
-  }
 
   // if (xTaskCreate(MQTT_Task, "MQTT_Task", 20000, NULL, 8, NULL) != pdTRUE)
   // {

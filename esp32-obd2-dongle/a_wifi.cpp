@@ -67,17 +67,37 @@ void WIFI_Init(void)
     // const IPAddress apIP = IPAddress(192, 168, 5, 1);
 
     // WiFi.waitForConnectResult();
-    // WiFi.mode(WIFI_AP);
+    WiFi.mode(WIFI_AP);
     // WiFi.softAPConfig(IPAddress(192, 168, 5, 1), IPAddress(192, 168, 5, 1), IPAddress(255, 255, 255, 0));
-    configASSERT(WiFi.softAP("MyAp_Test", "password1"));
+    if (!WiFi.softAP("MyAp_Test", "password1"))
+    {
+        Serial.println("ESP32 SoftAP failed to start!");
+    }
+
+    if (!WiFi.softAPsetHostname("esp32"))
+    {
+        Serial.println("ESP32 SoftAP failed to set host name!");
+    }
+
+    // if (!WiFi.softAPenableIpV6())
+    // {
+    //     Serial.println("ESP32 SoftAP IpV6 failed to start!");
+    // }
+
+    // Serial.println(WiFi.softAPIPv6().toString());
 
     vTaskDelay(500 / portTICK_PERIOD_MS);
     // WiFi.begin((char *)WIFI_SSID, (char *)WIFI_Password);
 
-    // if (MDNS.begin("myap"))
+    // if (!MDNS.begin("esp32"))
     // {
-    //     ESP_LOGI("WIFI", "MDNS responder started");
+    //     Serial.println("Error setting up MDNS responder!");
+    //     while (1)
+    //     {
+    //         delay(1000);
+    //     }
     // }
+    // Serial.println("mDNS responder started");
 
     if (!SPIFFS.begin())
     {
@@ -107,7 +127,7 @@ void WIFI_Init(void)
                 Serial.println();
             }
         });
-        
+
         HttpServer.addHandler(&WebSocket);
 
         HttpServer.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
