@@ -69,7 +69,7 @@ void WIFI_Init(void)
     // WiFi.waitForConnectResult();
     WiFi.mode(WIFI_AP);
     // WiFi.softAPConfig(IPAddress(192, 168, 5, 1), IPAddress(192, 168, 5, 1), IPAddress(255, 255, 255, 0));
-    if (!WiFi.softAP("MyAp_Test", "password1"))
+    if (!WiFi.softAP("OBD DONGLE", "password1"))
     {
         Serial.println("ESP32 SoftAP failed to start!");
     }
