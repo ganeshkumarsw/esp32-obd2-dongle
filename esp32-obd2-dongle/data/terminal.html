@@ -32,6 +32,7 @@
           alert("WebSocket is supported by your Browser!");
           // Create WebSocket connection.
           socket = new WebSocket("ws://" + location.host + "/ws");
+          socket.binaryType = 'arraybuffer';
 
           // Connection opened
           socket.addEventListener('open', function (event) {
@@ -40,7 +41,9 @@
 
           // Listen for messages
           socket.addEventListener('message', function (event) {
-            $('#message-text').val(event.data.join(" ") + "\n");
+            var temp = "";
+            (new Uint8Array(event.data)).forEach((val, idx, arr) => temp = temp + val.toString(16) + " ");
+            $('#message-text').append(temp + "\n");
             console.log('Message from server ', event.data);
           });
         }

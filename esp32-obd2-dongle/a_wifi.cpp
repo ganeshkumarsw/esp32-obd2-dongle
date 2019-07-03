@@ -122,6 +122,7 @@ void WIFI_Init(void)
             }
             else if (type == WS_EVT_DATA)
             {
+                pWebSocketClient = client;
                 APP_ProcessData(&data[11], (len - 13), APP_CHANNEL_WEB_SOC);
                 Serial.println("Data received: ");
 
@@ -381,6 +382,7 @@ void WIFI_WebSoc_Write(uint8_t *payLoad, uint16_t len)
         if (pWebSocketClient != NULL)
         {
             pWebSocketClient->binary(WIFI_TxBuff, WIFI_TxLen);
+            WIFI_TxLen = 0;
         }
     }
 }
