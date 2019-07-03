@@ -13,7 +13,11 @@ void setup()
 {
   Serial.begin(115200);
   Serial.setRxBufferSize(4096);
-  printf("OBDII USB/Wifi/BT Dongle v%s\r\n", VERSION);
+  String ver = "OBDII USB/Wifi/BT Dongle v";
+  
+  ver = ver + MAJOR_VERSION + MINOR_VERSION + SUB_VERSION + "\r\n"; 
+  printf("OBDII USB/Wifi/BT Dongle v%02d.%02d.%02d\r\n", MAJOR_VERSION, MINOR_VERSION, SUB_VERSION);
+  Serial.print(ver);
 
   LED_Init();
   APP_Init();

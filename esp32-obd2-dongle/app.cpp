@@ -111,7 +111,8 @@ void (*cb_APP_Send[])(uint8_t *, uint16_t) =
         UART_Write,
         MQTT_Write,
         NULL,
-        WIFI_Write,
+        WIFI_Soc_Write,
+        WIFI_WebSoc_Write
 };
 
 uint8_t APP_RxBuff[4130] = {0};
@@ -1230,9 +1231,9 @@ void APP_Frame2(uint8_t *p_buff, uint16_t len, uint8_t channel)
                 break;
             }
 
-            respBuff[0] = 0;
-            respBuff[1] = 0;
-            respBuff[2] = 1;
+            respBuff[0] = MAJOR_VERSION;
+            respBuff[1] = MINOR_VERSION;
+            respBuff[2] = SUB_VERSION;
             respLen = 3;
             break;
 

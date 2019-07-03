@@ -14,7 +14,7 @@
     }
 
     textarea {
-      min-height: 85vh;
+      min-height: 80vh;
       width: 100%;
     }
   </style>
@@ -35,11 +35,12 @@
 
           // Connection opened
           socket.addEventListener('open', function (event) {
-            socket.send($('#send').val());
+            // socket.send($('#send').val());
           });
 
           // Listen for messages
           socket.addEventListener('message', function (event) {
+            $('#message-text').val(event.data.join(" ") + "\n");
             console.log('Message from server ', event.data);
           });
         }
@@ -50,7 +51,7 @@
       }
 
       $('button').click(function () {
-        socket.send($('#send').val());
+        socket.send($('#send').val().split(' ').map(bin => parseInt(bin, 16)));
       });
     });
   </script>

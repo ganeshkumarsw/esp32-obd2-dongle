@@ -1,6 +1,7 @@
 #include <Arduino.h>
 #include <Preferences.h>
 #include "config.h"
+#include "util.h"
 #include <WiFi.h>
 #include "SPIFFS.h"
 #include "ESPmDNS.h"
@@ -12,10 +13,12 @@
 
 AsyncWebServer HttpServer(80);
 AsyncWebSocket WebSocket("/ws"); // access at ws://[esp ip]/ws
+AsyncWebSocketClient *pWebSocketClient;
 WiFiServer SocketServer(6888);
 
 char WIFI_SSID[50] = STA_WIFI_SSID;
 char WIFI_Password[50] = STA_WIFI_PASSWORD;
+uint8_t WIFI_SeqNo;
 uint8_t WIFI_RxBuff[4130];
 uint8_t WIFI_TxBuff[4130];
 uint16_t WIFI_TxLen;
@@ -68,7 +71,7 @@ void WIFI_Init(void)
 
     // WiFi.waitForConnectResult();
     WiFi.mode(WIFI_AP);
-    // WiFi.softAPConfig(IPAddress(192, 168, 5, 1), IPAddress(192, 168, 5, 1), IPAddress(255, 255, 255, 0));
+    // WiFi.softAPConfig(IPAddress(192, 168, 178, 1), IPAddress(192, 168, 178, 1), IPAddress(255, 255, 255, 0));
     if (!WiFi.softAP("OBD DONGLE", "password1"))
     {
         Serial.println("ESP32 SoftAP failed to start!");
@@ -109,21 +112,23 @@ void WIFI_Init(void)
         WebSocket.onEvent([](AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type, void *arg, uint8_t *data, size_t len) {
             if (type == WS_EVT_CONNECT)
             {
+                pWebSocketClient = client;
                 Serial.println("Websocket client connection received");
             }
             else if (type == WS_EVT_DISCONNECT)
             {
+                pWebSocketClient = NULL;
                 Serial.println("Client disconnected");
             }
             else if (type == WS_EVT_DATA)
             {
+                APP_ProcessData(&data[11], (len - 13), APP_CHANNEL_WEB_SOC);
                 Serial.println("Data received: ");
 
                 for (int i = 0; i < len; i++)
                 {
                     Serial.print((char)data[i]);
                 }
-
                 Serial.println();
             }
         });
@@ -259,8 +264,9 @@ void WIFI_Task(void *pvParameters)
 
                 if (len)
                 {
+                    WIFI_SeqNo = WIFI_RxBuff[0];
                     APP_ProcessData(&WIFI_RxBuff[11], (len - 13), APP_CHANNEL_TCP_SOC);
-                    client.write(WIFI_RxBuff, len);
+                    // client.write(WIFI_RxBuff, len);
                     len = 0;
                 }
 
@@ -294,17 +300,87 @@ void WIFI_Task(void *pvParameters)
     }
 }
 
-void WIFI_Write(uint8_t *payLoad, uint16_t len)
+void WIFI_Soc_Write(uint8_t *payLoad, uint16_t len)
 {
+#define byte(x, y) ((uint8_t)(x >> (y * 8)))
+
+    uint16_t crc16;
+    uint16_t idx;
+    uint32_t tick;
     Serial.println("App processed");
     // WiFiClient client = SocketServer.available();
 
     if (!WIFI_TxLen)
     {
-        // if (client.connected())
+        idx = 0;
+        if ((payLoad[0] & 0x20) == 0x20)
         {
-            memcpy(WIFI_TxBuff, payLoad, len);
-            WIFI_TxLen = len;
+            WIFI_TxBuff[idx++] = WIFI_SeqNo;
+        }
+        else
+        {
+            WIFI_TxBuff[idx++] = 0xFF;
+        }
+
+        WIFI_TxBuff[idx++] = byte(len, 1);
+        WIFI_TxBuff[idx++] = byte(len, 0);
+        tick = xTaskGetTickCount();
+        WIFI_TxBuff[idx++] = byte(tick, 3);
+        WIFI_TxBuff[idx++] = byte(tick, 2);
+        WIFI_TxBuff[idx++] = byte(tick, 1);
+        WIFI_TxBuff[idx++] = byte(tick, 0);
+        memset(&WIFI_TxBuff[idx], 0, 4);
+        idx = idx + 4;
+        memcpy(&WIFI_TxBuff[idx], payLoad, len);
+        idx = idx + len;
+        crc16 = UTIL_CRC16_CCITT(0xFFFF, WIFI_TxBuff, len + 11);
+        WIFI_TxBuff[idx++] = byte(crc16, 1);
+        WIFI_TxBuff[idx++] = byte(crc16, 0);
+        WIFI_TxLen = idx;
+    }
+}
+
+void WIFI_WebSoc_Write(uint8_t *payLoad, uint16_t len)
+{
+#define byte(x, y) ((uint8_t)(x >> (y * 8)))
+
+    uint16_t crc16;
+    uint16_t idx;
+    uint32_t tick;
+    Serial.println("App processed");
+    // WiFiClient client = SocketServer.available();
+
+    if (!WIFI_TxLen)
+    {
+        idx = 0;
+        if ((payLoad[0] & 0x20) == 0x20)
+        {
+            WIFI_TxBuff[idx++] = WIFI_SeqNo;
+        }
+        else
+        {
+            WIFI_TxBuff[idx++] = 0xFF;
+        }
+
+        WIFI_TxBuff[idx++] = byte(len, 1);
+        WIFI_TxBuff[idx++] = byte(len, 0);
+        tick = xTaskGetTickCount();
+        WIFI_TxBuff[idx++] = byte(tick, 3);
+        WIFI_TxBuff[idx++] = byte(tick, 2);
+        WIFI_TxBuff[idx++] = byte(tick, 1);
+        WIFI_TxBuff[idx++] = byte(tick, 0);
+        memset(&WIFI_TxBuff[idx], 0, 4);
+        idx = idx + 4;
+        memcpy(&WIFI_TxBuff[idx], payLoad, len);
+        idx = idx + len;
+        crc16 = UTIL_CRC16_CCITT(0xFFFF, WIFI_TxBuff, len + 11);
+        WIFI_TxBuff[idx++] = byte(crc16, 1);
+        WIFI_TxBuff[idx++] = byte(crc16, 0);
+        WIFI_TxLen = idx;
+
+        if (pWebSocketClient != NULL)
+        {
+            pWebSocketClient->binary(WIFI_TxBuff, WIFI_TxLen);
         }
     }
 }

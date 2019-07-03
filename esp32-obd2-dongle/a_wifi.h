@@ -7,7 +7,8 @@ extern "C" {
 
 void WIFI_Init(void);
 void WIFI_Task(void *pvParameters);
-void WIFI_Write(uint8_t *payLoad, uint16_t len);
+void WIFI_Soc_Write(uint8_t *payLoad, uint16_t len);
+void WIFI_WebSoc_Write(uint8_t *payLoad, uint16_t len);
 
 #ifdef __cplusplus
 }
