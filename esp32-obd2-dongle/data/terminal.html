@@ -14,7 +14,7 @@
     }
 
     textarea {
-      min-height: 80vh;
+      min-height: 75vh;
       width: 100%;
     }
   </style>
@@ -43,7 +43,7 @@
           socket.addEventListener('message', function (event) {
             var temp = "";
             (new Uint8Array(event.data)).forEach((val, idx, arr) => temp = temp + val.toString(16) + " ");
-            $('#message-text').append(temp + "\n");
+            $('#message-text').val($('#message-text').val() + temp + "\n");
             console.log('Message from server ', event.data);
           });
         }
