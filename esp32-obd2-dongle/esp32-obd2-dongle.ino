@@ -13,14 +13,12 @@ void setup()
 {
   Serial.begin(115200);
   Serial.setRxBufferSize(4096);
-  String ver = "OBDII USB/Wifi/BT Dongle v";
+  // String ver = "OBDII USB/Wifi/BT Dongle v";
   
-  ver = ver + MAJOR_VERSION + MINOR_VERSION + SUB_VERSION + "\r\n"; 
+  // ver = ver + MAJOR_VERSION + MINOR_VERSION + SUB_VERSION + "\r\n"; 
   printf("OBDII USB/Wifi/BT Dongle v%02d.%02d.%02d\r\n", MAJOR_VERSION, MINOR_VERSION, SUB_VERSION);
-  Serial.print(ver);
+  // Serial.print(ver);
 
-  LED_Init();
-  APP_Init();
   // MQTT_Init();
 
   if (xTaskCreate(CreateTask_Task, "CreateTask_Task", 2000, NULL, 1, NULL) != pdTRUE)

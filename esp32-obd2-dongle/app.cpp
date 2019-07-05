@@ -112,8 +112,7 @@ void (*cb_APP_Send[])(uint8_t *, uint16_t) =
         MQTT_Write,
         NULL,
         WIFI_Soc_Write,
-        WIFI_WebSoc_Write
-};
+        WIFI_WebSoc_Write};
 
 uint8_t APP_RxBuff[4130] = {0};
 uint8_t APP_TxBuff[4130] = {0};
@@ -211,6 +210,7 @@ void APP_Task(void *pvParameters)
     uxHighWaterMark = uxTaskGetStackHighWaterMark(NULL);
     ESP_LOGI("APP", "uxHighWaterMark = %d", uxHighWaterMark);
 
+    APP_Init();
     // CAN_ConfigFilterterMask(0x00000000, true);
 
     while (1)
@@ -471,10 +471,10 @@ void APP_Task(void *pvParameters)
                     }
 
                     if (((APP_Channel == APP_CHANNEL_MQTT) || (APP_Channel == APP_CHANNEL_UART) || (APP_ISO_State == APP_ISO_STATE_FC_WAIT_TIME)) &&
-                        ((CAN_ReadFrame(&rx_frame, pdMS_TO_TICKS(0)) == ESP_OK) && 
-                        // (rx_frame.identifier == APP_CAN_FilterId) &&
-                        // (rx_frame.flags == APP_CAN_FilterIdType) &&
-                        (rx_frame.flags != CAN_MSG_FLAG_RTR)))
+                        ((CAN_ReadFrame(&rx_frame, pdMS_TO_TICKS(0)) == ESP_OK) &&
+                         // (rx_frame.identifier == APP_CAN_FilterId) &&
+                         // (rx_frame.flags == APP_CAN_FilterIdType) &&
+                         (rx_frame.flags != CAN_MSG_FLAG_RTR)))
                     {
                         APP_CAN_COMM_Flag = true;
                         isoFrameType = rx_frame.data[0] >> 4;

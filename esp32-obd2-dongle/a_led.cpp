@@ -48,6 +48,8 @@ void LED_Task(void *pvParameters)
     uxHighWaterMark = uxTaskGetStackHighWaterMark(NULL);
     ESP_LOGI("LED", "uxHighWaterMark = %d", uxHighWaterMark);
 
+    LED_Init();
+
     freqCntr = 0;
 
     while (1)
