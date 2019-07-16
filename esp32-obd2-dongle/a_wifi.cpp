@@ -13,7 +13,7 @@
 
 AsyncWebServer HttpServer(80);
 AsyncWebSocket WebSocket("/ws"); // access at ws://[esp ip]/ws
-AsyncWebSocketClient *pWebSocketClient;
+AsyncWebSocketClient *p_WebSocketClient;
 WiFiServer SocketServer(6888);
 
 char WIFI_SSID[50] = STA_WIFI_SSID;
@@ -65,7 +65,7 @@ void WIFI_Init(void)
 
     // preferences.end();
 
-    // WiFi.mode(WIFI_AP_STA);  //Both hotspot and client are enabled
+    WiFi.mode(WIFI_AP_STA);  //Both hotspot and client are enabled
     // WiFi.onEvent(WIFI_EventCb, SYSTEM_EVENT_MAX);
     // const IPAddress apIP = IPAddress(192, 168, 5, 1);
 
@@ -90,7 +90,7 @@ void WIFI_Init(void)
     // Serial.println(WiFi.softAPIPv6().toString());
 
     vTaskDelay(500 / portTICK_PERIOD_MS);
-    // WiFi.begin((char *)WIFI_SSID, (char *)WIFI_Password);
+    WiFi.begin((char *)WIFI_SSID, (char *)WIFI_Password);
 
     // if (!MDNS.begin("esp32"))
     // {
@@ -112,17 +112,17 @@ void WIFI_Init(void)
         WebSocket.onEvent([](AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type, void *arg, uint8_t *data, size_t len) {
             if (type == WS_EVT_CONNECT)
             {
-                pWebSocketClient = client;
+                p_WebSocketClient = client;
                 Serial.println("Websocket client connection received");
             }
             else if (type == WS_EVT_DISCONNECT)
             {
-                pWebSocketClient = NULL;
+                p_WebSocketClient = NULL;
                 Serial.println("Client disconnected");
             }
             else if (type == WS_EVT_DATA)
             {
-                pWebSocketClient = client;
+                p_WebSocketClient = client;
                 APP_ProcessData(&data[11], (len - 13), APP_CHANNEL_WEB_SOC);
                 Serial.println("Data received: ");
 
@@ -379,9 +379,9 @@ void WIFI_WebSoc_Write(uint8_t *payLoad, uint16_t len)
         WIFI_TxBuff[idx++] = byte(crc16, 0);
         WIFI_TxLen = idx;
 
-        if (pWebSocketClient != NULL)
+        if (p_WebSocketClient != NULL)
         {
-            pWebSocketClient->binary(WIFI_TxBuff, WIFI_TxLen);
+            p_WebSocketClient->binary(WIFI_TxBuff, WIFI_TxLen);
             WIFI_TxLen = 0;
         }
     }

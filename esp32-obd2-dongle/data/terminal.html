@@ -54,7 +54,7 @@
       }
 
       $('button').click(function () {
-        socket.send($('#send').val().split(' ').map(bin => parseInt(bin, 16)));
+        socket.send(new Uint8Array($('#send').val().split(' ').map(bin => parseInt(bin, 16))));
       });
     });
   </script>
