@@ -26,6 +26,17 @@
       var socket;
       WebSocketTest();
 
+      function crc16(data) {
+        var crc = 0xFFFF;
+        for (i = 0; i < length; ++i) {
+          crc ^= data[i] << 8;
+          for (j = 0; j < 8; ++j) {
+            crc = (crc & 0x8000) > 0 ? (crc << 1) ^ 0x1021 : crc << 1;
+          }
+        }
+        return crc & 0xFFFF;
+      }
+
       function WebSocketTest() {
 
         if ("WebSocket" in window) {
@@ -54,6 +65,7 @@
       }
 
       $('button').click(function () {
+        var 
         socket.send(new Uint8Array($('#send').val().split(' ').map(bin => parseInt(bin, 16))));
       });
     });

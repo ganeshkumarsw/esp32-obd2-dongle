@@ -9,86 +9,6 @@
 #include "a_wifi.h"
 #include "app.h"
 
-#define APP_ISO_FC_WAIT_TIME 10000
-
-#define RSTVC 1
-#define SPRCOL 2
-#define GPRCOL 3
-#define STXHDR 4
-#define GTXHDR 5
-#define SRXHDRMSK 6
-#define GRXHDRMSK 7
-#define SFCBLKL 8
-#define GFCBLKL 9
-#define SFCST 10
-#define GFCST 11
-#define SETP1MIN 12
-#define GETP1MIN 13
-#define SETP2MAX 14
-#define GETP2MAX 15
-#define TXTP 16
-#define STPTXTP 17
-#define TXPAD 18
-#define STPTXPAD 19
-#define GETFWVER 20
-
-//typedef void (*cb_APP_FrameType)(uint8_t *, uint16_t);
-
-#define ACK 0       // Positive Response
-#define NACK 1      // Negative Response
-#define NACK10 0x10 // Command Not Supported
-#define NACK12 0x12 // Input Not supported
-#define NACK13 0x13 // Invalid format or incorrect message length of input
-#define NACK14 0x14 // Invalid operation
-#define NACK15 0x15 // CRC failure
-#define NACK22 0x22 // Conditions not correct
-#define NACK31 0x31 // Request out of range
-#define NACK33 0x33 // security access denied
-#define NACK78 0x78 // response pending
-#define NACK24 0x24 // request sequence error
-#define NACK35 0x35 // Invalid Key
-#define NACK36 0x36 // exceeded number of attempts
-#define NACK37 0x37 // required time delay not expired
-#define NACK72 0x72 // General programming failure
-#define NACK7E 0x7E // sub fn not supported in this diag session
-
-typedef enum
-{
-    APP_CAN_PROTOCOL_NONE = 0,
-    APP_CAN_PROTOCOL_ISO15765,
-    APP_CAN_PROTOCOL_NORMAL,
-    APP_CAN_PROTOCOL_OE_IVN,
-} CAN_PROTOCOL_t;
-
-typedef enum
-{
-    APP_ISO_STATE_SINGLE = 0,
-    APP_ISO_STATE_FIRST,
-    APP_ISO_STATE_CONSECUTIVE,
-    APP_ISO_STATE_SEP_TIME,
-    APP_ISO_STATE_FC_WAIT_TIME,
-    APP_ISO_STATE_SEND_TO_APP,
-    APP_ISO_STATE_IDLE,
-} APP_ISO_STATE_t;
-
-typedef enum
-{
-    APP_ISO_TYPE_SINGLE = 0,
-    APP_ISO_TYPE_FIRST,
-    APP_ISO_TYPE_CONSECUTIVE,
-    APP_ISO_TYPE_FLOWCONTROL,
-} APP_ISO_TYPE_t;
-
-typedef enum
-{
-    APP_BUFF_LOCKED_BY_NONE = 0,
-    APP_BUFF_LOCKED_BY_FRAME0,
-    APP_BUFF_LOCKED_BY_FRAME1,
-    APP_BUFF_LOCKED_BY_FRAME4,
-    APP_BUFF_LOCKED_BY_ISO_TP_RX_FF,
-    APP_BUFF_LOCKED_BY_ISO_TP_RX_CF,
-} APP_BUFF_LOCKED_BY_t;
-
 static void APP_Frame0(uint8_t *p_buff, uint16_t len, uint8_t channel);
 static void APP_Frame1(uint8_t *p_buff, uint16_t len, uint8_t channel);
 static void APP_Frame2(uint8_t *p_buff, uint16_t len, uint8_t channel);
@@ -179,6 +99,7 @@ void APP_Init(void)
     APP_ISO_State = APP_ISO_STATE_IDLE;
     APP_CAN_Protocol = APP_CAN_PROTOCOL_ISO15765;
     APP_CAN_RqRspMaxTime = 500;
+    APP_Channel = APP_CHANNEL_NONE;
 
     LED_SetLedState(SECURITY_LED, GPIO_STATE_TOGGLE, GPIO_TOGGLE_1HZ);
 }
@@ -240,7 +161,7 @@ void APP_Task(void *pvParameters)
                 respBuff[respLen++] = 0x40;
                 respBuff[respLen++] = 2;
 
-                if ((APP_Channel < 2) && (cb_APP_Send[APP_Channel] != NULL))
+                if (((APP_Channel > APP_CHANNEL_NONE) && (APP_Channel < APP_CHANNEL_MAX)) && (cb_APP_Send[APP_Channel] != NULL))
                 {
                     crc16 = UTIL_CRC16_CCITT(0xFFFF, respBuff, 0);
                     respBuff[respLen++] = crc16 >> 8;
@@ -432,13 +353,13 @@ void APP_Task(void *pvParameters)
                             break;
 
                         case APP_ISO_STATE_SEND_TO_APP:
-                            if ((APP_Channel == APP_CHANNEL_MQTT) || (APP_Channel == APP_CHANNEL_UART))
-                            {
+                            // if ((APP_Channel == APP_CHANNEL_MQTT) || (APP_Channel == APP_CHANNEL_UART))
+                            // {
                                 APP_CAN_COMM_Flag = true;
 
                                 respLen = 0;
 
-                                if ((APP_Channel < APP_CHANNEL_MAX) && (cb_APP_Send[APP_Channel] != NULL))
+                                if (((APP_Channel > APP_CHANNEL_NONE) && (APP_Channel < APP_CHANNEL_MAX)) && (cb_APP_Send[APP_Channel] != NULL))
                                 {
                                     crc16 = UTIL_CRC16_CCITT(0xFFFF, APP_RxBuff, APP_CAN_RxDataLen);
                                     APP_TxBuff[respLen++] = 0x40 | (((APP_CAN_RxDataLen + 2) >> 8) & 0x0F);
@@ -459,7 +380,7 @@ void APP_Task(void *pvParameters)
                                 APP_BuffDataRdyFlag = false;
                                 APP_BuffLockedBy = APP_BUFF_LOCKED_BY_NONE;
                                 APP_SendToAppWaitTmr = 0;
-                            }
+                            // }
                             break;
 
                         case APP_ISO_STATE_IDLE:
@@ -470,7 +391,7 @@ void APP_Task(void *pvParameters)
                         }
                     }
 
-                    if (((APP_Channel == APP_CHANNEL_MQTT) || (APP_Channel == APP_CHANNEL_UART) || (APP_ISO_State == APP_ISO_STATE_FC_WAIT_TIME)) &&
+                    if ((((APP_Channel > APP_CHANNEL_NONE) && (APP_Channel < APP_CHANNEL_MAX)) || (APP_ISO_State == APP_ISO_STATE_FC_WAIT_TIME)) &&
                         ((CAN_ReadFrame(&rx_frame, pdMS_TO_TICKS(0)) == ESP_OK) &&
                          // (rx_frame.identifier == APP_CAN_FilterId) &&
                          // (rx_frame.flags == APP_CAN_FilterIdType) &&
@@ -489,7 +410,7 @@ void APP_Task(void *pvParameters)
                             memcpy(&respBuff[respLen], &rx_frame.data[1], (rx_frame.data[0] & 0x0F));
                             respLen += (rx_frame.data[0] & 0x0F);
 
-                            if ((APP_Channel < APP_CHANNEL_MAX) && (cb_APP_Send[APP_Channel] != NULL))
+                            if (cb_APP_Send[APP_Channel] != NULL)
                             {
                                 crc16 = UTIL_CRC16_CCITT(0xFFFF, &respBuff[2], (respLen - 2));
                                 respBuff[respLen++] = crc16 >> 8;
@@ -666,7 +587,7 @@ void APP_ProcessData(uint8_t *p_buff, uint16_t len, APP_CHANNEL_t channel)
     respType = ACK;
     respNo = ACK;
 
-    Serial.println(String("Data Received from channel") + String(channel));
+    // Serial.println(String("Data Received from channel ") + String(channel));
 
     if (APP_ProcDataBusyFlag == false)
     {
@@ -883,7 +804,6 @@ void APP_Frame2(uint8_t *p_buff, uint16_t len, uint8_t channel)
     bool canFilterMask;
 
     canFilterMask = true;
-    APP_Channel = channel;
     respType = ACK;
     respNo = ACK;
     respLen = 0;
@@ -1379,7 +1299,7 @@ void APP_SendRespToFrame(uint8_t respType, uint8_t nackNo, uint8_t *p_buff, uint
         buff[len++] = respType;
     }
 
-    if ((channel < APP_CHANNEL_MAX) && (cb_APP_Send[channel] != NULL))
+    if (((channel > APP_CHANNEL_NONE ) && (channel < APP_CHANNEL_MAX)) && (cb_APP_Send[channel] != NULL))
     {
         if (dataLen && (p_buff != NULL))
         {

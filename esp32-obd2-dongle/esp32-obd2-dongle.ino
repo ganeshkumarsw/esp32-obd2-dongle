@@ -21,7 +21,7 @@ void setup()
 
   // MQTT_Init();
 
-  if (xTaskCreate(CreateTask_Task, "CreateTask_Task", 2000, NULL, 1, NULL) != pdTRUE)
+  if (xTaskCreate(CreateTask_Task, "CreateTask_Task", 2000, NULL, tskIDLE_PRIORITY + 4, NULL) != pdTRUE)
   {
     configASSERT(0);
   }
@@ -44,22 +44,22 @@ void CreateTask_Task(void *pvParameters)
   uxHighWaterMark = uxTaskGetStackHighWaterMark(NULL);
   ESP_LOGI("CREATE", "uxHighWaterMark = %d", uxHighWaterMark);
 
-  if (xTaskCreate(LED_Task, "LED_Task", 8000, NULL, 9, NULL) != pdTRUE)
+  if (xTaskCreate(LED_Task, "LED_Task", 8000, NULL, tskIDLE_PRIORITY + 1, NULL) != pdTRUE)
   {
     configASSERT(0);
   }
 
-  if (xTaskCreate(WIFI_Task, "WIFI_Task", 30000, NULL, 5, NULL) != pdTRUE)
+  if (xTaskCreate(WIFI_Task, "WIFI_Task", 30000, NULL, tskIDLE_PRIORITY + 2, NULL) != pdTRUE)
   {
     configASSERT(0);
   }
   
-  if (xTaskCreate(APP_Task, "APP_Task", 15000, NULL, 9, NULL) != pdTRUE)
+  if (xTaskCreate(APP_Task, "APP_Task", 15000, NULL, tskIDLE_PRIORITY + 2, NULL) != pdTRUE)
   {
     configASSERT(0);
   }
 
-  if (xTaskCreate(UART_Task, "UART_Task", 15000, NULL, 8, NULL) != pdTRUE)
+  if (xTaskCreate(UART_Task, "UART_Task", 15000, NULL, tskIDLE_PRIORITY + 2, NULL) != pdTRUE)
   {
     configASSERT(0);
   }
@@ -74,7 +74,7 @@ void CreateTask_Task(void *pvParameters)
   //   configASSERT(0);
   // }
 
-  if (xTaskCreate(CAN_Task, "CAN_Task", 10000, NULL, 8, NULL) != pdTRUE)
+  if (xTaskCreate(CAN_Task, "CAN_Task", 10000, NULL, tskIDLE_PRIORITY + 3, NULL) != pdTRUE)
   {
     configASSERT(0);
   }

@@ -125,16 +125,16 @@ esp_err_t CAN_ReadFrame(can_message_t *frame, TickType_t ticks_to_wait)
 
     if (status == ESP_OK)
     {
-        ESP_LOGD("CAN", "Message received; ID is %d", frame->identifier);
-        //Process received message
-        if (frame->flags & CAN_MSG_FLAG_EXTD)
-        {
-            ESP_LOGD("CAN", "Message is in Extended Format");
-        }
-        else
-        {
-            ESP_LOGD("CAN", "Message is in Standard Format");
-        }
+        // ESP_LOGD("CAN", "Message received; ID is %d", frame->identifier);
+        // //Process received message
+        // if (frame->flags & CAN_MSG_FLAG_EXTD)
+        // {
+        //     ESP_LOGD("CAN", "Message is in Extended Format");
+        // }
+        // else
+        // {
+        //     ESP_LOGD("CAN", "Message is in Standard Format");
+        // }
     }
     else
     {
