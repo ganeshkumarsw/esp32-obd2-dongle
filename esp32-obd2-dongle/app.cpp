@@ -355,31 +355,31 @@ void APP_Task(void *pvParameters)
                         case APP_ISO_STATE_SEND_TO_APP:
                             // if ((APP_Channel == APP_CHANNEL_MQTT) || (APP_Channel == APP_CHANNEL_UART))
                             // {
-                                APP_CAN_COMM_Flag = true;
+                            APP_CAN_COMM_Flag = true;
 
-                                respLen = 0;
+                            respLen = 0;
 
-                                if (((APP_Channel > APP_CHANNEL_NONE) && (APP_Channel < APP_CHANNEL_MAX)) && (cb_APP_Send[APP_Channel] != NULL))
-                                {
-                                    crc16 = UTIL_CRC16_CCITT(0xFFFF, APP_RxBuff, APP_CAN_RxDataLen);
-                                    APP_TxBuff[respLen++] = 0x40 | (((APP_CAN_RxDataLen + 2) >> 8) & 0x0F);
-                                    APP_TxBuff[respLen++] = (APP_CAN_RxDataLen + 2);
+                            if (((APP_Channel > APP_CHANNEL_NONE) && (APP_Channel < APP_CHANNEL_MAX)) && (cb_APP_Send[APP_Channel] != NULL))
+                            {
+                                crc16 = UTIL_CRC16_CCITT(0xFFFF, APP_RxBuff, APP_CAN_RxDataLen);
+                                APP_TxBuff[respLen++] = 0x40 | (((APP_CAN_RxDataLen + 2) >> 8) & 0x0F);
+                                APP_TxBuff[respLen++] = (APP_CAN_RxDataLen + 2);
 
-                                    memcpy(&APP_TxBuff[respLen], APP_RxBuff, APP_CAN_RxDataLen);
+                                memcpy(&APP_TxBuff[respLen], APP_RxBuff, APP_CAN_RxDataLen);
 
-                                    respLen = respLen + APP_CAN_RxDataLen;
-                                    APP_TxBuff[respLen++] = crc16 >> 8;
-                                    APP_TxBuff[respLen++] = crc16;
+                                respLen = respLen + APP_CAN_RxDataLen;
+                                APP_TxBuff[respLen++] = crc16 >> 8;
+                                APP_TxBuff[respLen++] = crc16;
 
-                                    cb_APP_Send[APP_Channel](APP_TxBuff, respLen);
-                                }
+                                cb_APP_Send[APP_Channel](APP_TxBuff, respLen);
+                            }
 
-                                APP_CAN_RxDataLen = 0;
-                                APP_ISO_State = APP_ISO_STATE_IDLE;
-                                APP_BuffRxIndex = 0;
-                                APP_BuffDataRdyFlag = false;
-                                APP_BuffLockedBy = APP_BUFF_LOCKED_BY_NONE;
-                                APP_SendToAppWaitTmr = 0;
+                            APP_CAN_RxDataLen = 0;
+                            APP_ISO_State = APP_ISO_STATE_IDLE;
+                            APP_BuffRxIndex = 0;
+                            APP_BuffDataRdyFlag = false;
+                            APP_BuffLockedBy = APP_BUFF_LOCKED_BY_NONE;
+                            APP_SendToAppWaitTmr = 0;
                             // }
                             break;
 
@@ -1299,7 +1299,7 @@ void APP_SendRespToFrame(uint8_t respType, uint8_t nackNo, uint8_t *p_buff, uint
         buff[len++] = respType;
     }
 
-    if (((channel > APP_CHANNEL_NONE ) && (channel < APP_CHANNEL_MAX)) && (cb_APP_Send[channel] != NULL))
+    if (((channel > APP_CHANNEL_NONE) && (channel < APP_CHANNEL_MAX)) && (cb_APP_Send[channel] != NULL))
     {
         if (dataLen && (p_buff != NULL))
         {

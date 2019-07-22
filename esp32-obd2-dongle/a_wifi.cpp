@@ -77,11 +77,6 @@ void WIFI_Init(void)
         Serial.println("ESP32 SoftAP failed to start!");
     }
 
-    if (!WiFi.softAPsetHostname("esp32"))
-    {
-        Serial.println("ESP32 SoftAP failed to set host name!");
-    }
-
     // if (!WiFi.softAPenableIpV6())
     // {
     //     Serial.println("ESP32 SoftAP IpV6 failed to start!");

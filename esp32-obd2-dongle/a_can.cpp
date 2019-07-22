@@ -1,4 +1,5 @@
 #include <Arduino.h>
+#include "esp_task_wdt.h"
 #include "a_can.h"
 
 //Initialize configuration structures using macro initializers
@@ -21,7 +22,7 @@ void CAN_Init(void)
     //Install CAN driver
     if (can_driver_install(&CAN_g_config, &CAN_t_config, &CAN_f_config) == ESP_OK)
     {
-        ESP_LOGI("CAN", "Driver installed");
+        // ESP_LOGI("CAN", "Driver installed");
     }
     else
     {
@@ -31,7 +32,7 @@ void CAN_Init(void)
     //Start CAN driver
     if (can_start() == ESP_OK)
     {
-        ESP_LOGI("CAN", "Driver started");
+        // ESP_LOGI("CAN", "Driver started");
     }
     else
     {
@@ -44,10 +45,13 @@ void CAN_DeInit(void)
     can_message_t message;
     can_status_info_t status_info;
 
+    esp_task_wdt_init(100, 1);
+    esp_task_wdt_reset();
+
     //Start CAN driver
     if (can_stop() == ESP_OK)
     {
-        ESP_LOGI("CAN", "Driver stopped");
+        // ESP_LOGI("CAN", "Driver stopped");
     }
     else
     {
@@ -63,7 +67,7 @@ void CAN_DeInit(void)
     //Uninstall CAN driver
     if (can_driver_uninstall() == ESP_OK)
     {
-        ESP_LOGI("CAN", "Driver uninstalled");
+        // ESP_LOGI("CAN", "Driver uninstalled");
     }
     else
     {
