@@ -70,7 +70,7 @@ void WIFI_Init(void)
     // const IPAddress apIP = IPAddress(192, 168, 5, 1);
 
     // WiFi.waitForConnectResult();
-    WiFi.mode(WIFI_AP);
+    // WiFi.mode(WIFI_AP);
     // WiFi.softAPConfig(IPAddress(192, 168, 178, 1), IPAddress(192, 168, 178, 1), IPAddress(255, 255, 255, 0));
     if (!WiFi.softAP("OBD DONGLE", "password1"))
     {
@@ -224,10 +224,6 @@ void WIFI_Init(void)
             request->send(SPIFFS, "/autopeepal.png", "image/png");
         });
 
-        // HttpServer.on("/doc.txt", HTTP_GET, [](AsyncWebServerRequest *request) {
-        //     request->send(SPIFFS, "/doc.txt", "text/plain");
-        // });
-
         HttpServer.begin();
     }
 
@@ -283,20 +279,21 @@ void WIFI_Task(void *pvParameters)
             // client.stop();
             Serial.println("Client disconnected");
         }
-        // if (wifiStatus != WiFi.status())
-        // {
-        //     if (WiFi.status() == WL_CONNECTED)
-        //     {
-        //         ESP_LOGI("WIFI", "WiFi connected; IP address: %s", WiFi.localIP().toString().c_str());
-        //         LED_SetLedState(WIFI_CONN_LED, GPIO_STATE_HIGH, GPIO_TOGGLE_NONE);
-        //     }
-        //     else
-        //     {
-        //         LED_SetLedState(WIFI_CONN_LED, GPIO_STATE_TOGGLE, GPIO_TOGGLE_1HZ);
-        //     }
-        // }
 
-        // wifiStatus = WiFi.status();
+        if (wifiStatus != WiFi.status())
+        {
+            if (WiFi.status() == WL_CONNECTED)
+            {
+                ESP_LOGI("WIFI", "WiFi connected; IP address: %s", WiFi.localIP().toString().c_str());
+                LED_SetLedState(WIFI_CONN_LED, GPIO_STATE_HIGH, GPIO_TOGGLE_NONE);
+            }
+            else
+            {
+                LED_SetLedState(WIFI_CONN_LED, GPIO_STATE_TOGGLE, GPIO_TOGGLE_1HZ);
+            }
+        }
+
+        wifiStatus = WiFi.status();
         vTaskDelay(1 / portTICK_PERIOD_MS);
     }
 }

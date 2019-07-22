@@ -666,6 +666,8 @@ void APP_ProcessData(uint8_t *p_buff, uint16_t len, APP_CHANNEL_t channel)
     respType = ACK;
     respNo = ACK;
 
+    Serial.println(String("Data Received from channel") + String(channel));
+
     if (APP_ProcDataBusyFlag == false)
     {
         APP_Channel = channel;
