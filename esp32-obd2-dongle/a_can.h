@@ -25,7 +25,7 @@ void CAN_DeInit(void);
 esp_err_t CAN_ReadFrame(can_message_t *frame, TickType_t ticks_to_wait);
 esp_err_t CAN_WriteFrame(can_message_t *frame, TickType_t ticks_to_wait);
 void CAN_Task(void *pvParameters);
-
+void CAN_SendCmd(uint8_t cmd, uint32_t data);
 
 #ifdef __cplusplus
 }

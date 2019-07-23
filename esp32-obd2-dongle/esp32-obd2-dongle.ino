@@ -8,18 +8,19 @@
 #include "a_mqtt.h"
 #include "app.h"
 
-
 void setup()
 {
   Serial.begin(115200);
   Serial.setRxBufferSize(4096);
   // String ver = "OBDII USB/Wifi/BT Dongle v";
-  
-  // ver = ver + MAJOR_VERSION + MINOR_VERSION + SUB_VERSION + "\r\n"; 
+
+  // ver = ver + MAJOR_VERSION + MINOR_VERSION + SUB_VERSION + "\r\n";
   printf("OBDII USB/Wifi/BT Dongle v%02d.%02d.%02d\r\n", MAJOR_VERSION, MINOR_VERSION, SUB_VERSION);
   // Serial.print(ver);
 
   // MQTT_Init();
+  // disableCore0WDT();
+  // disableCore1WDT();
 
   if (xTaskCreate(CreateTask_Task, "CreateTask_Task", 2000, NULL, tskIDLE_PRIORITY + 4, NULL) != pdTRUE)
   {
@@ -49,11 +50,11 @@ void CreateTask_Task(void *pvParameters)
     configASSERT(0);
   }
 
-  if (xTaskCreate(WIFI_Task, "WIFI_Task", 30000, NULL, tskIDLE_PRIORITY + 2, NULL) != pdTRUE)
+  if (xTaskCreate(WIFI_Task, "WIFI_Task", 30000, NULL, tskIDLE_PRIORITY + 3, NULL) != pdTRUE)
   {
     configASSERT(0);
   }
-  
+
   if (xTaskCreate(APP_Task, "APP_Task", 15000, NULL, tskIDLE_PRIORITY + 2, NULL) != pdTRUE)
   {
     configASSERT(0);
@@ -74,7 +75,7 @@ void CreateTask_Task(void *pvParameters)
   //   configASSERT(0);
   // }
 
-  if (xTaskCreate(CAN_Task, "CAN_Task", 15000, NULL, tskIDLE_PRIORITY + 3, NULL) != pdTRUE)
+  if (xTaskCreate(CAN_Task, "CAN_Task", 10000, NULL, tskIDLE_PRIORITY + 2, NULL) != pdTRUE)
   {
     configASSERT(0);
   }

@@ -54,7 +54,8 @@
           socket.addEventListener('message', function (event) {
             var temp = "";
             (new Uint8Array(event.data)).forEach((val, idx, arr) => temp = temp + val.toString(16) + " ");
-            $('#message-text').val($('#message-text').val() + temp + "\n");
+            $('#response').val($('#response').val() + temp + "\n");
+            $('#response').scrollTop($('#response')[0].scrollHeight);
             console.log('Message from server ', event.data);
           });
         }
@@ -64,8 +65,7 @@
         }
       }
 
-      $('button').click(function () {
-        var 
+      $('button').click(function () { 
         socket.send(new Uint8Array($('#send').val().split(' ').map(bin => parseInt(bin, 16))));
       });
     });
@@ -74,6 +74,7 @@
 </head>
 
 <body class="m-2" height="auto">
+  <label for="send" class="col-form-label">Send:</label>
   <div class="input-group">
     <input type="text" class="form-control" id="send" placeholder="Send">
     <div class="input-group-append ml=2">
@@ -81,8 +82,8 @@
     </div>
   </div>
   <div class="form-group">
-    <label for="message-text" class="col-form-label">Message:</label>
-    <textarea class="form-control" id="message-text"></textarea>
+    <label for="response" class="col-form-label">Message:</label>
+    <textarea class="form-control" id="response"></textarea>
   </div>
 </body>
 

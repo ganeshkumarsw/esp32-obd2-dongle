@@ -65,11 +65,11 @@ void WIFI_Init(void)
 
     // preferences.end();
 
-    WiFi.mode(WIFI_AP_STA);  //Both hotspot and client are enabled
+    WiFi.mode(WIFI_AP_STA); //Both hotspot and client are enabled
     // WiFi.onEvent(WIFI_EventCb, SYSTEM_EVENT_MAX);
     // const IPAddress apIP = IPAddress(192, 168, 5, 1);
-
-    // WiFi.waitForConnectResult();
+    WiFi.begin((char *)WIFI_SSID, (char *)WIFI_Password);
+    WiFi.waitForConnectResult();
     // WiFi.mode(WIFI_AP);
     // WiFi.softAPConfig(IPAddress(192, 168, 178, 1), IPAddress(192, 168, 178, 1), IPAddress(255, 255, 255, 0));
     if (!WiFi.softAP("OBD DONGLE", "password1"))
@@ -84,8 +84,7 @@ void WIFI_Init(void)
 
     // Serial.println(WiFi.softAPIPv6().toString());
 
-    vTaskDelay(500 / portTICK_PERIOD_MS);
-    WiFi.begin((char *)WIFI_SSID, (char *)WIFI_Password);
+    // vTaskDelay(500 / portTICK_PERIOD_MS);
 
     // if (!MDNS.begin("esp32"))
     // {
@@ -237,6 +236,7 @@ void WIFI_Task(void *pvParameters)
     ESP_LOGI("WIFI", "uxHighWaterMark = %d", uxHighWaterMark);
 
     WIFI_Init();
+    WiFi.reconnect();
 
     while (1)
     {
@@ -284,6 +284,7 @@ void WIFI_Task(void *pvParameters)
             }
             else
             {
+                WiFi.reconnect();
                 LED_SetLedState(WIFI_CONN_LED, GPIO_STATE_TOGGLE, GPIO_TOGGLE_1HZ);
             }
         }
@@ -381,15 +382,18 @@ void WIFI_WebSoc_Write(uint8_t *payLoad, uint16_t len)
 
 void WIFI_EventCb(system_event_id_t event)
 {
+    Serial.print("system_event_id_t: ");
+    Serial.println(event);
+
     switch (event)
     {
     case SYSTEM_EVENT_STA_GOT_IP:
-        // Serial.print("IP address: ");
-        // Serial.println(WiFi.localIP());
+        Serial.print("IP address: ");
+        Serial.println(WiFi.localIP());
         break;
 
     case SYSTEM_EVENT_STA_CONNECTED:
-        // Serial.println("WiFi connected");
+        Serial.println("WiFi connected");
         break;
 
     case SYSTEM_EVENT_STA_DISCONNECTED:
@@ -398,17 +402,12 @@ void WIFI_EventCb(system_event_id_t event)
         break;
 
     case SYSTEM_EVENT_AP_START:
-        // Serial.print("SoftAP Ip: ");
-        // Serial.println(WiFi.softAPIP().toString());
+        Serial.print("SoftAP Ip: ");
+        Serial.println(WiFi.softAPIP().toString());
         break;
 
     case SYSTEM_EVENT_AP_STAIPASSIGNED:
 
         break;
     }
-}
-
-static void WIFI_WebSocketOnEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type, void *arg, uint8_t *data, size_t len)
-{
-    //Handle WebSocket event
 }

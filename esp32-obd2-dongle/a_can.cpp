@@ -2,6 +2,14 @@
 #include "esp_task_wdt.h"
 #include "a_can.h"
 
+// Create a queue capable of containing 10 uint32_t values.
+QueueHandle_t CAN_CmdQueue;
+typedef struct CAN_Cmd
+{
+    uint8_t cmd;
+    uint32_t data;
+} CAN_Cmd_t;
+
 //Initialize configuration structures using macro initializers
 can_general_config_t CAN_g_config = {
     .mode = CAN_MODE_NORMAL,
@@ -45,8 +53,8 @@ void CAN_DeInit(void)
     can_message_t message;
     can_status_info_t status_info;
 
-    esp_task_wdt_init(100, 1);
-    esp_task_wdt_reset();
+    // esp_task_wdt_init(100, 1);
+    // esp_task_wdt_reset();
 
     //Start CAN driver
     if (can_stop() == ESP_OK)
@@ -61,7 +69,7 @@ void CAN_DeInit(void)
     // while (can_receive(&message, 0) == ESP_OK);
     // while ((can_get_status_info(&status_info) == ESP_OK) && ((status_info.msgs_to_tx != 0) || (status_info.msgs_to_rx != 0)))
     // {
-    //     vTaskDelay(2 / portTICK_PERIOD_MS);
+    // vTaskDelay(10 / portTICK_PERIOD_MS);
     // }
 
     //Uninstall CAN driver
@@ -169,16 +177,53 @@ void CAN_Task(void *pvParameters)
     UBaseType_t uxHighWaterMark;
     //Configure message to transmit
     can_message_t message;
+    CAN_Cmd_t canCmd;
+    CAN_speed_t baud;
+    bool extId;
+    uint32_t acceptanceCode;
 
     ESP_LOGI("CAN", "Task Started");
 
     uxHighWaterMark = uxTaskGetStackHighWaterMark(NULL);
     ESP_LOGI("CAN", "uxHighWaterMark = %d", uxHighWaterMark);
 
+    CAN_CmdQueue = xQueueCreate(10, sizeof(CAN_Cmd_t));
+    if (CAN_CmdQueue == NULL)
+    {
+        ESP_LOGE("CAN", "Failed to create queue message for command");
+    }
+
     CAN_Init();
 
     while (1)
     {
+        if (CAN_CmdQueue != NULL)
+        {
+            if (xQueueReceive(CAN_CmdQueue, (void *)&canCmd, portMAX_DELAY) == pdPASS)
+            {
+                switch (canCmd.cmd)
+                {
+                case 0:
+                    CAN_Init();
+                    break;
+
+                case 1:
+                    CAN_DeInit();
+                    break;
+
+                case 2:
+                    extId = canCmd.data & 0x80000000 ? true : false;
+                    acceptanceCode = canCmd.data & 0x40000000 ? 0xFFFFFFFF : canCmd.data & 0x1FFFFFFF;
+                    CAN_ConfigFilterterMask(acceptanceCode, extId);
+                    break;
+
+                case 3:
+                    baud = (CAN_speed_t)canCmd.data;
+                    CAN_SetBaud(baud);
+                    break;
+                }
+            }
+        }
         // message.identifier = 0xAAAA;
         // message.flags = CAN_MSG_FLAG_EXTD;
         // message.data_length_code = 4;
@@ -225,6 +270,16 @@ void CAN_Task(void *pvParameters)
         // {
         // }
 
-        vTaskDelay(100 / portTICK_PERIOD_MS);
+        // vTaskDelay(5 / portTICK_PERIOD_MS);
+    }
+}
+
+void CAN_SendCmd(uint8_t cmd, uint32_t data)
+{
+    CAN_Cmd_t canCmd = {.cmd = cmd, .data = data};
+
+    if (xQueueSend(CAN_CmdQueue, (void *)&canCmd, (TickType_t)(10 / portTICK_PERIOD_MS)) != pdPASS)
+    {
+        ESP_LOGE("CAN", "Failed to queue message for command");
     }
 }
