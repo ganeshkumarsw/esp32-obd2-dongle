@@ -27,6 +27,7 @@ static void WIFI_EventCb(system_event_id_t event);
 
 void WIFI_Init(void)
 {
+    wl_status_t wifiStatus;
     // char apSSID[32];
     // char apPass[63];
     // char mac[6];
@@ -65,11 +66,11 @@ void WIFI_Init(void)
 
     // preferences.end();
 
-    WiFi.mode(WIFI_AP_STA); //Both hotspot and client are enabled
+    // WiFi.mode(WIFI_AP_STA); //Both hotspot and client are enabled
     // WiFi.onEvent(WIFI_EventCb, SYSTEM_EVENT_MAX);
     // const IPAddress apIP = IPAddress(192, 168, 5, 1);
-    WiFi.begin((char *)WIFI_SSID, (char *)WIFI_Password);
-    WiFi.waitForConnectResult();
+
+    // WiFi.waitForConnectResult();
     // WiFi.mode(WIFI_AP);
     // WiFi.softAPConfig(IPAddress(192, 168, 178, 1), IPAddress(192, 168, 178, 1), IPAddress(255, 255, 255, 0));
     if (!WiFi.softAP("OBD DONGLE", "password1"))
@@ -84,7 +85,10 @@ void WIFI_Init(void)
 
     // Serial.println(WiFi.softAPIPv6().toString());
 
-    // vTaskDelay(500 / portTICK_PERIOD_MS);
+    vTaskDelay(50 / portTICK_PERIOD_MS);
+    wifiStatus = WiFi.begin((char *)WIFI_SSID, (char *)WIFI_Password);
+    Serial.print("WIFI begin status: ");
+    Serial.println(wifiStatus);
 
     // if (!MDNS.begin("esp32"))
     // {
@@ -284,7 +288,7 @@ void WIFI_Task(void *pvParameters)
             }
             else
             {
-                WiFi.reconnect();
+                // WiFi.reconnect();
                 LED_SetLedState(WIFI_CONN_LED, GPIO_STATE_TOGGLE, GPIO_TOGGLE_1HZ);
             }
         }
