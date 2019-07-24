@@ -24,7 +24,7 @@
       $('#refresh').click(function() {
         $.post("fsread", {}, function(result) {
           $('table').children('tbody').empty();
-          $.each($.parseJSON(result).data, function(key, value) {
+          $.each(result.data, function(key, value) {
             if(value != 'end')
             {
               $('table').children('tbody').append('<tr><th scope="row">'+ key+'</th><td>'+value.replace('/','')+'</td>'+'<td><button type="button" id="delete" class="btn btn-danger">Delete</button></td></tr>');

@@ -30,21 +30,21 @@ void CAN_Init(void)
     //Install CAN driver
     if (can_driver_install(&CAN_g_config, &CAN_t_config, &CAN_f_config) == ESP_OK)
     {
-        // ESP_LOGI("CAN", "Driver installed");
+        Serial.println("CAN Driver installed");
     }
     else
     {
-        ESP_LOGE("CAN", "Failed to install driver");
+        Serial.println("CAN driver Failed to install");
     }
 
     //Start CAN driver
     if (can_start() == ESP_OK)
     {
-        // ESP_LOGI("CAN", "Driver started");
+        Serial.println("CAN Driver started");
     }
     else
     {
-        ESP_LOGE("CAN", "Failed to start driver");
+        Serial.println("CAN driver failed to start");
     }
 }
 
@@ -59,11 +59,11 @@ void CAN_DeInit(void)
     //Start CAN driver
     if (can_stop() == ESP_OK)
     {
-        // ESP_LOGI("CAN", "Driver stopped");
+        Serial.println("CAN Driver stopped");
     }
     else
     {
-        ESP_LOGE("CAN", "Failed to stop driver");
+        Serial.println("CAN driver Failed to stop");
     }
 
     // while (can_receive(&message, 0) == ESP_OK);
@@ -75,11 +75,11 @@ void CAN_DeInit(void)
     //Uninstall CAN driver
     if (can_driver_uninstall() == ESP_OK)
     {
-        // ESP_LOGI("CAN", "Driver uninstalled");
+        Serial.println("CAN Driver uninstalled");
     }
     else
     {
-        ESP_LOGE("CAN", "Failed to uninstall driver");
+        Serial.println("CAN driver failed to uninstall");
     }
 }
 
@@ -197,33 +197,33 @@ void CAN_Task(void *pvParameters)
 
     while (1)
     {
-        if (CAN_CmdQueue != NULL)
-        {
-            if (xQueueReceive(CAN_CmdQueue, (void *)&canCmd, portMAX_DELAY) == pdPASS)
-            {
-                switch (canCmd.cmd)
-                {
-                case 0:
-                    CAN_Init();
-                    break;
+        // if (CAN_CmdQueue != NULL)
+        // {
+        //     if (xQueueReceive(CAN_CmdQueue, (void *)&canCmd, portMAX_DELAY) == pdPASS)
+        //     {
+        //         switch (canCmd.cmd)
+        //         {
+        //         case 0:
+        //             CAN_Init();
+        //             break;
 
-                case 1:
-                    CAN_DeInit();
-                    break;
+        //         case 1:
+        //             CAN_DeInit();
+        //             break;
 
-                case 2:
-                    extId = canCmd.data & 0x80000000 ? true : false;
-                    acceptanceCode = canCmd.data & 0x40000000 ? 0xFFFFFFFF : canCmd.data & 0x1FFFFFFF;
-                    CAN_ConfigFilterterMask(acceptanceCode, extId);
-                    break;
+        //         case 2:
+        //             extId = canCmd.data & 0x80000000 ? true : false;
+        //             acceptanceCode = canCmd.data & 0x40000000 ? 0xFFFFFFFF : canCmd.data & 0x1FFFFFFF;
+        //             CAN_ConfigFilterterMask(acceptanceCode, extId);
+        //             break;
 
-                case 3:
-                    baud = (CAN_speed_t)canCmd.data;
-                    CAN_SetBaud(baud);
-                    break;
-                }
-            }
-        }
+        //         case 3:
+        //             baud = (CAN_speed_t)canCmd.data;
+        //             CAN_SetBaud(baud);
+        //             break;
+        //         }
+        //     }
+        // }
         // message.identifier = 0xAAAA;
         // message.flags = CAN_MSG_FLAG_EXTD;
         // message.data_length_code = 4;
@@ -270,7 +270,7 @@ void CAN_Task(void *pvParameters)
         // {
         // }
 
-        // vTaskDelay(5 / portTICK_PERIOD_MS);
+        vTaskDelay(100 / portTICK_PERIOD_MS);
     }
 }
 

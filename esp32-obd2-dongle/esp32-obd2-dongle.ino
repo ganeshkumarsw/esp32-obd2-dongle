@@ -22,7 +22,7 @@ void setup()
   // disableCore0WDT();
   // disableCore1WDT();
 
-  if (xTaskCreate(CreateTask_Task, "CreateTask_Task", 2000, NULL, tskIDLE_PRIORITY + 4, NULL) != pdTRUE)
+  if (xTaskCreate(CreateTask_Task, "CreateTask_Task", 2000, NULL, tskIDLE_PRIORITY + 10, NULL) != pdTRUE)
   {
     configASSERT(0);
   }
@@ -50,7 +50,7 @@ void CreateTask_Task(void *pvParameters)
     configASSERT(0);
   }
 
-  if (xTaskCreate(WIFI_Task, "WIFI_Task", 30000, NULL, tskIDLE_PRIORITY + 3, NULL) != pdTRUE)
+  if (xTaskCreate(WIFI_Task, "WIFI_Task", 30000, NULL, tskIDLE_PRIORITY + 9, NULL) != pdTRUE)
   {
     configASSERT(0);
   }

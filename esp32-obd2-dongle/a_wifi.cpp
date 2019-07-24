@@ -66,7 +66,7 @@ void WIFI_Init(void)
 
     // preferences.end();
 
-    // WiFi.mode(WIFI_AP_STA); //Both hotspot and client are enabled
+    WiFi.mode(WIFI_AP_STA); //Both hotspot and client are enabled
     // WiFi.onEvent(WIFI_EventCb, SYSTEM_EVENT_MAX);
     // const IPAddress apIP = IPAddress(192, 168, 5, 1);
 
@@ -85,7 +85,7 @@ void WIFI_Init(void)
 
     // Serial.println(WiFi.softAPIPv6().toString());
 
-    vTaskDelay(50 / portTICK_PERIOD_MS);
+    // vTaskDelay(50 / portTICK_PERIOD_MS);
     wifiStatus = WiFi.begin((char *)WIFI_SSID, (char *)WIFI_Password);
     Serial.print("WIFI begin status: ");
     Serial.println(wifiStatus);
@@ -122,11 +122,12 @@ void WIFI_Init(void)
             {
                 p_WebSocketClient = client;
                 APP_ProcessData(&data[11], (len - 13), APP_CHANNEL_WEB_SOC);
-                Serial.println("Data received: ");
+                Serial.print("Data received: ");
 
                 for (int i = 0; i < len; i++)
                 {
-                    Serial.print((char)data[i]);
+                    Serial.print((char)data[i], HEX);
+                    Serial.print(' ');
                 }
                 Serial.println();
             }
@@ -174,7 +175,7 @@ void WIFI_Init(void)
                 }
 
                 json = json + "\"end\"]}";
-                request->send(200, "text/plain", json);
+                request->send(200, "application/json", json);
             });
 
         HttpServer.on(
@@ -283,12 +284,13 @@ void WIFI_Task(void *pvParameters)
         {
             if (WiFi.status() == WL_CONNECTED)
             {
-                ESP_LOGI("WIFI", "WiFi connected; IP address: %s", WiFi.localIP().toString().c_str());
+                Serial.printf("WiFi connected, IP address: %s", WiFi.localIP().toString().c_str());
                 LED_SetLedState(WIFI_CONN_LED, GPIO_STATE_HIGH, GPIO_TOGGLE_NONE);
             }
-            else
+            else if (WiFi.status() == WL_DISCONNECTED)
             {
                 // WiFi.reconnect();
+                Serial.println("WiFi Disconnected");
                 LED_SetLedState(WIFI_CONN_LED, GPIO_STATE_TOGGLE, GPIO_TOGGLE_1HZ);
             }
         }
