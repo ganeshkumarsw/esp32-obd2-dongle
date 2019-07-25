@@ -50,12 +50,12 @@ void CreateTask_Task(void *pvParameters)
     configASSERT(0);
   }
 
-  if (xTaskCreate(WIFI_Task, "WIFI_Task", 30000, NULL, tskIDLE_PRIORITY + 9, NULL) != pdTRUE)
+  if (xTaskCreate(WIFI_Task, "WIFI_Task", 30000, NULL, tskIDLE_PRIORITY + 4, NULL) != pdTRUE)
   {
     configASSERT(0);
   }
 
-  if (xTaskCreate(APP_Task, "APP_Task", 15000, NULL, tskIDLE_PRIORITY + 2, NULL) != pdTRUE)
+  if (xTaskCreate(APP_Task, "APP_Task", 15000, NULL, tskIDLE_PRIORITY + 3, NULL) != pdTRUE)
   {
     configASSERT(0);
   }
@@ -75,7 +75,7 @@ void CreateTask_Task(void *pvParameters)
   //   configASSERT(0);
   // }
 
-  if (xTaskCreate(CAN_Task, "CAN_Task", 10000, NULL, tskIDLE_PRIORITY + 2, NULL) != pdTRUE)
+  if (xTaskCreate(CAN_Task, "CAN_Task", 10000, NULL, tskIDLE_PRIORITY + 5, NULL) != pdTRUE)
   {
     configASSERT(0);
   }

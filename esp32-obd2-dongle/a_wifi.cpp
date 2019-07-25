@@ -4,7 +4,6 @@
 #include "util.h"
 #include <WiFi.h>
 #include "SPIFFS.h"
-#include "ESPmDNS.h"
 #include <ArduinoJson.h>
 #include "ESPAsyncWebServer.h"
 #include "app.h"
@@ -185,8 +184,15 @@ void WIFI_Init(void)
                 request->send(200);
             });
 
-        HttpServer.on("/fsexplorer", HTTP_GET, [](AsyncWebServerRequest *request) {
-            AsyncWebServerResponse *response = request->beginResponse(SPIFFS, "/fsexplorer.html.gz", "text/html");
+        HttpServer.on(
+            "/tasklist",
+            HTTP_POST,
+            [](AsyncWebServerRequest *request) {
+                request->send(200, "text/plain", "Hello");
+            });
+
+        HttpServer.on("/explorer", HTTP_GET, [](AsyncWebServerRequest *request) {
+            AsyncWebServerResponse *response = request->beginResponse(SPIFFS, "/explorer.html.gz", "text/html");
             response->addHeader("Content-Encoding", "gzip");
             request->send(response);
         });

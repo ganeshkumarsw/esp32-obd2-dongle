@@ -2,7 +2,7 @@
 <html lang="en">
 
 <head>
-  <title>Dongle File Explorer</title>
+  <title>Dongle Explorer</title>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" href="bootstrap.min.css">
@@ -20,22 +20,29 @@
         modal.find('.modal-title').text('New message to ' + recipient)
         modal.find('.modal-body input').val(recipient)
       });
-      
-      $('#refresh').click(function() {
-        $.post("fsread", {}, function(result) {
+
+      $('#refresh').click(function () {
+        $.post("fsread", {}, function (result) {
           $('table').children('tbody').empty();
-          $.each(result.data, function(key, value) {
-            if(value != 'end')
-            {
-              $('table').children('tbody').append('<tr><th scope="row">'+ key+'</th><td>'+value.replace('/','')+'</td>'+'<td><button type="button" id="delete" class="btn btn-danger">Delete</button></td></tr>');
+          $.each(result.data, function (key, value) {
+            if (value != 'end') {
+              $('table').children('tbody').append('<tr><th scope="row">' + key + '</th><td>' + value.replace('/', '') + '</td>' + '<td><button type="button" id="delete" class="btn btn-danger">Delete</button></td></tr>');
             }
           });
         });
       });
 
-      $('tbody').on('click', 'button', function(event) {
-        $.post("fsdelete", {file:$(this).parents()[1].children[1].innerHTML}, function(result) {
-          });
+      $('#task').click(function () {
+        $.post("tasklist", {}, function (result) {
+          $('table').children('tbody').empty();
+          $('table').children('tbody').append(result);
+
+        });
+      });
+
+      $('tbody').on('click', 'button', function (event) {
+        $.post("fsdelete", { file: $(this).parents()[1].children[1].innerHTML }, function (result) {
+        });
       });
     });
   </script>
@@ -61,8 +68,10 @@
     </nav>
   </div>
   <div>
-    <button type="button" id="add" class="mt-2 mb-2 btn btn-success float-right" data-toggle="modal" data-target="#exampleModal" data-whatever="@mdo">Add</button>
+    <button type="button" id="add" class="mt-2 mb-2 btn btn-success float-right" data-toggle="modal"
+      data-target="#exampleModal" data-whatever="@mdo">Add</button>
     <button type="button" id="refresh" class="mt-2 mb-2 mr-2 btn btn-primary float-right">Refresh</button>
+    <button type="button" id="task" class="mt-2 mb-2 mr-2 btn btn-primary float-right">Task</button>
   </div>
   <div class="table-responsive-sm">
     <table class="table table-hover">
@@ -78,7 +87,8 @@
     </table>
   </div>
 
-  <div class="modal fade" id="exampleModal" tabindex="-1" data-backdrop="static" data-keyboard="false" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+  <div class="modal fade" id="exampleModal" tabindex="-1" data-backdrop="static" data-keyboard="false" role="dialog"
+    aria-labelledby="exampleModalLabel" aria-hidden="true">
     <div class="modal-dialog" role="document">
       <div class="modal-content">
         <div class="modal-header">

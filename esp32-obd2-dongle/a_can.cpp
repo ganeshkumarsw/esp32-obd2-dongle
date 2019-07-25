@@ -1,6 +1,197 @@
 #include <Arduino.h>
-#include "esp_task_wdt.h"
+#include <ESP32CAN.h>
+#include <CAN_config.h>
 #include "a_can.h"
+
+#if 1
+// Create a queue capable of containing 10 uint32_t values.
+QueueHandle_t CAN_CmdQueue;
+typedef struct CAN_Cmd
+{
+    uint8_t cmd;
+    uint32_t data;
+} CAN_Cmd_t;
+
+CAN_device_t CAN_cfg;             // CAN Config
+const int CAN_rx_queue_size = 10; // Receive Queue size
+
+void CAN_Init(void)
+{
+    CAN_filter_t p_filter;
+
+    CAN_cfg.speed = CAN_SPEED_500KBPS;
+    CAN_cfg.tx_pin_id = GPIO_NUM_5;
+    CAN_cfg.rx_pin_id = GPIO_NUM_4;
+    CAN_cfg.rx_queue = xQueueCreate(CAN_rx_queue_size, sizeof(CAN_frame_t));
+
+    // Set CAN Filter
+    // See in the SJA1000 Datasheet chapter "6.4.15 Acceptance filter"
+    // and the APPLICATION NOTE AN97076 chapter "4.1.2 Acceptance Filter"
+    // for PeliCAN Mode
+    p_filter.FM = Single_Mode;
+
+    p_filter.ACR0 = 0;
+    p_filter.ACR1 = 0;
+    p_filter.ACR2 = 0;
+    p_filter.ACR3 = 0;
+
+    p_filter.AMR0 = 0xFF;
+    p_filter.AMR1 = 0xFF;
+    p_filter.AMR2 = 0xFF;
+    p_filter.AMR3 = 0xFF;
+    ESP32Can.CANConfigFilter(&p_filter);
+
+    // Init CAN Module
+    ESP32Can.CANInit();
+}
+
+void CAN_SetBaud(CAN_speed_t speed)
+{
+    ESP32Can.CANStop();
+    CAN_cfg.speed = speed;
+
+    // Init CAN Module
+    ESP32Can.CANInit();
+}
+
+void CAN_ConfigFilterterMask(uint32_t acceptance_code, bool extId)
+{
+    uint32_t acceptance_mask;
+
+#define byte(x, y) ((uint8_t)(x >> (y * 8)))
+    CAN_filter_t p_filter;
+
+    ESP32Can.CANStop();
+
+    if (acceptance_code == 0xFFFFFFFF)
+    {
+        // No filter
+        acceptance_mask = 0xFFFFFFFF;
+        acceptance_code = 0;
+    }
+    else
+    {
+        if (extId == true)
+        {
+            acceptance_code = (acceptance_code << (32 - 29));
+            acceptance_mask = ~(CAN_EXTD_ID_MASK << (32 - 29));
+        }
+        else
+        {
+            acceptance_code = (acceptance_code << (32 - 11));
+            acceptance_mask = ~(CAN_STD_ID_MASK << (32 - 11));
+        }
+    }
+
+    p_filter.FM = Single_Mode;
+
+    p_filter.ACR0 = byte(acceptance_code, 3);
+    p_filter.ACR1 = byte(acceptance_code, 2);
+    p_filter.ACR2 = byte(acceptance_code, 1);
+    p_filter.ACR3 = byte(acceptance_code, 0);
+
+    p_filter.AMR0 = byte(acceptance_mask, 3);
+    p_filter.AMR1 = byte(acceptance_mask, 2);
+    p_filter.AMR2 = byte(acceptance_mask, 1);
+    p_filter.AMR3 = byte(acceptance_mask, 0);
+    ESP32Can.CANConfigFilter(&p_filter);
+
+    // Init CAN Module
+    ESP32Can.CANInit();
+}
+
+esp_err_t CAN_ReadFrame(CAN_frame_t *frame, TickType_t ticks_to_wait)
+{
+    esp_err_t status;
+
+    if (xQueueReceive(CAN_cfg.rx_queue, frame, ticks_to_wait) == pdTRUE)
+    {
+        status = ESP_OK;
+    }
+    else
+    {
+        status = ESP_FAIL;
+    }
+
+    return status;
+}
+
+esp_err_t CAN_WriteFrame(CAN_frame_t *frame, TickType_t ticks_to_wait)
+{
+    esp_err_t status;
+
+    ESP32Can.CANWriteFrame(frame);
+
+    return ESP_OK;
+}
+
+void CAN_Task(void *pvParameters)
+{
+    UBaseType_t uxHighWaterMark;
+    //Configure message to transmit
+    can_message_t message;
+    CAN_Cmd_t canCmd;
+    CAN_speed_t baud;
+    bool extId;
+    uint32_t acceptanceCode;
+
+    ESP_LOGI("CAN", "Task Started");
+
+    uxHighWaterMark = uxTaskGetStackHighWaterMark(NULL);
+    ESP_LOGI("CAN", "uxHighWaterMark = %d", uxHighWaterMark);
+
+    CAN_CmdQueue = xQueueCreate(10, sizeof(CAN_Cmd_t));
+    if (CAN_CmdQueue == NULL)
+    {
+        ESP_LOGE("CAN", "Failed to create queue message for command");
+    }
+
+    CAN_Init();
+
+    while (1)
+    {
+        if (CAN_CmdQueue != NULL)
+        {
+            if (xQueueReceive(CAN_CmdQueue, (void *)&canCmd, portMAX_DELAY) == pdPASS)
+            {
+                switch (canCmd.cmd)
+                {
+                case 0:
+                    CAN_Init();
+                    break;
+
+                case 1:
+                    // CAN_DeInit();
+                    break;
+
+                case 2:
+                    extId = canCmd.data & 0x80000000 ? true : false;
+                    acceptanceCode = canCmd.data & 0x40000000 ? 0xFFFFFFFF : canCmd.data & 0x1FFFFFFF;
+                    CAN_ConfigFilterterMask(acceptanceCode, extId);
+                    break;
+
+                case 3:
+                    baud = (CAN_speed_t)canCmd.data;
+                    CAN_SetBaud(baud);
+                    break;
+                }
+            }
+        }
+
+        vTaskDelay(100 / portTICK_PERIOD_MS);
+    }
+}
+
+void CAN_SendCmd(uint8_t cmd, uint32_t data)
+{
+    CAN_Cmd_t canCmd = {.cmd = cmd, .data = data};
+
+    if (xQueueSend(CAN_CmdQueue, (void *)&canCmd, (TickType_t)(10 / portTICK_PERIOD_MS)) != pdPASS)
+    {
+        ESP_LOGE("CAN", "Failed to queue message for command");
+    }
+}
+#else
 
 // Create a queue capable of containing 10 uint32_t values.
 QueueHandle_t CAN_CmdQueue;
@@ -197,33 +388,33 @@ void CAN_Task(void *pvParameters)
 
     while (1)
     {
-        // if (CAN_CmdQueue != NULL)
-        // {
-        //     if (xQueueReceive(CAN_CmdQueue, (void *)&canCmd, portMAX_DELAY) == pdPASS)
-        //     {
-        //         switch (canCmd.cmd)
-        //         {
-        //         case 0:
-        //             CAN_Init();
-        //             break;
+        if (CAN_CmdQueue != NULL)
+        {
+            if (xQueueReceive(CAN_CmdQueue, (void *)&canCmd, portMAX_DELAY) == pdPASS)
+            {
+                switch (canCmd.cmd)
+                {
+                case 0:
+                    CAN_Init();
+                    break;
 
-        //         case 1:
-        //             CAN_DeInit();
-        //             break;
+                case 1:
+                    CAN_DeInit();
+                    break;
 
-        //         case 2:
-        //             extId = canCmd.data & 0x80000000 ? true : false;
-        //             acceptanceCode = canCmd.data & 0x40000000 ? 0xFFFFFFFF : canCmd.data & 0x1FFFFFFF;
-        //             CAN_ConfigFilterterMask(acceptanceCode, extId);
-        //             break;
+                case 2:
+                    extId = canCmd.data & 0x80000000 ? true : false;
+                    acceptanceCode = canCmd.data & 0x40000000 ? 0xFFFFFFFF : canCmd.data & 0x1FFFFFFF;
+                    CAN_ConfigFilterterMask(acceptanceCode, extId);
+                    break;
 
-        //         case 3:
-        //             baud = (CAN_speed_t)canCmd.data;
-        //             CAN_SetBaud(baud);
-        //             break;
-        //         }
-        //     }
-        // }
+                case 3:
+                    baud = (CAN_speed_t)canCmd.data;
+                    CAN_SetBaud(baud);
+                    break;
+                }
+            }
+        }
         // message.identifier = 0xAAAA;
         // message.flags = CAN_MSG_FLAG_EXTD;
         // message.data_length_code = 4;
@@ -283,3 +474,5 @@ void CAN_SendCmd(uint8_t cmd, uint32_t data)
         ESP_LOGE("CAN", "Failed to queue message for command");
     }
 }
+
+#endif

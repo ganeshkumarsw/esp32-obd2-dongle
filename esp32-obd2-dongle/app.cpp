@@ -107,8 +107,8 @@ void APP_Init(void)
 void APP_Task(void *pvParameters)
 {
     UBaseType_t uxHighWaterMark;
-    can_message_t rx_frame;
-    can_message_t tx_frame;
+    CAN_frame_t rx_frame;
+    CAN_frame_t tx_frame;
     uint16_t frameCount = 0;
     uint8_t respType;
     uint8_t respNo;
@@ -138,9 +138,9 @@ void APP_Task(void *pvParameters)
     {
         vTaskDelay(1 / portTICK_PERIOD_MS);
 
-        tx_frame.identifier = APP_CAN_TxId;
-        tx_frame.flags = APP_CAN_TxIdType;
-        // tx_frame.data_length_code = 5 + 1;
+        tx_frame.MsgID = APP_CAN_TxId;
+        tx_frame.FIR.B.FF = (CAN_frame_format_t)APP_CAN_TxIdType;
+        // tx_frame.FIR.B.DLC = 5 + 1;
 
         // CAN_WriteFrame(&tx_frame, pdMS_TO_TICKS(10));
 
@@ -212,8 +212,8 @@ void APP_Task(void *pvParameters)
 
         if (APP_SecurityChk == true)
         {
-            tx_frame.identifier = APP_CAN_TxId;
-            tx_frame.flags = APP_CAN_TxIdType;
+            tx_frame.MsgID = APP_CAN_TxId;
+            tx_frame.FIR.B.FF = (CAN_frame_format_t)APP_CAN_TxIdType;
 
             switch (APP_CAN_Protocol)
             {
@@ -229,16 +229,16 @@ void APP_Task(void *pvParameters)
                         switch (APP_ISO_State)
                         {
                         case APP_ISO_STATE_SINGLE:
-                            tx_frame.data_length_code = APP_CAN_TxDataLen + 1;
-                            tx_frame.data[0] = 0x0F & (tx_frame.data_length_code - 1);
-                            memcpy((uint8_t *)&tx_frame.data[1], &APP_RxBuff[0], (tx_frame.data_length_code - 1));
+                            tx_frame.FIR.B.DLC = APP_CAN_TxDataLen + 1;
+                            tx_frame.data.u8[0] = 0x0F & (tx_frame.FIR.B.DLC - 1);
+                            memcpy((uint8_t *)&tx_frame.data.u8[1], &APP_RxBuff[0], (tx_frame.FIR.B.DLC - 1));
 
-                            if ((tx_frame.data_length_code < 8) && (APP_CAN_PaddingByte & 0x0100))
+                            if ((tx_frame.FIR.B.DLC < 8) && (APP_CAN_PaddingByte & 0x0100))
                             {
-                                memset(((uint8_t *)&tx_frame.data[0] + tx_frame.data_length_code),
+                                memset(((uint8_t *)&tx_frame.data.u8[0] + tx_frame.FIR.B.DLC),
                                        (uint8_t)APP_CAN_PaddingByte,
-                                       (8 - tx_frame.data_length_code));
-                                tx_frame.data_length_code = 8;
+                                       (8 - tx_frame.FIR.B.DLC));
+                                tx_frame.FIR.B.DLC = 8;
                             }
 
                             canFrameSend = true;
@@ -250,12 +250,12 @@ void APP_Task(void *pvParameters)
                             break;
 
                         case APP_ISO_STATE_FIRST:
-                            tx_frame.data_length_code = 8;
-                            tx_frame.data[0] = (0x0F & (uint8_t)(APP_CAN_TxDataLen >> 8)) | 0x10;
-                            tx_frame.data[1] = (uint8_t)APP_CAN_TxDataLen;
-                            memcpy((uint8_t *)&tx_frame.data[2], &APP_RxBuff[APP_BuffTxIndex], (tx_frame.data_length_code - 2));
-                            APP_BuffTxIndex = APP_BuffTxIndex + (tx_frame.data_length_code - 2);
-                            APP_CAN_TxDataLen = APP_CAN_TxDataLen - (tx_frame.data_length_code - 2);
+                            tx_frame.FIR.B.DLC = 8;
+                            tx_frame.data.u8[0] = (0x0F & (uint8_t)(APP_CAN_TxDataLen >> 8)) | 0x10;
+                            tx_frame.data.u8[1] = (uint8_t)APP_CAN_TxDataLen;
+                            memcpy((uint8_t *)&tx_frame.data.u8[2], &APP_RxBuff[APP_BuffTxIndex], (tx_frame.FIR.B.DLC - 2));
+                            APP_BuffTxIndex = APP_BuffTxIndex + (tx_frame.FIR.B.DLC - 2);
+                            APP_CAN_TxDataLen = APP_CAN_TxDataLen - (tx_frame.FIR.B.DLC - 2);
                             APP_ISO_FC_WaitTmr = (xTaskGetTickCount() / portTICK_PERIOD_MS) + APP_ISO_FC_WAIT_TIME;
                             canFrameSend = true;
                             APP_ISO_TxBlockCounter = 0;
@@ -268,17 +268,17 @@ void APP_Task(void *pvParameters)
                             {
                                 if (APP_CAN_TxDataLen >= 7)
                                 {
-                                    tx_frame.data_length_code = 8;
+                                    tx_frame.FIR.B.DLC = 8;
                                 }
                                 else
                                 {
-                                    tx_frame.data_length_code = APP_CAN_TxDataLen + 1;
+                                    tx_frame.FIR.B.DLC = APP_CAN_TxDataLen + 1;
                                 }
 
-                                tx_frame.data[0] = (0x0F & APP_ISO_TxFrameCounter) | 0x20;
-                                memcpy((uint8_t *)&tx_frame.data[1], &APP_RxBuff[APP_BuffTxIndex], (tx_frame.data_length_code - 1));
-                                APP_BuffTxIndex = APP_BuffTxIndex + (tx_frame.data_length_code - 1);
-                                APP_CAN_TxDataLen = APP_CAN_TxDataLen - (tx_frame.data_length_code - 1);
+                                tx_frame.data.u8[0] = (0x0F & APP_ISO_TxFrameCounter) | 0x20;
+                                memcpy((uint8_t *)&tx_frame.data.u8[1], &APP_RxBuff[APP_BuffTxIndex], (tx_frame.FIR.B.DLC - 1));
+                                APP_BuffTxIndex = APP_BuffTxIndex + (tx_frame.FIR.B.DLC - 1);
+                                APP_CAN_TxDataLen = APP_CAN_TxDataLen - (tx_frame.FIR.B.DLC - 1);
                                 APP_ISO_TxFrameCounter++;
                                 APP_ISO_TxBlockCounter++;
                                 canFrameSend = true;
@@ -297,12 +297,12 @@ void APP_Task(void *pvParameters)
 
                                 if (APP_CAN_TxDataLen == 0)
                                 {
-                                    if ((tx_frame.data_length_code < 8) && (APP_CAN_PaddingByte & 0x0100))
+                                    if ((tx_frame.FIR.B.DLC < 8) && (APP_CAN_PaddingByte & 0x0100))
                                     {
-                                        memset(((uint8_t *)&tx_frame.data[0] + tx_frame.data_length_code),
+                                        memset(((uint8_t *)&tx_frame.data.u8[0] + tx_frame.FIR.B.DLC),
                                                (uint8_t)APP_CAN_PaddingByte,
-                                               (8 - tx_frame.data_length_code));
-                                        tx_frame.data_length_code = 8;
+                                               (8 - tx_frame.FIR.B.DLC));
+                                        tx_frame.FIR.B.DLC = 8;
                                     }
 
                                     APP_BuffTxIndex = 0;
@@ -395,20 +395,20 @@ void APP_Task(void *pvParameters)
                         ((CAN_ReadFrame(&rx_frame, pdMS_TO_TICKS(0)) == ESP_OK) &&
                          // (rx_frame.identifier == APP_CAN_FilterId) &&
                          // (rx_frame.flags == APP_CAN_FilterIdType) &&
-                         (rx_frame.flags != CAN_MSG_FLAG_RTR)))
+                         (rx_frame.FIR.B.RTR == CAN_no_RTR)))
                     {
                         APP_CAN_COMM_Flag = true;
-                        isoFrameType = rx_frame.data[0] >> 4;
+                        isoFrameType = rx_frame.data.u8[0] >> 4;
 
                         switch (isoFrameType)
                         {
                         case APP_ISO_TYPE_SINGLE:
                             respLen = 0;
                             respBuff[respLen++] = 0x40;
-                            respBuff[respLen++] = ((rx_frame.data[0] & 0x0F) + 2);
+                            respBuff[respLen++] = ((rx_frame.data.u8[0] & 0x0F) + 2);
 
-                            memcpy(&respBuff[respLen], &rx_frame.data[1], (rx_frame.data[0] & 0x0F));
-                            respLen += (rx_frame.data[0] & 0x0F);
+                            memcpy(&respBuff[respLen], &rx_frame.data.u8[1], (rx_frame.data.u8[0] & 0x0F));
+                            respLen += (rx_frame.data.u8[0] & 0x0F);
 
                             if (cb_APP_Send[APP_Channel] != NULL)
                             {
@@ -425,31 +425,31 @@ void APP_Task(void *pvParameters)
                             if ((APP_BuffLockedBy == APP_BUFF_LOCKED_BY_NONE) && (APP_BuffDataRdyFlag == false))
                             {
                                 APP_BuffLockedBy = APP_BUFF_LOCKED_BY_ISO_TP_RX_FF;
-                                APP_CAN_RxDataLen = ((uint16_t)(0x0F & rx_frame.data[0]) << 8) | (uint16_t)rx_frame.data[1];
+                                APP_CAN_RxDataLen = ((uint16_t)(0x0F & rx_frame.data.u8[0]) << 8) | (uint16_t)rx_frame.data.u8[1];
                                 APP_BuffRxIndex = 0;
-                                memcpy(&APP_RxBuff[APP_BuffRxIndex], &rx_frame.data[2], 6);
+                                memcpy(&APP_RxBuff[APP_BuffRxIndex], &rx_frame.data.u8[2], 6);
                                 APP_BuffRxIndex = APP_BuffRxIndex + 6;
                                 APP_RxResp_tmeOutTmr = (xTaskGetTickCount() / portTICK_PERIOD_MS) + APP_CAN_RqRspMaxTime;
-                                tx_frame.data[0] = 0x30;
+                                tx_frame.data.u8[0] = 0x30;
                             }
                             else
                             {
                                 // wait buffer is busy
-                                tx_frame.data[0] = 0x31;
+                                tx_frame.data.u8[0] = 0x31;
                             }
 
-                            tx_frame.identifier = APP_CAN_TxId;
-                            tx_frame.flags = APP_CAN_TxIdType;
-                            tx_frame.data_length_code = 3;
-                            tx_frame.data[1] = APP_ISO_FC_RxBlockSize;
-                            tx_frame.data[2] = APP_ISO_FC_RxSepTime;
+                            tx_frame.MsgID = APP_CAN_TxId;
+                            tx_frame.FIR.B.FF = (CAN_frame_format_t)APP_CAN_TxIdType;
+                            tx_frame.FIR.B.DLC = 3;
+                            tx_frame.data.u8[1] = APP_ISO_FC_RxBlockSize;
+                            tx_frame.data.u8[2] = APP_ISO_FC_RxSepTime;
 
-                            if ((tx_frame.data_length_code < 8) && (APP_CAN_PaddingByte & 0x0100))
+                            if ((tx_frame.FIR.B.DLC < 8) && (APP_CAN_PaddingByte & 0x0100))
                             {
-                                memset(((uint8_t *)&tx_frame.data[0] + tx_frame.data_length_code),
+                                memset(((uint8_t *)&tx_frame.data.u8[0] + tx_frame.FIR.B.DLC),
                                        (uint8_t)APP_CAN_PaddingByte,
-                                       (8 - tx_frame.data_length_code));
-                                tx_frame.data_length_code = 8;
+                                       (8 - tx_frame.FIR.B.DLC));
+                                tx_frame.FIR.B.DLC = 8;
                             }
                             canFrameSend = true;
                             break;
@@ -459,8 +459,8 @@ void APP_Task(void *pvParameters)
                             if (APP_BuffLockedBy == APP_BUFF_LOCKED_BY_ISO_TP_RX_FF)
                             {
                                 APP_RxResp_tmeOutTmr = (xTaskGetTickCount() / portTICK_PERIOD_MS) + APP_CAN_RqRspMaxTime;
-                                memcpy(&APP_RxBuff[APP_BuffRxIndex], &rx_frame.data[1], rx_frame.data_length_code - 1);
-                                APP_BuffRxIndex = APP_BuffRxIndex + (rx_frame.data_length_code - 1);
+                                memcpy(&APP_RxBuff[APP_BuffRxIndex], &rx_frame.data.u8[1], rx_frame.FIR.B.DLC - 1);
+                                APP_BuffRxIndex = APP_BuffRxIndex + (rx_frame.FIR.B.DLC - 1);
                                 APP_ISO_RxBlockCounter++;
 
                                 if (APP_BuffRxIndex >= APP_CAN_RxDataLen)
@@ -473,30 +473,30 @@ void APP_Task(void *pvParameters)
                                 else if ((APP_ISO_FC_RxBlockSize) && (APP_ISO_RxBlockCounter == APP_ISO_FC_RxBlockSize))
                                 {
                                     APP_ISO_RxBlockCounter = 0;
-                                    tx_frame.identifier = APP_CAN_TxId;
-                                    tx_frame.flags = APP_CAN_TxIdType;
-                                    tx_frame.data_length_code = 3;
-                                    tx_frame.data[0] = 0x30;
-                                    tx_frame.data[1] = APP_ISO_FC_RxBlockSize;
-                                    tx_frame.data[2] = APP_ISO_FC_RxSepTime;
+                                    tx_frame.MsgID = APP_CAN_TxId;
+                                    tx_frame.FIR.B.FF = (CAN_frame_format_t)APP_CAN_TxIdType;
+                                    tx_frame.FIR.B.DLC = 3;
+                                    tx_frame.data.u8[0] = 0x30;
+                                    tx_frame.data.u8[1] = APP_ISO_FC_RxBlockSize;
+                                    tx_frame.data.u8[2] = APP_ISO_FC_RxSepTime;
                                     canFrameSend = true;
                                 }
                             }
                             break;
 
                         case APP_ISO_TYPE_FLOWCONTROL:
-                            APP_ISO_FC_TxFlag = rx_frame.data[0] & 0x0F;
-                            APP_ISO_FC_TxBlockSize = rx_frame.data[1];
+                            APP_ISO_FC_TxFlag = rx_frame.data.u8[0] & 0x0F;
+                            APP_ISO_FC_TxBlockSize = rx_frame.data.u8[1];
 
-                            if (rx_frame.data[2] <= 127)
+                            if (rx_frame.data.u8[2] <= 127)
                             {
-                                // if(rx_frame.data[2] == 0)
+                                // if(rx_frame.data.u8[2] == 0)
                                 // {
                                 //     APP_ISO_TxSepTime = 1;
                                 // }
                                 // else
                                 {
-                                    APP_ISO_TxSepTime = rx_frame.data[2];
+                                    APP_ISO_TxSepTime = rx_frame.data.u8[2];
                                 }
                             }
                             else
@@ -547,17 +547,17 @@ void APP_Task(void *pvParameters)
 
             if (rx_frame.flags & CAN_MSG_FLAG_RTR)
             {
-                printf(" RTR from 0x%08x, DLC %d\r\n", rx_frame.identifier, rx_frame.data_length_code);
+                printf(" RTR from 0x%08x, DLC %d\r\n", rx_frame.identifier, rx_frame.FIR.B.DLC);
             }
             else
             {
-                printf(" from 0x%08x, DLC %d\n", rx_frame.identifier, rx_frame.data_length_code);
+                printf(" from 0x%08x, DLC %d\n", rx_frame.identifier, rx_frame.FIR.B.DLC);
                 // convert to upper case and respond to sender
                 for (int i = 0; i < 8; i++)
                 {
-                    if (rx_frame.data[i] >= 'a' && rx_frame.data[i] <= 'z')
+                    if (rx_frame.data.u8[i] >= 'a' && rx_frame.data.u8[i] <= 'z')
                     {
-                        rx_frame.data[i] = rx_frame.data[i] - 32;
+                        rx_frame.data.u8[i] = rx_frame.data.u8[i] - 32;
                     }
                 }
             }
@@ -924,12 +924,12 @@ void APP_Frame2(uint8_t *p_buff, uint16_t len, uint8_t channel)
         case STXHDR:
             if (len == 3)
             {
-                APP_CAN_TxIdType = CAN_MSG_FLAG_NONE; // Standard frame
+                APP_CAN_TxIdType = (uint8_t)CAN_frame_std; // Standard frame
                 APP_CAN_TxId = ((uint32_t)p_buff[1] << 8) | (uint32_t)p_buff[2];
             }
             else if (len == 5)
             {
-                APP_CAN_TxIdType = CAN_MSG_FLAG_EXTD;
+                APP_CAN_TxIdType = (uint8_t)CAN_frame_ext;
                 APP_CAN_TxId = ((uint32_t)p_buff[1] << 24) | ((uint32_t)p_buff[2] << 16) | ((uint32_t)p_buff[3] << 8) | (uint32_t)p_buff[4];
             }
             else
