@@ -22,6 +22,7 @@
     input {
       font-family:'consolas', Segoe UI, Tahoma, Geneva, Verdana, sans-serif;
     }
+}
   </style>
 
   <script src="jquery.min.js"></script>
@@ -79,17 +80,26 @@
 </head>
 
 <body class="m-2" height="auto">
-  <label for="send" class="col-form-label">Send:</label>
-  <div class="input-group">
-    <input type="text" class="form-control" id="send" placeholder="Send">
-    <div class="input-group-append ml=2">
-      <button class="btn btn-success" type="submit">Go</button>
+<div class="d-flex">
+    <input type="text" class="form-control mr-sm-2" id="send" placeholder="Send application level protocol command, starting with command ID">
+  <button type="submit" class="btn btn-success">Send</button>
     </div>
-  </div>
+	
+	<div class="d-inline-flex mt-2">
+  <select class="custom-select p-6 pl-2" id="inlineFormCustomSelectPref">
+    <option selected>Baud...</option>
+    <option value="1">1000Kbps</option>
+    <option value="2">500Kbps</option>
+    <option value="3">250Kbps</option>
+  </select>
+
+  
+</div>
   <div class="form-group">
     <label for="response" class="col-form-label">Message:</label>
     <textarea class="form-control" id="response"></textarea>
   </div>
+
 </body>
 
 </html>

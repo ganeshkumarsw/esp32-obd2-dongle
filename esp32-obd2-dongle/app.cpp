@@ -15,7 +15,7 @@ static void APP_Frame2(uint8_t *p_buff, uint16_t len, uint8_t channel);
 static void APP_Frame3(uint8_t *p_buff, uint16_t len, uint8_t channel);
 static void APP_Frame4(uint8_t *p_buff, uint16_t len, uint8_t channel);
 static void APP_Frame5(uint8_t *p_buff, uint16_t len, uint8_t channel);
-static void APP_SendRespToFrame(uint8_t respType, uint8_t nackNo, uint8_t *p_buff, uint16_t dataLen, uint8_t channel, bool cache);
+static void APP_SendRespToFrame(uint8_t respType, uint8_t APP_RESP_nackNo, uint8_t *p_buff, uint16_t dataLen, uint8_t channel, bool cache);
 
 void (*cb_APP_FrameType[])(uint8_t *, uint16_t, uint8_t) =
     {
@@ -120,8 +120,8 @@ void APP_Task(void *pvParameters)
     uint8_t delay;
     uint16_t crc16;
 
-    respType = ACK;
-    respNo = ACK;
+    respType = APP_RESP_ACK;
+    respNo = APP_RESP_ACK;
     respLen = 0;
     canFrameSend = false;
     delay = 0;
@@ -530,46 +530,9 @@ void APP_Task(void *pvParameters)
                 break;
             }
         }
-#if 0
-        //receive next CAN frame from queue
-        if (CAN_ReadFrame(&rx_frame, pdMS_TO_TICKS(5)) == ESP_OK)
-        {
-            //printf("%d", frameCount++);
-            //do stuff!
-            if (rx_frame.flags & CAN_MSG_FLAG_EXTD)
-            {
-                printf("New extended frame");
-            }
-            else
-            {
-                printf("New standard frame");
-            }
-
-            if (rx_frame.flags & CAN_MSG_FLAG_RTR)
-            {
-                printf(" RTR from 0x%08x, DLC %d\r\n", rx_frame.identifier, rx_frame.FIR.B.DLC);
-            }
-            else
-            {
-                printf(" from 0x%08x, DLC %d\n", rx_frame.identifier, rx_frame.FIR.B.DLC);
-                // convert to upper case and respond to sender
-                for (int i = 0; i < 8; i++)
-                {
-                    if (rx_frame.data.u8[i] >= 'a' && rx_frame.data.u8[i] <= 'z')
-                    {
-                        rx_frame.data.u8[i] = rx_frame.data.u8[i] - 32;
-                    }
-                }
-            }
-
-            //respond to sender
-            CAN_WriteFrame(&rx_frame, pdMS_TO_TICKS(10));
-        }
-#endif
     }
 }
 
-#if 1
 void APP_ProcessData(uint8_t *p_buff, uint16_t len, APP_CHANNEL_t channel)
 {
     uint8_t frameType;
@@ -584,8 +547,8 @@ void APP_ProcessData(uint8_t *p_buff, uint16_t len, APP_CHANNEL_t channel)
     APP_Client_COMM_Flag = true;
 
     respLen = 0;
-    respType = ACK;
-    respNo = ACK;
+    respType = APP_RESP_ACK;
+    respNo = APP_RESP_ACK;
 
     // Serial.println(String("Data Received from channel ") + String(channel));
 
@@ -626,21 +589,21 @@ void APP_ProcessData(uint8_t *p_buff, uint16_t len, APP_CHANNEL_t channel)
                         }
                         else
                         {
-                            respType = NACK;
-                            respNo = NACK33;
+                            respType = APP_RESP_NACK;
+                            respNo = APP_RESP_NACK33;
                         }
                     }
                 }
                 else
                 {
-                    respType = NACK;
-                    respNo = NACK10;
+                    respType = APP_RESP_NACK;
+                    respNo = APP_RESP_NACK10;
                 }
             }
             else
             {
-                respType = NACK;
-                respNo = NACK15;
+                respType = APP_RESP_NACK;
+                respNo = APP_RESP_NACK15;
 
                 respBuff[respLen++] = crc16Act >> 8;
                 respBuff[respLen++] = crc16Act;
@@ -650,20 +613,20 @@ void APP_ProcessData(uint8_t *p_buff, uint16_t len, APP_CHANNEL_t channel)
         }
         else
         {
-            respType = NACK;
+            respType = APP_RESP_NACK;
             // Invalid format or incorrect message length of input
-            respNo = NACK13;
+            respNo = APP_RESP_NACK13;
         }
 
         APP_ProcDataBusyFlag = false;
     }
     else
     {
-        respType = NACK;
-        respNo = NACK14;
+        respType = APP_RESP_NACK;
+        respNo = APP_RESP_NACK14;
     }
 
-    if (respType != ACK)
+    if (respType != APP_RESP_ACK)
     {
         APP_SendRespToFrame(respType, respNo, respBuff, respLen, (uint8_t)channel, false);
     }
@@ -681,8 +644,8 @@ void APP_Frame0(uint8_t *p_buff, uint16_t len, uint8_t channel)
     uint16_t respLen;
     uint8_t respBuff[50];
 
-    respType = ACK;
-    respNo = ACK;
+    respType = APP_RESP_ACK;
+    respNo = APP_RESP_ACK;
     respLen = 0;
 
     if ((APP_BuffLockedBy == APP_BUFF_LOCKED_BY_NONE) && (APP_BuffDataRdyFlag == false))
@@ -693,8 +656,8 @@ void APP_Frame0(uint8_t *p_buff, uint16_t len, uint8_t channel)
 
         if (APP_CAN_TxDataLen > 4095)
         {
-            respType = NACK;
-            respNo = NACK13;
+            respType = APP_RESP_NACK;
+            respNo = APP_RESP_NACK13;
             APP_BuffLockedBy = APP_BUFF_LOCKED_BY_NONE;
         }
         else
@@ -706,8 +669,8 @@ void APP_Frame0(uint8_t *p_buff, uint16_t len, uint8_t channel)
     }
     else
     {
-        respType = NACK;
-        respNo = NACK14;
+        respType = APP_RESP_NACK;
+        respNo = APP_RESP_NACK14;
     }
 
     respBuff[respLen++] = APP_BuffRxIndex >> 8;
@@ -728,8 +691,8 @@ void APP_Frame1(uint8_t *p_buff, uint16_t len, uint8_t channel)
     uint16_t respLen;
     uint8_t respBuff[50];
 
-    respType = ACK;
-    respNo = ACK;
+    respType = APP_RESP_ACK;
+    respNo = APP_RESP_ACK;
     respLen = 0;
 
     if ((APP_BuffLockedBy == APP_BUFF_LOCKED_BY_FRAME0) && (APP_BuffDataRdyFlag == false))
@@ -769,16 +732,16 @@ void APP_Frame1(uint8_t *p_buff, uint16_t len, uint8_t channel)
         }
         else
         {
-            respType = NACK;
-            respNo = NACK13;
+            respType = APP_RESP_NACK;
+            respNo = APP_RESP_NACK13;
             APP_BuffRxIndex = 0;
             APP_BuffLockedBy = APP_BUFF_LOCKED_BY_NONE;
         }
     }
     else
     {
-        respType = NACK;
-        respNo = NACK14;
+        respType = APP_RESP_NACK;
+        respNo = APP_RESP_NACK14;
         APP_BuffRxIndex = 0;
         APP_BuffLockedBy = APP_BUFF_LOCKED_BY_NONE;
     }
@@ -804,8 +767,8 @@ void APP_Frame2(uint8_t *p_buff, uint16_t len, uint8_t channel)
     bool canFilterMask;
 
     canFilterMask = true;
-    respType = ACK;
-    respNo = ACK;
+    respType = APP_RESP_ACK;
+    respNo = APP_RESP_ACK;
     respLen = 0;
     offset = 0;
 
@@ -813,25 +776,25 @@ void APP_Frame2(uint8_t *p_buff, uint16_t len, uint8_t channel)
     {
         switch (p_buff[0])
         {
-        case RSTVC:
+        case APP_REQ_CMD_RSTVC:
             if (len != 1)
             {
-                respType = NACK;
-                respNo = NACK13;
+                respType = APP_RESP_NACK;
+                respNo = APP_RESP_NACK13;
                 break;
             }
 
-            APP_CAN_Baud = CAN_SPEED_1000KBPS;
+            APP_CAN_Baud = CAN_SPEED_500KBPS;
             APP_CAN_Protocol = APP_CAN_PROTOCOL_NONE;
             // Reset or disable CAN
-            // CAN_DeInit();
+            CAN_DeInit();
             break;
 
-        case SPRCOL:
+        case APP_REQ_CMD_SPRCOL:
             if (len != 2)
             {
-                respType = NACK;
-                respNo = NACK13;
+                respType = APP_RESP_NACK;
+                respNo = APP_RESP_NACK13;
                 break;
             }
 
@@ -856,8 +819,8 @@ void APP_Frame2(uint8_t *p_buff, uint16_t len, uint8_t channel)
             }
             else
             {
-                respType = NACK;
-                respNo = NACK12;
+                respType = APP_RESP_NACK;
+                respNo = APP_RESP_NACK12;
             }
 
             if ((p_buff[1] - offset) < 2)
@@ -870,13 +833,13 @@ void APP_Frame2(uint8_t *p_buff, uint16_t len, uint8_t channel)
             }
             else if ((p_buff[1] - offset) < 6)
             {
-                respType = NACK;
-                respNo = NACK12;
+                respType = APP_RESP_NACK;
+                respNo = APP_RESP_NACK12;
             }
             else
             {
-                respType = NACK;
-                respNo = NACK12;
+                respType = APP_RESP_NACK;
+                respNo = APP_RESP_NACK12;
             }
 
             if ((p_buff[1] - offset) % 2)
@@ -888,7 +851,7 @@ void APP_Frame2(uint8_t *p_buff, uint16_t len, uint8_t channel)
                 APP_CAN_TxIdType = CAN_MSG_FLAG_NONE; // Standard frame;
             }
 
-            if (respType == ACK)
+            if (respType == APP_RESP_ACK)
             {
                 APP_CAN_RqRspMaxTime = 500;
                 APP_CAN_TxMinTime = 10;
@@ -902,18 +865,18 @@ void APP_Frame2(uint8_t *p_buff, uint16_t len, uint8_t channel)
                 APP_CAN_RxDataLen = 0;
                 APP_BuffDataRdyFlag = false;
                 APP_BuffLockedBy = APP_BUFF_LOCKED_BY_NONE;
-                // CAN_SetBaud(APP_CAN_Baud);
-                // CAN_ConfigFilterterMask(0xFFFFFFFF, true);
-                CAN_SendCmd(3, APP_CAN_Baud);
-                CAN_SendCmd(2, 0xFFFFFFFF);
+                CAN_SetBaud(APP_CAN_Baud);
+                CAN_ConfigFilterterMask(0xFFFFFFFF, true);
+                // CAN_SendCmd(3, APP_CAN_Baud);
+                // CAN_SendCmd(2, 0xFFFFFFFF);
             }
             break;
 
-        case GPRCOL:
+        case APP_REQ_CMD_GPRCOL:
             if (len != 1)
             {
-                respType = NACK;
-                respNo = NACK13;
+                respType = APP_RESP_NACK;
+                respNo = APP_RESP_NACK13;
                 break;
             }
 
@@ -921,7 +884,7 @@ void APP_Frame2(uint8_t *p_buff, uint16_t len, uint8_t channel)
             respLen = 1;
             break;
 
-        case STXHDR:
+        case APP_REQ_CMD_STXHDR:
             if (len == 3)
             {
                 APP_CAN_TxIdType = (uint8_t)CAN_frame_std; // Standard frame
@@ -934,16 +897,16 @@ void APP_Frame2(uint8_t *p_buff, uint16_t len, uint8_t channel)
             }
             else
             {
-                respType = NACK;
-                respNo = NACK13;
+                respType = APP_RESP_NACK;
+                respNo = APP_RESP_NACK13;
             }
             break;
 
-        case GTXHDR:
+        case APP_REQ_CMD_GTXHDR:
             if (len != 1)
             {
-                respType = NACK;
-                respNo = NACK13;
+                respType = APP_RESP_NACK;
+                respNo = APP_RESP_NACK13;
                 break;
             }
 
@@ -964,7 +927,7 @@ void APP_Frame2(uint8_t *p_buff, uint16_t len, uint8_t channel)
             }
             break;
 
-        case SRXHDRMSK:
+        case APP_REQ_CMD_SRXHDRMSK:
             if (len == 3)
             {
                 APP_CAN_FilterIdType = CAN_MSG_FLAG_NONE; // Standard frame
@@ -977,21 +940,21 @@ void APP_Frame2(uint8_t *p_buff, uint16_t len, uint8_t channel)
             }
             else
             {
-                respType = NACK;
-                respNo = NACK13;
+                respType = APP_RESP_NACK;
+                respNo = APP_RESP_NACK13;
                 break;
             }
 
-            // CAN_ConfigFilterterMask(APP_CAN_FilterId, (bool)APP_CAN_FilterIdType);
-            APP_CAN_FilterId = APP_CAN_FilterIdType? APP_CAN_FilterId | 0x80000000: APP_CAN_FilterId;
-            CAN_SendCmd(2, APP_CAN_FilterId);
+            CAN_ConfigFilterterMask(APP_CAN_FilterId, (bool)APP_CAN_FilterIdType);
+            // APP_CAN_FilterId = APP_CAN_FilterIdType? APP_CAN_FilterId | 0x80000000: APP_CAN_FilterId;
+            // CAN_SendCmd(2, APP_CAN_FilterId);
             break;
 
-        case GRXHDRMSK:
+        case APP_REQ_CMD_GRXHDRMSK:
             if (len != 1)
             {
-                respType = NACK;
-                respNo = NACK13;
+                respType = APP_RESP_NACK;
+                respNo = APP_RESP_NACK13;
                 break;
             }
 
@@ -1012,22 +975,22 @@ void APP_Frame2(uint8_t *p_buff, uint16_t len, uint8_t channel)
             }
             break;
 
-        case SFCBLKL:
+        case APP_REQ_CMD_SFCBLKL:
             if (len != 2)
             {
-                respType = NACK;
-                respNo = NACK13;
+                respType = APP_RESP_NACK;
+                respNo = APP_RESP_NACK13;
                 break;
             }
 
             APP_ISO_FC_RxBlockSize = p_buff[1];
             break;
 
-        case GFCBLKL:
+        case APP_REQ_CMD_GFCBLKL:
             if (len != 1)
             {
-                respType = NACK;
-                respNo = NACK13;
+                respType = APP_RESP_NACK;
+                respNo = APP_RESP_NACK13;
                 break;
             }
 
@@ -1035,22 +998,22 @@ void APP_Frame2(uint8_t *p_buff, uint16_t len, uint8_t channel)
             respLen = 1;
             break;
 
-        case SFCST:
+        case APP_REQ_CMD_SFCST:
             if (len != 2)
             {
-                respType = NACK;
-                respNo = NACK13;
+                respType = APP_RESP_NACK;
+                respNo = APP_RESP_NACK13;
                 break;
             }
 
             APP_ISO_FC_RxSepTime = p_buff[1];
             break;
 
-        case GFCST:
+        case APP_REQ_CMD_GFCST:
             if (len != 1)
             {
-                respType = NACK;
-                respNo = NACK13;
+                respType = APP_RESP_NACK;
+                respNo = APP_RESP_NACK13;
                 break;
             }
 
@@ -1058,22 +1021,22 @@ void APP_Frame2(uint8_t *p_buff, uint16_t len, uint8_t channel)
             respLen = 1;
             break;
 
-        case SETP1MIN:
+        case APP_REQ_CMD_SETP1MIN:
             if (len != 2)
             {
-                respType = NACK;
-                respNo = NACK13;
+                respType = APP_RESP_NACK;
+                respNo = APP_RESP_NACK13;
                 break;
             }
 
             APP_CAN_TxMinTime = p_buff[1];
             break;
 
-        case GETP1MIN:
+        case APP_REQ_CMD_GETP1MIN:
             if (len != 1)
             {
-                respType = NACK;
-                respNo = NACK13;
+                respType = APP_RESP_NACK;
+                respNo = APP_RESP_NACK13;
                 break;
             }
 
@@ -1081,22 +1044,22 @@ void APP_Frame2(uint8_t *p_buff, uint16_t len, uint8_t channel)
             respLen = 1;
             break;
 
-        case SETP2MAX:
+        case APP_REQ_CMD_SETP2MAX:
             if (len != 3)
             {
-                respType = NACK;
-                respNo = NACK13;
+                respType = APP_RESP_NACK;
+                respNo = APP_RESP_NACK13;
                 break;
             }
 
             APP_CAN_RqRspMaxTime = ((uint16_t)p_buff[1] << 8) | (uint16_t)p_buff[2];
             break;
 
-        case GETP2MAX:
+        case APP_REQ_CMD_GETP2MAX:
             if (len != 1)
             {
-                respType = NACK;
-                respNo = NACK13;
+                respType = APP_RESP_NACK;
+                respNo = APP_RESP_NACK13;
                 break;
             }
 
@@ -1105,55 +1068,55 @@ void APP_Frame2(uint8_t *p_buff, uint16_t len, uint8_t channel)
             respLen = 2;
             break;
 
-        case TXTP:
+        case APP_REQ_CMD_TXTP:
             if (len != 1)
             {
-                respType = NACK;
-                respNo = NACK13;
+                respType = APP_RESP_NACK;
+                respNo = APP_RESP_NACK13;
                 break;
             }
 
             APP_CAN_TransmitTstrMsg = true;
             break;
 
-        case STPTXTP:
+        case APP_REQ_CMD_STPTXTP:
             if (len != 1)
             {
-                respType = NACK;
-                respNo = NACK13;
+                respType = APP_RESP_NACK;
+                respNo = APP_RESP_NACK13;
                 break;
             }
 
             APP_CAN_TransmitTstrMsg = false;
             break;
 
-        case TXPAD:
+        case APP_REQ_CMD_TXPAD:
             if (len != 2)
             {
-                respType = NACK;
-                respNo = NACK13;
+                respType = APP_RESP_NACK;
+                respNo = APP_RESP_NACK13;
                 break;
             }
 
             APP_CAN_PaddingByte = 0x0100 | (uint16_t)p_buff[1];
             break;
 
-        case STPTXPAD:
+        case APP_REQ_CMD_STPTXPAD:
             if (len != 1)
             {
-                respType = NACK;
-                respNo = NACK13;
+                respType = APP_RESP_NACK;
+                respNo = APP_RESP_NACK13;
                 break;
             }
 
             APP_CAN_PaddingByte = 0x0000;
             break;
 
-        case GETFWVER:
+        case APP_REQ_CMD_GETFWVER:
             if (len != 1)
             {
-                respType = NACK;
-                respNo = NACK13;
+                respType = APP_RESP_NACK;
+                respNo = APP_RESP_NACK13;
                 break;
             }
 
@@ -1164,15 +1127,15 @@ void APP_Frame2(uint8_t *p_buff, uint16_t len, uint8_t channel)
             break;
 
         default:
-            respType = NACK;
-            respNo = NACK10;
+            respType = APP_RESP_NACK;
+            respNo = APP_RESP_NACK10;
             break;
         }
     }
     else
     {
-        respType = NACK;
-        respNo = NACK13;
+        respType = APP_RESP_NACK;
+        respNo = APP_RESP_NACK13;
     }
 
     APP_SendRespToFrame(respType, respNo, respBuff, respLen, channel, false);
@@ -1199,8 +1162,8 @@ void APP_Frame4(uint8_t *p_buff, uint16_t len, uint8_t channel)
     uint16_t respLen;
     uint8_t respBuff[50];
 
-    respType = ACK;
-    respNo = ACK;
+    respType = APP_RESP_ACK;
+    respNo = APP_RESP_ACK;
     respLen = 0;
 
     if ((APP_BuffLockedBy == APP_BUFF_LOCKED_BY_NONE) && (APP_BuffDataRdyFlag == false))
@@ -1232,15 +1195,15 @@ void APP_Frame4(uint8_t *p_buff, uint16_t len, uint8_t channel)
         }
         else
         {
-            respType = NACK;
-            respNo = NACK13;
+            respType = APP_RESP_NACK;
+            respNo = APP_RESP_NACK13;
             APP_BuffRxIndex = 0;
         }
     }
     else
     {
-        respType = NACK;
-        respNo = NACK14;
+        respType = APP_RESP_NACK;
+        respNo = APP_RESP_NACK14;
         APP_BuffRxIndex = 0;
     }
 
@@ -1252,8 +1215,8 @@ void APP_Frame5(uint8_t *p_buff, uint16_t len, uint8_t channel)
     uint8_t respType;
     uint8_t respNo;
 
-    respType = ACK;
-    respNo = ACK;
+    respType = APP_RESP_ACK;
+    respNo = APP_RESP_ACK;
 
     if (len != sizeof(APP_SecuityCode))
     {
@@ -1275,14 +1238,14 @@ void APP_Frame5(uint8_t *p_buff, uint16_t len, uint8_t channel)
 
     if (APP_SecurityChk == false)
     {
-        respType = NACK;
-        respNo = NACK35;
+        respType = APP_RESP_NACK;
+        respNo = APP_RESP_NACK35;
     }
 
     APP_SendRespToFrame(respType, respNo, NULL, 0, channel, false);
 }
 
-void APP_SendRespToFrame(uint8_t respType, uint8_t nackNo, uint8_t *p_buff, uint16_t dataLen, uint8_t channel, bool cache)
+void APP_SendRespToFrame(uint8_t respType, uint8_t APP_RESP_nackNo, uint8_t *p_buff, uint16_t dataLen, uint8_t channel, bool cache)
 {
     uint8_t len;
     uint8_t buff[30];
@@ -1295,7 +1258,7 @@ void APP_SendRespToFrame(uint8_t respType, uint8_t nackNo, uint8_t *p_buff, uint
     {
         buff[len++] = 2 + 2;
         buff[len++] = respType;
-        buff[len++] = nackNo;
+        buff[len++] = APP_RESP_nackNo;
     }
     else
     {
@@ -1320,4 +1283,3 @@ void APP_SendRespToFrame(uint8_t respType, uint8_t nackNo, uint8_t *p_buff, uint
         cb_APP_Send[channel](buff, len);
     }
 }
-#endif

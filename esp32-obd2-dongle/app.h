@@ -7,46 +7,52 @@ extern "C" {
 
 #define APP_ISO_FC_WAIT_TIME 10000
 
-#define RSTVC 1
-#define SPRCOL 2
-#define GPRCOL 3
-#define STXHDR 4
-#define GTXHDR 5
-#define SRXHDRMSK 6
-#define GRXHDRMSK 7
-#define SFCBLKL 8
-#define GFCBLKL 9
-#define SFCST 10
-#define GFCST 11
-#define SETP1MIN 12
-#define GETP1MIN 13
-#define SETP2MAX 14
-#define GETP2MAX 15
-#define TXTP 16
-#define STPTXTP 17
-#define TXPAD 18
-#define STPTXPAD 19
-#define GETFWVER 20
+typedef enum
+{
+    APP_REQ_CMD_RSTVC       = 1,
+    APP_REQ_CMD_SPRCOL      = 2,
+    APP_REQ_CMD_GPRCOL      = 3,
+    APP_REQ_CMD_STXHDR      = 4,
+    APP_REQ_CMD_GTXHDR      = 5,
+    APP_REQ_CMD_SRXHDRMSK   = 6,
+    APP_REQ_CMD_GRXHDRMSK   = 7,
+    APP_REQ_CMD_SFCBLKL     = 8,
+    APP_REQ_CMD_GFCBLKL     = 9,
+    APP_REQ_CMD_SFCST       = 10,
+    APP_REQ_CMD_GFCST       = 11,
+    APP_REQ_CMD_SETP1MIN    = 12,
+    APP_REQ_CMD_GETP1MIN    = 13,
+    APP_REQ_CMD_SETP2MAX    = 14,
+    APP_REQ_CMD_GETP2MAX    = 15,
+    APP_REQ_CMD_TXTP        = 16,
+    APP_REQ_CMD_STPTXTP     = 17,
+    APP_REQ_CMD_TXPAD       = 18,
+    APP_REQ_CMD_STPTXPAD    = 19,
+    APP_REQ_CMD_GETFWVER    = 20,
+    APP_REQ_CMD_GETSFR      = 21,
+}APP_REQ_CMD_t;
 
-//typedef void (*cb_APP_FrameType)(uint8_t *, uint16_t);
-
-#define ACK 0       // Positive Response
-#define NACK 1      // Negative Response
-#define NACK10 0x10 // Command Not Supported
-#define NACK12 0x12 // Input Not supported
-#define NACK13 0x13 // Invalid format or incorrect message length of input
-#define NACK14 0x14 // Invalid operation
-#define NACK15 0x15 // CRC failure
-#define NACK22 0x22 // Conditions not correct
-#define NACK31 0x31 // Request out of range
-#define NACK33 0x33 // security access denied
-#define NACK78 0x78 // response pending
-#define NACK24 0x24 // request sequence error
-#define NACK35 0x35 // Invalid Key
-#define NACK36 0x36 // exceeded number of attempts
-#define NACK37 0x37 // required time delay not expired
-#define NACK72 0x72 // General programming failure
-#define NACK7E 0x7E // sub fn not supported in this diag session
+typedef enum
+{
+    APP_RESP_ACK     = 0x00, // Positive Response
+    APP_RESP_NACK    = 0x01, // Negative Response
+    APP_RESP_NACK_10  = 0x10,	// Command Not Supported
+    APP_RESP_NACK_12  = 0x12,	// Input Not supported
+    APP_RESP_NACK_13  = 0x13,	// Invalid format or incorrect message length of input
+    APP_RESP_NACK_14  = 0x14,	// Invalid operation
+    APP_RESP_NACK_15  = 0x15,	// CRC failure
+    APP_RESP_NACK_16  = 0x16,	// Protocol not set
+    APP_RESP_NACK_22  = 0x22,	// Conditions not correct
+    APP_RESP_NACK_31  = 0x31,	// Request out of range
+    APP_RESP_NACK_33  = 0x33,	// security access denied
+    APP_RESP_NACK_78  = 0x78,	// response pending
+    APP_RESP_NACK_24  = 0x24,	// request sequence error
+    APP_RESP_NACK_35  = 0x35,	// Invalid Key
+    APP_RESP_NACK_36  = 0x36,	// exceeded number of attempts
+    APP_RESP_NACK_37  = 0x37,	// required time delay not expired
+    APP_RESP_NACK_72  = 0x72,	// General programming failure
+    APP_RESP_NACK_7E  = 0x7E,	// sub fn not supported in this diag session
+}APP_RESP_t;
 
 typedef enum
 {
