@@ -120,6 +120,7 @@ void WIFI_Init(void)
             else if (type == WS_EVT_DATA)
             {
                 p_WebSocketClient = client;
+                WIFI_SeqNo = data[0];
                 APP_ProcessData(&data[11], (len - 13), APP_CHANNEL_WEB_SOC);
                 Serial.print("Data received: ");
 
@@ -319,7 +320,7 @@ void WIFI_Soc_Write(uint8_t *payLoad, uint16_t len)
     if (!WIFI_TxLen)
     {
         idx = 0;
-        if ((payLoad[0] & 0x20) == 0x20)
+        if ((payLoad[0] & 0xF0) == 0x20)
         {
             WIFI_TxBuff[idx++] = WIFI_SeqNo;
         }
@@ -343,6 +344,7 @@ void WIFI_Soc_Write(uint8_t *payLoad, uint16_t len)
         WIFI_TxBuff[idx++] = byte(crc16, 1);
         WIFI_TxBuff[idx++] = byte(crc16, 0);
         WIFI_TxLen = idx;
+        WIFI_SeqNo = 0xFE;
     }
 }
 
@@ -359,7 +361,7 @@ void WIFI_WebSoc_Write(uint8_t *payLoad, uint16_t len)
     if (!WIFI_TxLen)
     {
         idx = 0;
-        if ((payLoad[0] & 0x20) == 0x20)
+        if ((payLoad[0] & 0xF0) == 0x20)
         {
             WIFI_TxBuff[idx++] = WIFI_SeqNo;
         }
@@ -388,6 +390,7 @@ void WIFI_WebSoc_Write(uint8_t *payLoad, uint16_t len)
         {
             p_WebSocketClient->binary(WIFI_TxBuff, WIFI_TxLen);
             WIFI_TxLen = 0;
+            WIFI_SeqNo = 0xFE;
         }
     }
 }

@@ -34,32 +34,33 @@ void CAN_Init(void)
     if (CAN_cfg.tx_queue == NULL)
     {
         CAN_cfg.tx_queue = xQueueCreate(CAN_TX_QUEUE_SIZE, sizeof(CAN_frame_t));
+
+        // Set CAN Filter
+        // See in the SJA1000 Datasheet chapter "6.4.15 Acceptance filter"
+        // and the APPLICATION NOTE AN97076 chapter "4.1.2 Acceptance Filter"
+        // for PeliCAN Mode
+        filter = {
+            .FM = Single_Mode,
+            .ACR0 = 0,
+            .ACR1 = 0,
+            .ACR2 = 0,
+            .ACR3 = 0,
+            .AMR0 = 0xFF,
+            .AMR1 = 0xFF,
+            .AMR2 = 0xFF,
+            .AMR3 = 0xFF,
+        };
+
+        ESP32Can.CANConfigFilter(&filter);
     }
 
     if ((CAN_cfg.rx_queue == NULL) || (CAN_cfg.tx_queue == NULL))
     {
         Serial.println("CAN Failed to create queue message for either Rx / Tx");
     }
-    // Set CAN Filter
-    // See in the SJA1000 Datasheet chapter "6.4.15 Acceptance filter"
-    // and the APPLICATION NOTE AN97076 chapter "4.1.2 Acceptance Filter"
-    // for PeliCAN Mode
-    filter = {
-        .FM = Single_Mode,
-        .ACR0 = 0,
-        .ACR1 = 0,
-        .ACR2 = 0,
-        .ACR3 = 0,
-        .AMR0 = 0xFF,
-        .AMR1 = 0xFF,
-        .AMR2 = 0xFF,
-        .AMR3 = 0xFF,
-    };
-
-    ESP32Can.CANConfigFilter(&filter);
 
     // Init CAN Module
-    ESP32Can.CANInit();
+    // ESP32Can.CANInit();
 }
 
 void CAN_DeInit(void)
@@ -130,6 +131,7 @@ esp_err_t CAN_ReadFrame(CAN_frame_t *frame, TickType_t ticks_to_wait)
     if ((CAN_cfg.rx_queue != NULL) && (xQueueReceive(CAN_cfg.rx_queue, frame, ticks_to_wait) == pdTRUE))
     {
         status = ESP_OK;
+        Serial.println("CAN Read Rx queue success");
     }
     else
     {
@@ -145,14 +147,14 @@ esp_err_t CAN_WriteFrame(CAN_frame_t *frame, TickType_t ticks_to_wait)
 
     if (CAN_cfg.tx_queue == NULL)
     {
-        status = ESP_FAIL; 
+        status = ESP_FAIL;
     }
     else
     {
         if (xQueueSend(CAN_cfg.tx_queue, (void *)frame, (TickType_t)(5 / portTICK_PERIOD_MS)) != pdPASS)
         {
             Serial.println("CAN Failed to queue Tx message");
-            status = ESP_FAIL; 
+            status = ESP_FAIL;
         }
     }
 
@@ -182,11 +184,11 @@ void CAN_Task(void *pvParameters)
     //     ESP_LOGE("CAN", "Failed to create queue message for command");
     // }
 
-    // CAN_Init();
+    CAN_Init();
 
     while (1)
     {
-        if (CAN_TxQueue != NULL)
+        if (CAN_cfg.tx_queue != NULL)
         {
             if (xQueueReceive(CAN_cfg.tx_queue, (void *)&frame, portMAX_DELAY) == pdPASS)
             {
