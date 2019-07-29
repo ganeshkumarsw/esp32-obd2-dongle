@@ -2,7 +2,7 @@
 <html lang="en">
 
 <head>
-  <title>Dongle File Explorer</title>
+  <title>Dongle Terminal</title>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" href="bootstrap.min.css">
@@ -14,15 +14,15 @@
     }
 
     textarea {
-      font-family:'consolas', Segoe UI, Tahoma, Geneva, Verdana, sans-serif;
+      font-family: 'consolas', Segoe UI, Tahoma, Geneva, Verdana, sans-serif;
       min-height: 75vh;
       width: 100%;
     }
 
     input {
-      font-family:'consolas', Segoe UI, Tahoma, Geneva, Verdana, sans-serif;
+      font-family: 'consolas', Segoe UI, Tahoma, Geneva, Verdana, sans-serif;
     }
-}
+    }
   </style>
 
   <script src="jquery.min.js"></script>
@@ -71,7 +71,7 @@
         }
       }
 
-      $('button').click(function () { 
+      $('button').click(function () {
         socket.send(new Uint8Array($('#send').val().split(' ').map(bin => parseInt(bin, 16))));
       });
     });
@@ -80,23 +80,57 @@
 </head>
 
 <body class="m-2" height="auto">
-<div class="d-flex">
-    <input type="text" class="form-control mr-sm-2" id="send" placeholder="Send application level protocol command, starting with command ID">
-  <button type="submit" class="btn btn-success">Send</button>
-    </div>
-	
-	<div class="d-inline-flex mt-2">
-  <select class="custom-select p-6 pl-2" id="inlineFormCustomSelectPref">
-    <option selected>Baud...</option>
-    <option value="1">1000Kbps</option>
-    <option value="2">500Kbps</option>
-    <option value="3">250Kbps</option>
-  </select>
+  <div class="d-flex">
+    <input type="text" class="form-control mr-2" id="send"
+      placeholder="Send application level protocol command, starting with command ID in HEX">
+    <button type="submit" class="btn btn-success">Send</button>
+  </div>
 
-  
-</div>
+  <div class="d-xl-inline-flex mt-2">
+    <div>
+      <label class="pt-2 mr-2 font-weight-bold" for="can-protocol">Set CAN Protocol:</label>
+    </div>
+    <div>
+      <select class="custom-select p-6 pl-2" id="can-protocol">
+        <option value="0x00">ISO15765-250KB-11BIT-CAN</option>
+        <option value="0x01">ISO15765-250Kb-29BIT-CAN</option>
+        <option selected value="0x02">ISO15765-500KB-11BIT-CAN</option>
+        <option value="0x03">ISO15765-500KB-29BIT-CAN</option>
+        <option value="0x04">ISO15765-1MB-11BIT-CAN</option>
+        <option value="0x05">ISO15765-1MB-29BIT-CAN</option>
+        <option value="0x06">250KB-11BIT-CAN</option>
+        <option value="0x07">250Kb-29BIT-CAN</option>
+        <option value="0x08">500KB-11BIT-CAN</option>
+        <option value="0x09">500KB-29BIT-CAN</option>
+        <option value="0x0A">1MB-11BIT-CAN</option>
+        <option value="0x0B">1MB-29BIT-CAN</option>
+        <option value="0x0C">OE-IVN-250KBPS-11BIT-CAN</option>
+        <option value="0x0D">OE-IVN-250KBPS-29BIT-CAN</option>
+        <option value="0x0E">OE-IVN-500KBPS-11BIT-CAN</option>
+        <option value="0x0F">OE-IVN-500KBPS-29BIT-CAN</option>
+        <option value="0x10">OE-IVN-1MBPS-11BIT-CAN </option>
+        <option value="0x11">OE-IVN-1MBPS-29BIT-CAN </option>
+      </select>
+    </div>
+    <div>
+      <label class="pt-2 ml-2 mr-2 font-weight-bold" for="rx-can-id">Rx CAN ID:</label>
+    </div>
+    <div>
+      <input type="text" class="form-control mr-2" id="rx-can-id" placeholder="0x0000 or 00000 in HEX">
+    </div>
+    <div>
+      <label class="pt-2 ml-2 mr-2 font-weight-bold" for="tx-can-id">Tx CAN ID:</label>
+    </div>
+    <div>
+      <input type="text" class="form-control mr-2" id="tx-can-id" placeholder="0x0000 or 00000 in HEX">
+    </div>
+  </div>
+  <div class="d-flex">
+    <input type="text" class="form-control mt-2 mr-2" id="send" placeholder="Send CAN message in HEX">
+    <button type="submit" class="btn btn-success">Send</button>
+  </div>
   <div class="form-group">
-    <label for="response" class="col-form-label">Message:</label>
+    <label for="response" class="col-form-label font-weight-bold">Response:</label>
     <textarea class="form-control" id="response"></textarea>
   </div>
 
