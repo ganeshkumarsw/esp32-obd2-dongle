@@ -15,7 +15,7 @@
 
     textarea {
       font-family: 'consolas', Segoe UI, Tahoma, Geneva, Verdana, sans-serif;
-      min-height: 75vh;
+      min-height: 80vh;
       width: 100%;
     }
 
@@ -79,69 +79,77 @@
 
 </head>
 
-<body class="m-2" height="auto">
-  <div class="d-flex">
-    <input type="text" class="form-control mr-2" id="send"
-      placeholder="Send application level protocol command, starting with command ID in HEX">
-    <div> <button type="submit" id="btn1" class="btn btn-success">Send</button></div>
-  </div>
-
-  <div class="d-xl-flex">
-    <div class="d-flex mt-2 mr-2">
-      <div class="pt-2 mr-2 font-weight-bold" for="can-protocol">
-        CAN Protocol:
+<body>
+  <div class="container-fluid">
+    <div class="row mt-2">
+      <div class="col">
+        <input type="text" class="form-control" id="send"
+          placeholder="Send application level protocol command, starting with command ID in HEX">
       </div>
-      <div class="mr-2">
-        <select class="custom-select p-6 pl-2" id="can-protocol">
-          <option value="0x00">ISO15765-250KB-11BIT-CAN</option>
-          <option value="0x01">ISO15765-250Kb-29BIT-CAN</option>
-          <option selected value="0x02">ISO15765-500KB-11BIT-CAN</option>
-          <option value="0x03">ISO15765-500KB-29BIT-CAN</option>
-          <option value="0x04">ISO15765-1MB-11BIT-CAN</option>
-          <option value="0x05">ISO15765-1MB-29BIT-CAN</option>
-          <option value="0x06">250KB-11BIT-CAN</option>
-          <option value="0x07">250Kb-29BIT-CAN</option>
-          <option value="0x08">500KB-11BIT-CAN</option>
-          <option value="0x09">500KB-29BIT-CAN</option>
-          <option value="0x0A">1MB-11BIT-CAN</option>
-          <option value="0x0B">1MB-29BIT-CAN</option>
-          <option value="0x0C">OE-IVN-250KBPS-11BIT-CAN</option>
-          <option value="0x0D">OE-IVN-250KBPS-29BIT-CAN</option>
-          <option value="0x0E">OE-IVN-500KBPS-11BIT-CAN</option>
-          <option value="0x0F">OE-IVN-500KBPS-29BIT-CAN</option>
-          <option value="0x10">OE-IVN-1MBPS-11BIT-CAN </option>
-          <option value="0x11">OE-IVN-1MBPS-29BIT-CAN </option>
-        </select>
+      <div class="col* mr-3">
+        <button type="submit" id="btn1" class="btn btn-success">Send</button>
       </div>
-      <div class="mr-2"><button type="submit" id="btn2" class="btn btn-success">S</button> </div>
-      <div><button type="submit" id="btn3" class="btn btn-success">R</button> </div>
     </div>
-    <div class="d-flex mr-2 mt-2">
-      <div class="pt-2 mr-2 font-weight-bold" for="rx-can-id">Rx CAN ID:</div>
+    <div class="row">
 
-      <div class="mr-2"><input type="text" class="form-control mr-2" id="rx-can-id"
-          placeholder="0x0000 or 00000 in HEX"></div>
-      <div class="mr-2"> <button type="submit" id="btn4" class="btn btn-success">S</button></div>
-      <div><button type="submit" id="btn5" class="btn btn-success">R</button></div>
-    </div>
-
-    <div class="d-flex mt-2">
-      <div class="pt-2 mr-2 font-weight-bold" for="tx-can-id">Tx CAN ID:</div>
-      <div class="mr-2"><input type="text" class="form-control  mr-2" id="tx-can-id"
-          placeholder="0x0000 or 00000 in HEX"></div>
-      <div class="mr-2"><button type="submit" id="btn6" class="btn btn-success">S</button></div>
-      <div><button type="submit" id="btn7" class="btn btn-success">R</button></div>
+      <div class="col-xl  mt-2">
+        <div class="row">
+          <div class="col* ml-3 pt-2 mr-1 font-weight-bold" for="can-protocol">
+            CAN Protocol:
+          </div>
+          <div class="col p-0">
+            <select class="custom-select" id="can-protocol">
+              <option value="0x00">ISO15765-250KB-11BIT-CAN</option>
+              <option value="0x01">ISO15765-250Kb-29BIT-CAN</option>
+              <option selected value="0x02">ISO15765-500KB-11BIT-CAN</option>
+              <option value="0x03">ISO15765-500KB-29BIT-CAN</option>
+              <option value="0x04">ISO15765-1MB-11BIT-CAN</option>
+              <option value="0x05">ISO15765-1MB-29BIT-CAN</option>
+              <option value="0x06">250KB-11BIT-CAN</option>
+              <option value="0x07">250Kb-29BIT-CAN</option>
+              <option value="0x08">500KB-11BIT-CAN</option>
+              <option value="0x09">500KB-29BIT-CAN</option>
+              <option value="0x0A">1MB-11BIT-CAN</option>
+              <option value="0x0B">1MB-29BIT-CAN</option>
+              <option value="0x0C">OE-IVN-250KBPS-11BIT-CAN</option>
+              <option value="0x0D">OE-IVN-250KBPS-29BIT-CAN</option>
+              <option value="0x0E">OE-IVN-500KBPS-11BIT-CAN</option>
+              <option value="0x0F">OE-IVN-500KBPS-29BIT-CAN</option>
+              <option value="0x10">OE-IVN-1MBPS-11BIT-CAN </option>
+              <option value="0x11">OE-IVN-1MBPS-29BIT-CAN </option>
+            </select>
+          </div>
+          <div class=" col* ml-1 p-0"><button type="submit" id="btn2" class="btn btn-success">S</button> </div>
+          <div class=" col* ml-1 mr-3 p-0"><button type="submit" id="btn3" class="btn btn-success">R</button> </div>
+        </div>
+      </div>
+      <div class="col-xl mt-2">
+        <div class="row ml-0">
+          <div class="col* pt-2 mr-1 font-weight-bold" for="can-protocol">
+            Rx CAN ID:
+          </div>
+          <div class="col p-0">
+            <input type="text" class="form-control" id="rx-can-id" placeholder="0x0000 or 00000 in HEX">
+          </div>
+          <div class=" col* ml-1 p-0"><button type="submit" id="btn2" class="btn btn-success">S</button> </div>
+          <div class=" col* ml-1 mr-3 p-0"><button type="submit" id="btn3" class="btn btn-success">R</button> </div>
+        </div>
+      </div>
+      <div class="col-xl mt-2">
+        <div class="row ml-0">
+          <div class="col* pt-2 mr-1 font-weight-bold" for="can-protocol">
+            Tx CAN ID:
+          </div>
+          <div class="col p-0">
+            <input type="text" class="form-control" id="rx-can-id" placeholder="0x0000 or 00000 in HEX">
+          </div>
+          <div class=" col* ml-1 p-0"><button type="submit" id="btn2" class="btn btn-success">S</button> </div>
+          <div class=" col* ml-1 mr-3 p-0"><button type="submit" id="btn3" class="btn btn-success">R</button> </div>
+        </div>
+      </div>
     </div>
   </div>
-  <div class="d-flex mt-2">
-    <input type="text" class="form-control mr-2" id="send" placeholder="Send CAN message in HEX">
-    <button type="submit" id="btn8" class="btn btn-success">Send</button>
-  </div>
-  <div class="mt-2">
-    <label for="response" class="font-weight-bold">Response: </label>
-    <div class="d-flex"><textarea class="form-control" id="response"></textarea></div>
-  </div>
-
+  <textarea class="form-control" id="response"></textarea>
 </body>
 
 </html>
