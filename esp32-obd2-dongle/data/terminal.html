@@ -8,14 +8,8 @@
   <link rel="stylesheet" href="bootstrap.min.css">
   <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
   <style>
-    html,
-    body {
-      height: 100%;
-    }
-
     textarea {
       font-family: 'consolas', Segoe UI, Tahoma, Geneva, Verdana, sans-serif;
-      min-height: 80vh;
       width: 100%;
     }
 
@@ -30,7 +24,16 @@
   <script>
     $(document).ready(function () {
       var socket;
-      WebSocketTest();
+      var pro_seqnum = 0;
+      var pro_len = 0;
+      var pro_reservered = (new Date()).getTime();
+
+      function adjust() {
+        $('div textarea').css('height', window.innerHeight - parseInt($('div').css('height')) - 30);
+      }
+      adjust();
+      $(window).resize(adjust);
+      WebSocketCheck();
 
       function crc16(data) {
         var crc = 0xFFFF;
@@ -43,10 +46,9 @@
         return crc & 0xFFFF;
       }
 
-      function WebSocketTest() {
-
+      function WebSocketCheck() {
         if ("WebSocket" in window) {
-          alert("WebSocket is supported by your Browser!");
+          ModalDisp("info", "WebSocket is supported by your Browser!");
           // Create WebSocket connection.
           socket = new WebSocket("ws://" + location.host + "/ws");
           socket.binaryType = 'arraybuffer';
@@ -67,13 +69,35 @@
         }
         else {
           // The browser doesn't support WebSocket
-          alert("WebSocket NOT supported by your Browser!");
+          ModalDisp("error", "WebSocket NOT supported by your Browser!");
         }
       }
 
       $('button').click(function () {
-        socket.send(new Uint8Array($('#send').val().split(' ').map(bin => parseInt(bin, 16))));
+        var send = 0;
+        switch ($(this).id) {
+          case "btn5":
+
+        }
+
+        if (send) {
+          socket.send(new Uint8Array($('#send').val().split(' ').map(bin => parseInt(bin, 16))));
+        }
       });
+
+      function ModalDisp(title, text) {
+        if (title === "error") {
+          $('#ModalDisp').find('.modal-header').addClass('alert-danger');
+        }
+        else {
+          $('#ModalDisp').find('.modal-header').addClass('alert-success');
+        }
+
+        $('#ModalDisp').find('.modal-title').text(title);
+        $('#ModalDisp').find('.modal-body').text(text);
+        $('#ModalDisp').modal('show');
+      }
+
     });
   </script>
 
@@ -82,7 +106,7 @@
 <body>
   <div class="container-fluid">
     <div class="row mt-2">
-      <div class="col">
+      <div class="col pr-1">
         <input type="text" class="form-control" id="send"
           placeholder="Send application level protocol command, starting with command ID in HEX">
       </div>
@@ -131,8 +155,8 @@
           <div class="col p-0">
             <input type="text" class="form-control" id="rx-can-id" placeholder="0x0000 or 00000 in HEX">
           </div>
-          <div class=" col* ml-1 p-0"><button type="submit" id="btn2" class="btn btn-success">S</button> </div>
-          <div class=" col* ml-1 mr-3 p-0"><button type="submit" id="btn3" class="btn btn-success">R</button> </div>
+          <div class=" col* ml-1 p-0"><button type="submit" id="btn4" class="btn btn-success">S</button> </div>
+          <div class=" col* ml-1 mr-3 p-0"><button type="submit" id="btn5" class="btn btn-success">R</button> </div>
         </div>
       </div>
       <div class="col-xl mt-2">
@@ -143,13 +167,78 @@
           <div class="col p-0">
             <input type="text" class="form-control" id="rx-can-id" placeholder="0x0000 or 00000 in HEX">
           </div>
-          <div class=" col* ml-1 p-0"><button type="submit" id="btn2" class="btn btn-success">S</button> </div>
-          <div class=" col* ml-1 mr-3 p-0"><button type="submit" id="btn3" class="btn btn-success">R</button> </div>
+          <div class=" col* ml-1 p-0"><button type="submit" id="btn6" class="btn btn-success">S</button> </div>
+          <div class=" col* ml-1 mr-3 p-0"><button type="submit" id="btn7" class="btn btn-success">R</button> </div>
+        </div>
+      </div>
+    </div>
+    <div class="row mt-2">
+
+      <div class="col pr-1">
+        <input type="text" class="form-control" id="send" placeholder="Send Message in HEX">
+      </div>
+      <div class="col* mr-3">
+        <button type="submit" id="btn8" class="btn btn-success">Send</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="container-fluid">
+    <textarea class="form-control mt-2" id="response"></textarea>
+    <table class="table">
+      <caption>List of users</caption>
+      <thead>
+        <tr>
+          <th scope="col">#</th>
+          <th scope="col">First</th>
+          <th scope="col">Last</th>
+          <th scope="col">Handle</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <th scope="row">1</th>
+          <td>Mark</td>
+          <td>Otto</td>
+          <td>@mdo</td>
+        </tr>
+        <tr>
+          <th scope="row">2</th>
+          <td>Jacob</td>
+          <td>Thornton</td>
+          <td>@fat</td>
+        </tr>
+        <tr>
+          <th scope="row">3</th>
+          <td>Larry</td>
+          <td>the Bird</td>
+          <td>@twitter</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+
+  <!-- Modal -->
+  <div class="modal fade" id="ModalDisp" tabindex="-1" role="dialog" aria-labelledby="ModalLabel" aria-hidden="true">
+    <div class="modal-dialog sucess" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="ModalLabel"></h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          ...
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
         </div>
       </div>
     </div>
   </div>
-  <textarea class="form-control" id="response"></textarea>
+
 </body>
 
 </html>
