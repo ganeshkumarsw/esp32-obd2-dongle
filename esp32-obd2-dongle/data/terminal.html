@@ -16,7 +16,6 @@
     input {
       font-family: 'consolas', Segoe UI, Tahoma, Geneva, Verdana, sans-serif;
     }
-    }
   </style>
 
   <script src="jquery.min.js"></script>
@@ -26,11 +25,10 @@
       var socket;
       var pro_seqnum = 0;
       var pro_len = 0;
-      var pro_reservered = (new Date()).getTime();
+      var time = (new Date()).getTime().toString(16);
+      time = (time.length % 2) === 0 ? time : "0" + time;
+      var pro_reserved = new Uint8Array(time.match(/.[\w]{0,1}/g).map(x => parseInt(x, 16)));
 
-      function adjust() {
-        $('div textarea').css('height', window.innerHeight - parseInt($('div').css('height')) - 30);
-      }
       adjust();
       $(window).resize(adjust);
       WebSocketCheck();
@@ -76,7 +74,20 @@
       $('button').click(function () {
         var send = 0;
         switch ($(this).id) {
+          case "btn1":
+            var array = new Uint8Array()
+          case "btn2":
+          case "btn3":
+
+          case "btn4":
+
           case "btn5":
+          case "btn6":
+
+          case "btn7":
+
+          case "btn8":
+          case "btn9":
 
         }
 
@@ -98,9 +109,12 @@
         $('#ModalDisp').modal('show');
       }
 
+      function adjust() {
+        $('div textarea').css('height', window.innerHeight - parseInt($('div').css('height')) - 30);
+      }
+
     });
   </script>
-
 </head>
 
 <body>
@@ -173,7 +187,6 @@
       </div>
     </div>
     <div class="row mt-2">
-
       <div class="col pr-1">
         <input type="text" class="form-control" id="send" placeholder="Send Message in HEX">
       </div>
@@ -218,7 +231,6 @@
     </table>
   </div>
 
-
   <!-- Modal -->
   <div class="modal fade" id="ModalDisp" tabindex="-1" role="dialog" aria-labelledby="ModalLabel" aria-hidden="true">
     <div class="modal-dialog sucess" role="document">
@@ -238,7 +250,6 @@
       </div>
     </div>
   </div>
-
 </body>
 
 </html>
