@@ -21,13 +21,10 @@
   <script src="jquery.min.js"></script>
   <script src="bootstrap.min.js"></script>
   <script>
+    var socket;
     $(document).ready(function () {
-      var socket;
+
       var pro_seqnum = 0;
-      var pro_len = 0;
-      var time = (new Date()).getTime().toString(16);
-      time = (time.length % 2) === 0 ? time : "0" + time;
-      var pro_reserved = new Uint8Array(time.match(/.[\w]{0,1}/g).map(x => parseInt(x, 16)));
 
       adjust();
       $(window).resize(adjust);
@@ -49,6 +46,7 @@
           ModalDisp("info", "WebSocket is supported by your Browser!");
           // Create WebSocket connection.
           socket = new WebSocket("ws://" + location.host + "/ws");
+          // socket = new WebSocket("ws://" + "192.168.178.33" + "/ws");
           socket.binaryType = 'arraybuffer';
 
           // Connection opened
@@ -73,9 +71,25 @@
 
       $('button').click(function () {
         var send = 0;
+        var pro_len = 0;
+        var pro_time = (new Date()).getTime().toString(16);
+        pro_time = (pro_time.length % 2) === 0 ? pro_time : "0" + pro_time;
+        var message;
+        var body;
+
         switch ($(this).id) {
           case "btn1":
-            var array = new Uint8Array()
+            var data = new Uint8Array($('#send').val().match(/[\w]{1,2}/g).map(bin => parseInt(bin, 16)));
+            var message = new Uint8Array(1 + 2 + 4 + 4 + data.length + 2 + 2);
+            message[0] = pro_seqnum;
+            message[1] = body.length >> 8;
+            message[2] = body.length;
+            message.set(pro_time.match(/[\w]{1,2}/g).slice(0, 8), 3);
+            message.set(data, 12);
+            message.set(data, 12);
+            var crc1 = crc16(data);
+            body = new Uint8Array($('#send').val().match(/[\w]{1,2}/g).map(bin => parseInt(bin, 16)));
+            var message = [pro_seqnum].concat(body.length >> 8, body.length, pro_time.match(/[\w]{1,2}/g).slice(0, 8), body)
           case "btn2":
           case "btn3":
 
@@ -92,7 +106,7 @@
         }
 
         if (send) {
-          socket.send(new Uint8Array($('#send').val().split(' ').map(bin => parseInt(bin, 16))));
+          socket.send(new Uint8Array($('#send').val().match(/[\w]{1,2}/g).map(bin => parseInt(bin, 16))));
         }
       });
 
