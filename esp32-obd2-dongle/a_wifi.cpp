@@ -3,6 +3,7 @@
 #include "config.h"
 #include "util.h"
 #include <WiFi.h>
+#include <ESPmDNS.h>
 #include "SPIFFS.h"
 #include <ArduinoJson.h>
 #include "ESPAsyncWebServer.h"
@@ -13,7 +14,7 @@
 AsyncWebServer HttpServer(80);
 AsyncWebSocket WebSocket("/ws"); // access at ws://[esp ip]/ws
 AsyncWebSocketClient *p_WebSocketClient;
-WiFiServer SocketServer(6888);
+// WiFiServer SocketServer(6888);
 
 char WIFI_SSID[50] = STA_WIFI_SSID;
 char WIFI_Password[50] = STA_WIFI_PASSWORD;
@@ -89,14 +90,14 @@ void WIFI_Init(void)
     Serial.print("WIFI begin status: ");
     Serial.println(wifiStatus);
 
-    // if (!MDNS.begin("esp32"))
-    // {
-    //     Serial.println("Error setting up MDNS responder!");
-    //     while (1)
-    //     {
-    //         delay(1000);
-    //     }
-    // }
+    if (!MDNS.begin("esp32"))
+    {
+        Serial.println("Error setting up MDNS responder!");
+        while (1)
+        {
+            delay(1000);
+        }
+    }
     // Serial.println("mDNS responder started");
 
     if (!SPIFFS.begin())
@@ -107,6 +108,11 @@ void WIFI_Init(void)
     {
         // attach AsyncWebSocket
         WebSocket.onEvent([](AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type, void *arg, uint8_t *data, size_t len) {
+            uint16_t crc16Act;
+            uint16_t crc16Calc;
+            uint8_t buff[30];
+            uint16_t crc16;
+
             if (type == WS_EVT_CONNECT)
             {
                 p_WebSocketClient = client;
@@ -121,7 +127,30 @@ void WIFI_Init(void)
             {
                 p_WebSocketClient = client;
                 WIFI_SeqNo = data[0];
-                APP_ProcessData(&data[11], (len - 13), APP_CHANNEL_WEB_SOC);
+                crc16Act = ((uint16_t)data[len - 2] << 8) | (uint16_t)data[len - 1];
+                crc16Calc = UTIL_CRC16_CCITT(0xFFFF, data, (len - 2));
+
+                if (crc16Act == crc16Calc)
+                {
+                    APP_ProcessData(&data[11], (len - 13), APP_CHANNEL_WEB_SOC);
+                }
+                else
+                {
+                    len = 0;
+                    buff[len++] = 0x20;
+                    buff[len++] = 2 + 2 + 4;
+                    buff[len++] = APP_RESP_NACK;
+                    buff[len++] = APP_RESP_NACK_15;
+                    buff[len++] = crc16Act >> 8;
+                    buff[len++] = crc16Act;
+                    buff[len++] = crc16Calc >> 8;
+                    buff[len++] = crc16Calc;
+                    crc16 = UTIL_CRC16_CCITT(0xFFFF, &buff[2], (len - 2));
+                    buff[len++] = crc16 >> 8;
+                    buff[len++] = crc16;
+
+                    
+                }
                 Serial.print("Data received: ");
 
                 for (int i = 0; i < len; i++)
@@ -234,7 +263,10 @@ void WIFI_Init(void)
     }
 
     ESP_LOGI("WIFI", "AP IP address: %s", WiFi.softAPIP().toString().c_str());
-    SocketServer.begin();
+    // SocketServer.begin();
+
+    // Add service to MDNS-SD
+    MDNS.addService("http", "tcp", 80);
 }
 
 void WIFI_Task(void *pvParameters)
@@ -252,40 +284,40 @@ void WIFI_Task(void *pvParameters)
 
     while (1)
     {
-        WiFiClient client = SocketServer.available();
+        // WiFiClient client = SocketServer.available();
 
-        if (client)
-        {
-            uint16_t len = 0;
-            Serial.println("Client connected");
+        // if (client)
+        // {
+        //     uint16_t len = 0;
+        //     Serial.println("Client connected");
 
-            while (client.connected())
-            {
-                while (client.available())
-                {
-                    len = client.read(WIFI_RxBuff, sizeof(WIFI_RxBuff));
-                }
+        //     while (client.connected())
+        //     {
+        //         while (client.available())
+        //         {
+        //             len = client.read(WIFI_RxBuff, sizeof(WIFI_RxBuff));
+        //         }
 
-                if (len)
-                {
-                    WIFI_SeqNo = WIFI_RxBuff[0];
-                    APP_ProcessData(&WIFI_RxBuff[11], (len - 13), APP_CHANNEL_TCP_SOC);
-                    // client.write(WIFI_RxBuff, len);
-                    len = 0;
-                }
+        //         if (len)
+        //         {
+        //             WIFI_SeqNo = WIFI_RxBuff[0];
+        //             APP_ProcessData(&WIFI_RxBuff[11], (len - 13), APP_CHANNEL_TCP_SOC);
+        //             // client.write(WIFI_RxBuff, len);
+        //             len = 0;
+        //         }
 
-                if (WIFI_TxLen)
-                {
-                    client.write(WIFI_TxBuff, WIFI_TxLen);
-                    WIFI_TxLen = 0;
-                }
+        //         if (WIFI_TxLen)
+        //         {
+        //             client.write(WIFI_TxBuff, WIFI_TxLen);
+        //             WIFI_TxLen = 0;
+        //         }
 
-                vTaskDelay(1 / portTICK_PERIOD_MS);
-            }
+        //         vTaskDelay(1 / portTICK_PERIOD_MS);
+        //     }
 
-            // client.stop();
-            Serial.println("Client disconnected");
-        }
+        //     // client.stop();
+        //     Serial.println("Client disconnected");
+        // }
 
         if (wifiStatus != WiFi.status())
         {
@@ -356,7 +388,6 @@ void WIFI_WebSoc_Write(uint8_t *payLoad, uint16_t len)
     uint16_t idx;
     uint32_t tick;
     Serial.println("App processed");
-    // WiFiClient client = SocketServer.available();
 
     if (!WIFI_TxLen)
     {
@@ -381,7 +412,7 @@ void WIFI_WebSoc_Write(uint8_t *payLoad, uint16_t len)
         idx = idx + 4;
         memcpy(&WIFI_TxBuff[idx], payLoad, len);
         idx = idx + len;
-        crc16 = UTIL_CRC16_CCITT(0xFFFF, WIFI_TxBuff, len + 11);
+        crc16 = UTIL_CRC16_CCITT(0xFFFF, WIFI_TxBuff, idx);
         WIFI_TxBuff[idx++] = byte(crc16, 1);
         WIFI_TxBuff[idx++] = byte(crc16, 0);
         WIFI_TxLen = idx;

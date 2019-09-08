@@ -8,9 +8,18 @@
   <link rel="stylesheet" href="bootstrap.min.css">
   <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
   <style>
-    textarea {
+    /* textarea {
       font-family: 'consolas', Segoe UI, Tahoma, Geneva, Verdana, sans-serif;
       width: 100%;
+    } */
+
+    .table-custom {
+      font-family: Segoe UI, Tahoma, Geneva, Verdana, sans-serif;
+      overflow: auto;
+    }
+
+    td {
+      font-family: 'consolas', Segoe UI, Tahoma, Geneva, Verdana, sans-serif;
     }
 
     input {
@@ -22,17 +31,18 @@
   <script src="bootstrap.min.js"></script>
   <script>
     var socket;
+    var MesgCnt = 0;
     $(document).ready(function () {
 
       var pro_seqnum = 0;
 
-      adjust();
-      $(window).resize(adjust);
+      AdjustMessageareaHeight();
+      $(window).resize(AdjustMessageareaHeight);
       WebSocketCheck();
 
       function crc16(data) {
         var crc = 0xFFFF;
-        for (i = 0; i < length; ++i) {
+        for (i = 0; i < data.length; ++i) {
           crc ^= data[i] << 8;
           for (j = 0; j < 8; ++j) {
             crc = (crc & 0x8000) > 0 ? (crc << 1) ^ 0x1021 : crc << 1;
@@ -41,12 +51,37 @@
         return crc & 0xFFFF;
       }
 
+      function GeneratePDU(data) {
+        var pro_len = 0;
+        var pro_time = (new Date()).getTime().toString(16);
+        pro_time = (pro_time.length % 2) === 0 ? pro_time : "0" + pro_time;
+        var body;
+        var idx = 0;
+
+        var message = new Uint8Array(1 + 2 + 4 + 4 + data.length + 2 + 2);
+        message[idx++] = pro_seqnum++;
+        message[idx++] = data.length >> 8;
+        message[idx++] = data.length;
+        message.set(pro_time.match(/[\w]{1,2}/g).slice(0, 8), idx);
+        idx = idx + 8;
+        message.set(data, idx);
+        idx = idx + data.length;
+        var crc1 = crc16(data);
+        message[idx++] = crc1 >> 8;
+        message[idx++] = crc1;
+        var crc2 = crc16(message.slice(0, idx));
+        message[idx++] = crc2 >> 8;
+        message[idx++] = crc2;
+
+        return message;
+      }
+
       function WebSocketCheck() {
         if ("WebSocket" in window) {
           ModalDisp("info", "WebSocket is supported by your Browser!");
           // Create WebSocket connection.
-          socket = new WebSocket("ws://" + location.host + "/ws");
           // socket = new WebSocket("ws://" + "192.168.178.33" + "/ws");
+          socket = new WebSocket("ws://" + location.host + "/ws");
           socket.binaryType = 'arraybuffer';
 
           // Connection opened
@@ -57,9 +92,14 @@
           // Listen for messages
           socket.addEventListener('message', function (event) {
             var temp = "";
-            (new Uint8Array(event.data)).forEach((val, idx, arr) => temp = temp + val.toString(16) + " ");
-            $('#response').val($('#response').val() + temp + "\n");
-            $('#response').scrollTop($('#response')[0].scrollHeight);
+            (new Uint8Array(event.data)).forEach(function (val, idx, arr) {
+              var hex = val.toString(16).toUpperCase();
+              temp = temp + (hex.length < 2 ? "0" : "") + hex + " ";
+            });
+
+            $('#output').children('tbody').append('<tr><th scope="row">' + (MesgCnt++) + '</th><td><-</td><td>' + temp + '</td></tr>');
+            // $('#response').val($('#response').val() + temp + "\n");
+            $('.table-custom').scrollTop($('.table-custom')[0].scrollHeight);
             console.log('Message from server ', event.data);
           });
         }
@@ -70,27 +110,13 @@
       }
 
       $('button').click(function () {
-        var send = 0;
-        var pro_len = 0;
-        var pro_time = (new Date()).getTime().toString(16);
-        pro_time = (pro_time.length % 2) === 0 ? pro_time : "0" + pro_time;
-        var message;
-        var body;
-
-        switch ($(this).id) {
+        var send = false;
+        switch (this.id) {
           case "btn1":
-            var data = new Uint8Array($('#send').val().match(/[\w]{1,2}/g).map(bin => parseInt(bin, 16)));
-            var message = new Uint8Array(1 + 2 + 4 + 4 + data.length + 2 + 2);
-            message[0] = pro_seqnum;
-            message[1] = body.length >> 8;
-            message[2] = body.length;
-            message.set(pro_time.match(/[\w]{1,2}/g).slice(0, 8), 3);
-            message.set(data, 12);
-            message.set(data, 12);
-            var crc1 = crc16(data);
-            body = new Uint8Array($('#send').val().match(/[\w]{1,2}/g).map(bin => parseInt(bin, 16)));
-            var message = [pro_seqnum].concat(body.length >> 8, body.length, pro_time.match(/[\w]{1,2}/g).slice(0, 8), body)
+            var message = GeneratePDU(new Uint8Array($('#send').val().match(/[\w]{1,2}/g).map(bin => parseInt(bin, 16))));
+            send = true;
           case "btn2":
+
           case "btn3":
 
           case "btn4":
@@ -106,7 +132,13 @@
         }
 
         if (send) {
-          socket.send(new Uint8Array($('#send').val().match(/[\w]{1,2}/g).map(bin => parseInt(bin, 16))));
+          socket.send(message);
+          var temp = "";
+          message.map(function (val) {
+            var hex = val.toString(16).toUpperCase();
+            temp = temp + (hex.length < 2 ? "0" : "") + hex + " ";
+          });
+          $('#output').children('tbody').append('<tr><th scope="row">' + (MesgCnt++) + '</th><td>-></td><td>' + temp + '</td></tr>');
         }
       });
 
@@ -123,8 +155,9 @@
         $('#ModalDisp').modal('show');
       }
 
-      function adjust() {
-        $('div textarea').css('height', window.innerHeight - parseInt($('div').css('height')) - 30);
+      function AdjustMessageareaHeight() {
+        // $('div textarea').css('height', window.innerHeight - parseInt($('div').css('height')) - 30);
+        $('.table-custom').css('height', window.innerHeight - parseInt($('div').css('height')) - 30);
       }
 
     });
@@ -211,38 +244,24 @@
   </div>
 
   <div class="container-fluid">
-    <textarea class="form-control mt-2" id="response"></textarea>
-    <table class="table">
-      <caption>List of users</caption>
-      <thead>
-        <tr>
-          <th scope="col">#</th>
-          <th scope="col">First</th>
-          <th scope="col">Last</th>
-          <th scope="col">Handle</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <th scope="row">1</th>
-          <td>Mark</td>
-          <td>Otto</td>
-          <td>@mdo</td>
-        </tr>
-        <tr>
-          <th scope="row">2</th>
-          <td>Jacob</td>
-          <td>Thornton</td>
-          <td>@fat</td>
-        </tr>
-        <tr>
-          <th scope="row">3</th>
-          <td>Larry</td>
-          <td>the Bird</td>
-          <td>@twitter</td>
-        </tr>
-      </tbody>
-    </table>
+    <div style="position: relative;">
+      <table class="mt-2 mb-0 table table-sm table-bordered table-stripped">
+        <thead>
+          <tr>
+            <th scope="col">#</th>
+            <th scope="col">Dir</th>
+            <th scope="col">Message</th>
+          </tr>
+        </thead>
+      </table>
+      <div class="mt-0 table-custom">
+        <!-- <textarea class="form-control mt-2" id="response"></textarea> -->
+        <table id="output" class="table table-sm table-bordered table-stripped">
+          <tbody>
+          </tbody>
+        </table>
+      </div>
+    </div>
   </div>
 
   <!-- Modal -->

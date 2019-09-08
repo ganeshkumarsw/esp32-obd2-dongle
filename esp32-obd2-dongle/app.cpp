@@ -563,11 +563,9 @@ void APP_ProcessData(uint8_t *p_buff, uint16_t len, APP_CHANNEL_t channel)
         if (frameLen == (len - 2))
         {
             crc16Act = ((uint16_t)p_buff[len - 2] << 8) | (uint16_t)p_buff[len - 1];
-
             crc16Calc = UTIL_CRC16_CCITT(0xFFFF, &p_buff[2], (frameLen - 2));
 
-            // if (crc16Act == crc16Calc)
-            if (true)
+            if (crc16Act == crc16Calc)
             {
                 if (frameType < (sizeof(cb_APP_FrameType) / sizeof(cb_APP_FrameType[0])))
                 {
