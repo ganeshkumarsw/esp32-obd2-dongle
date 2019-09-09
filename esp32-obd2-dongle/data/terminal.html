@@ -19,8 +19,13 @@
       overflow: auto;
     }
 
-    td {
+    tbody td {
       font-family: 'consolas', Segoe UI, Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    thead th {
+      position: sticky;
+      top: 0;
     }
 
     input {
@@ -65,9 +70,11 @@
         message[idx++] = data.length;
         message.set(pro_time.match(/[\w]{1,2}/g).slice(0, 8), idx);
         idx = idx + 8;
-        message.set(data, idx);
-        idx = idx + data.length;
-        var crc1 = crc16(data);
+        message[idx++] = (data[0] & 0xF0) | (((data.length - 1) + 2) >> 8);
+        message[idx++] = ((data.length - 1) + 2);
+        message.set(data.subarray(1), idx);
+        idx = idx + (data.length - 1);
+        var crc1 = crc16(data.subarray(1));
         message[idx++] = crc1 >> 8;
         message[idx++] = crc1;
         var crc2 = crc16(message.slice(0, idx));
@@ -247,12 +254,12 @@
   <div class="container-fluid">
     <div class="mt-2 table-custom">
       <!-- <textarea class="form-control mt-2" id="response"></textarea> -->
-      <table id="output" class="table table-sm table-bordered table-stripped">
+      <table id="output" class="table table-sm table-bordered table-striped">
         <thead>
           <tr>
-            <th scope="col">#</th>
-            <th scope="col">Dir</th>
-            <th scope="col">Message</th>
+            <th class="btn-success" scope="col">#</th>
+            <th class="btn-success" scope="col">Dir</th>
+            <th class="btn-success" scope="col">Message</th>
           </tr>
         </thead>
         <tbody>
