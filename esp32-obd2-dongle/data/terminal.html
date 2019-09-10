@@ -23,11 +23,6 @@
       font-family: 'consolas', Segoe UI, Tahoma, Geneva, Verdana, sans-serif;
     }
 
-    thead th {
-      position: sticky;
-      top: 0;
-    }
-
     input {
       font-family: 'consolas', Segoe UI, Tahoma, Geneva, Verdana, sans-serif;
     }
@@ -45,6 +40,16 @@
       AdjustMessageareaHeight();
       $(window).resize(AdjustMessageareaHeight);
       WebSocketCheck();
+
+      function create_UUID() {
+        var dt = new Date().getTime();
+        var uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+          var r = (dt + Math.random() * 16) % 16 | 0;
+          dt = Math.floor(dt / 16);
+          return (c == 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+        });
+        return uuid;
+      }
 
       function crc16(data) {
         var crc = 0xFFFF;
@@ -64,7 +69,7 @@
         var body;
         var idx = 0;
 
-        var message = new Uint8Array(1 + 2 + 4 + 4 + data.length + 2 + 2);
+        var message = new Uint8Array(1 + 2 + 4 + 4 + 1 + data.length + 2 + 2);
         message[idx++] = pro_seqnum++;
         message[idx++] = data.length >> 8;
         message[idx++] = data.length;
@@ -105,7 +110,7 @@
               temp = temp + (hex.length < 2 ? "0" : "") + hex + " ";
             });
 
-            $('#output').children('tbody').append('<tr><th scope="row">' + (MesgCnt++) + '</th><td><-</td><td>' + temp + '</td></tr>');
+            $('#output').children('tbody').append('<tr><th scope="row">' + (MesgCnt++) + '</th><td><span class="badge badge-warning"><-</span></td><td>' + temp + '</td></tr>');
             // $('#response').val($('#response').val() + temp + "\n");
             $('.table-custom').scrollTop($('.table-custom')[0].scrollHeight);
             console.log('Message from server ', event.data);
@@ -146,7 +151,8 @@
             var hex = val.toString(16).toUpperCase();
             temp = temp + (hex.length < 2 ? "0" : "") + hex + " ";
           });
-          $('#output').children('tbody').append('<tr><th scope="row">' + (MesgCnt++) + '</th><td>-></td><td>' + temp + '</td></tr>');
+          $('#output').children('tbody').append('<tr><th scope="row">' + (MesgCnt++) + '</th><td><span class="badge badge-success">-></span></td><td>' + temp + '</td></tr>');
+          $('.table-custom').scrollTop($('.table-custom')[0].scrollHeight);
         }
       });
 
@@ -161,6 +167,9 @@
         $('#ModalDisp').find('.modal-title').text(title);
         $('#ModalDisp').find('.modal-body').text(text);
         $('#ModalDisp').modal('show');
+        setTimeout(function () {
+          $('#ModalDisp').modal('hide');
+        }, 1000);
       }
 
       function AdjustMessageareaHeight() {
@@ -252,14 +261,14 @@
   </div>
 
   <div class="container-fluid">
-    <div class="mt-2 table-custom">
+    <div class="mt-2 card table-custom">
       <!-- <textarea class="form-control mt-2" id="response"></textarea> -->
-      <table id="output" class="table table-sm table-bordered table-striped">
+      <table id="output" class="table table-sm table-striped">
         <thead>
           <tr>
-            <th class="btn-success" scope="col">#</th>
-            <th class="btn-success" scope="col">Dir</th>
-            <th class="btn-success" scope="col">Message</th>
+            <th class="shadow-sm rounded-left sticky-top bg-primary text-white" scope="col">#</th>
+            <th class="shadow-sm sticky-top bg-primary text-white" scope="col">Dir</th>
+            <th class="shadow-sm rounded-right sticky-top bg-primary text-white" scope="col">Message</th>
           </tr>
         </thead>
         <tbody>
