@@ -266,7 +266,7 @@ void WIFI_Init(void)
     // SocketServer.begin();
 
     // Add service to MDNS-SD
-    MDNS.addService("http", "tcp", 80);
+    MDNS.addService("_http", "_tcp", 80);
 }
 
 void WIFI_Task(void *pvParameters)
@@ -323,7 +323,7 @@ void WIFI_Task(void *pvParameters)
         {
             if (WiFi.status() == WL_CONNECTED)
             {
-                Serial.printf("WiFi connected, IP address: %s", WiFi.localIP().toString().c_str());
+                Serial.printf("WiFi connected, IP address: %s\r\n", WiFi.localIP().toString().c_str());
                 LED_SetLedState(WIFI_CONN_LED, GPIO_STATE_HIGH, GPIO_TOGGLE_NONE);
             }
             else if (WiFi.status() == WL_DISCONNECTED)
