@@ -36,7 +36,12 @@
     $(document).ready(function () {
 
       var pro_seqnum = 0;
+      var RxMessageCount = 0;
+      var TxMessageCount = 0;
 
+      Set_ConnectionStatus('Closed');
+      Set_RxMessageCount(RxMessageCount);
+      Set_TxMessageCount(TxMessageCount);
       AdjustMessageareaHeight();
       $(window).resize(AdjustMessageareaHeight);
       WebSocketCheck();
@@ -89,6 +94,18 @@
         return message;
       }
 
+      function Set_ConnectionStatus(status) {
+        $("#connectionStatus").text(status);
+      }
+
+      function Set_RxMessageCount(cnt) {
+        $("#messageRx").text(cnt);
+      }
+
+      function Set_TxMessageCount(cnt) {
+        $("#messageTx").text(cnt);
+      }
+
       function WebSocketCheck() {
         if ("WebSocket" in window) {
           ModalDisp("info", "WebSocket is supported by your Browser!");
@@ -99,7 +116,15 @@
 
           // Connection opened
           socket.addEventListener('open', function (event) {
-            // socket.send($('#send').val());
+            ConnectionStatus('Connected');
+          });
+
+          socket.addEventListener('error', function (event) {
+            ConnectionStatus('Error');
+          });
+
+          socket.addEventListener('close', function (event) {
+            ConnectionStatus('Closed');
           });
 
           // Listen for messages
@@ -113,6 +138,7 @@
             $('#output').children('tbody').append('<tr><th scope="row">' + (MesgCnt++) + '</th><td><span class="badge badge-warning"><-</span></td><td>' + temp + '</td></tr>');
             // $('#response').val($('#response').val() + temp + "\n");
             $('.table-custom').scrollTop($('.table-custom')[0].scrollHeight);
+            Set_RxMessageCount(RxMessageCount++);
             console.log('Message from server ', event.data);
           });
         }
@@ -153,6 +179,7 @@
           });
           $('#output').children('tbody').append('<tr><th scope="row">' + (MesgCnt++) + '</th><td><span class="badge badge-success">-></span></td><td>' + temp + '</td></tr>');
           $('.table-custom').scrollTop($('.table-custom')[0].scrollHeight);
+          Set_TxMessageCount(TxMessageCount++);
         }
       });
 
@@ -231,7 +258,7 @@
             Rx CAN ID:
           </div>
           <div class="col p-0">
-            <input type="text" class="form-control" id="rx-can-id" placeholder="0x0000 or 00000 in HEX">
+            <input type="text" class="form-control" id="rx-can-id" placeholder="0000 in HEX">
           </div>
           <div class=" col* ml-1 p-0"><button type="submit" id="btn4" class="btn btn-success">S</button> </div>
           <div class=" col* ml-1 mr-3 p-0"><button type="submit" id="btn5" class="btn btn-success">R</button> </div>
@@ -243,7 +270,7 @@
             Tx CAN ID:
           </div>
           <div class="col p-0">
-            <input type="text" class="form-control" id="rx-can-id" placeholder="0x0000 or 00000 in HEX">
+            <input type="text" class="form-control" id="rx-can-id" placeholder="0000 in HEX">
           </div>
           <div class=" col* ml-1 p-0"><button type="submit" id="btn6" class="btn btn-success">S</button> </div>
           <div class=" col* ml-1 mr-3 p-0"><button type="submit" id="btn7" class="btn btn-success">R</button> </div>
@@ -264,11 +291,18 @@
     <div class="mt-2 card table-custom">
       <!-- <textarea class="form-control mt-2" id="response"></textarea> -->
       <table id="output" class="table table-sm table-striped">
-        <thead>
+        <thead class="thead-dark rounded-left  rounded-right">
           <tr>
-            <th class="shadow-sm rounded-left sticky-top bg-primary text-white" scope="col">#</th>
-            <th class="shadow-sm sticky-top bg-primary text-white" scope="col">Dir</th>
-            <th class="shadow-sm rounded-right sticky-top bg-primary text-white" scope="col">Message</th>
+            <th class="sticky-top" scope="col">#</th>
+            <th class="sticky-top " scope="col">Dir</th>
+            <th class="sticky-top" scope="col">
+              Message
+              <div style="display:inline; float:right; ">
+                <span id="connectionStatus"></span>
+                <span id="messageTx" class="badge badge-success">0</span>
+                <span id="messageRX" class="badge badge-warning">0</span>
+              </div>
+            </th>
           </tr>
         </thead>
         <tbody>
