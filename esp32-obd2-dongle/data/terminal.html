@@ -15,17 +15,19 @@
 
     .table-custom {
       position: relative;
-      font-family: Segoe UI, Tahoma, Geneva, Verdana, sans-serif;
+      /* font-family: Segoe UI, Tahoma, Geneva, Verdana, sans-serif; */
       overflow: auto;
     }
 
+    .table-custom,
+    input,
     tbody td {
       font-family: 'consolas', Segoe UI, Tahoma, Geneva, Verdana, sans-serif;
     }
 
-    input {
+    /* input {
       font-family: 'consolas', Segoe UI, Tahoma, Geneva, Verdana, sans-serif;
-    }
+    } */
   </style>
 
   <script src="jquery.min.js"></script>
@@ -38,6 +40,11 @@
       var pro_seqnum = 0;
       var RxMessageCount = 0;
       var TxMessageCount = 0;
+      var AppCmd = {
+        AppCmd_CAN_Protocol: [0x02],
+        AppCmd_CAN_TxId: [0x04],
+        AppCmd_CAN_RxId: [0x06],
+      };
 
       Set_ConnectionStatus('Closed');
       Set_RxMessageCount(RxMessageCount);
@@ -106,6 +113,30 @@
         $("#messageTx").text(cnt);
       }
 
+      async function ParseRxMessage(data) {
+        switch ((data[11] & 0xF0)) {
+          case 0x20:
+            var len = ((data[11] & 0x0F) << 8) + data[12];
+            len = len - 3;
+
+            switch (data[13]) {
+              case AppCmd["AppCmd_CAN_Protocol"]:
+                $('#select-can-protocol').val(data[14]);
+                break;
+
+              case AppCmd["AppCmd_CAN_RxId"]:
+                
+                $('#input-rx-can-id').val(len);
+                break;
+
+              case AppCmd["AppCmd_CAN_TxId"]:
+                $('#input-tx-can-id').val(len);
+                break;
+            }
+            break;
+        }
+      }
+
       function WebSocketCheck() {
         if ("WebSocket" in window) {
           ModalDisp("info", "WebSocket is supported by your Browser!");
@@ -129,44 +160,87 @@
 
           // Listen for messages
           socket.addEventListener('message', function (event) {
+            var data = new Uint8Array(event.data);
+            var crcAct = data[data.length - 2] << 8 | data[data.length - 1];
+            var crcCalc = crc16(data.slice(0, data.length - 2));
+
+            if (crcAct != crcCalc) {
+              ModalDisp("error", "CRC Mismatch", -1);
+              return;
+            }
+
+            ParseRxMessage(data);
+
             var temp = "";
-            (new Uint8Array(event.data)).forEach(function (val, idx, arr) {
+            data.forEach(function (val, idx, arr) {
               var hex = val.toString(16).toUpperCase();
               temp = temp + (hex.length < 2 ? "0" : "") + hex + " ";
             });
 
-            $('#output').children('tbody').append('<tr><th scope="row">' + (MesgCnt++) + '</th><td><span class="badge badge-warning"><-</span></td><td>' + temp + '</td></tr>');
+            $('#table-output').children('tbody').append('<tr><th scope="row">' + (MesgCnt++) + '</th><td><span class="badge badge-warning"><-</span></td><td>' + temp + '</td></tr>');
             // $('#response').val($('#response').val() + temp + "\n");
             $('.table-custom').scrollTop($('.table-custom')[0].scrollHeight);
             Set_RxMessageCount(++RxMessageCount);
-            console.log('Message from server ', event.data);
+            console.log('Message from server ', data);
           });
         }
         else {
           // The browser doesn't support WebSocket
-          ModalDisp("error", "WebSocket NOT supported by your Browser!");
+          ModalDisp("error", "WebSocket NOT supported by your Browser!", -1);
         }
       }
 
       $('button').click(function () {
         var send = false;
         switch (this.id) {
-          case "btn1":
-            var message = GeneratePDU(new Uint8Array($('#send').val().match(/[\w]{1,2}/g).map(bin => parseInt(bin, 16))));
+          case "btn-send":
+            var message = GeneratePDU(new Uint8Array($('#input-send').val().match(/[\w]{1,2}/g).map(bin => parseInt(bin, 16))));
             send = true;
-          case "btn2":
+            break;
+          case "btn-can-protocol-r":
+            var message = GeneratePDU(new Uint8Array([0x20, parseInt(AppCmd["AppCmd_CAN_Protocol"], 16) + 1]));
+            send = true;
+            break;
 
-          case "btn3":
+          case "btn-can-protocol-s":
+            var message = GeneratePDU(new Uint8Array([0x20, AppCmd["AppCmd_CAN_Protocol"], $('#select-can-protocol').val()]));
+            send = true;
+            break;
 
-          case "btn4":
+          case "btn-rx-can-id-r":
 
-          case "btn5":
-          case "btn6":
+            var message = GeneratePDU(new Uint8Array([0x20, parseInt(AppCmd["AppCmd_CAN_RxId"], 16) + 1]));
+            send = true;
+            break;
 
-          case "btn7":
+          case "btn-rx-can-id-s":
+            var input = new Uint8Array($('#input-rx-can-id').val().match(/[\w]{1,2}/g).map(bin => parseInt(bin, 16)));
+            var temp = new Uint8Array(2 + input.length);
+            temp.set([0x20, AppCmd["AppCmd_CAN_RxId"]], 0);
+            temp.set(input, 2);
+            var message = GeneratePDU(temp);
+            send = true;
+            break;
+          case "btn-tx-can-id-r":
+            var message = GeneratePDU(new Uint8Array([0x20, parseInt(AppCmd["AppCmd_CAN_TxId"], 16) + 1]));
+            send = true;
+            break;
 
-          case "btn8":
+          case "btn-tx-can-id-s":
+            var input = new Uint8Array($('#input-tx-can-id').val().match(/[\w]{1,2}/g).map(bin => parseInt(bin, 16)));
+            var temp = new Uint8Array(2 + input.length);
+            temp.set([0x20, AppCmd["AppCmd_CAN_TxId"]], 0);
+            temp.set(input, 2);
+            var message = GeneratePDU(temp);
+            send = true;
+            break;
+
+          case "input-send-raw":
+            var message = new Uint8Array($('#input-send-raw').val().match(/[\w]{1,2}/g).map(bin => parseInt(bin, 16)));
+            break;
+
           case "btn9":
+            break;
 
         }
 
@@ -177,13 +251,13 @@
             var hex = val.toString(16).toUpperCase();
             temp = temp + (hex.length < 2 ? "0" : "") + hex + " ";
           });
-          $('#output').children('tbody').append('<tr><th scope="row">' + (MesgCnt++) + '</th><td><span class="badge badge-success">-></span></td><td>' + temp + '</td></tr>');
+          $('#table-output').children('tbody').append('<tr><th scope="row">' + (MesgCnt++) + '</th><td><span class="badge badge-success">-></span></td><td>' + temp + '</td></tr>');
           $('.table-custom').scrollTop($('.table-custom')[0].scrollHeight);
           Set_TxMessageCount(++TxMessageCount);
         }
       });
 
-      function ModalDisp(title, text) {
+      function ModalDisp(title, text, timout = 1000) {
         if (title === "error") {
           $('#ModalDisp').find('.modal-header').addClass('alert-danger');
         }
@@ -194,9 +268,12 @@
         $('#ModalDisp').find('.modal-title').text(title);
         $('#ModalDisp').find('.modal-body').text(text);
         $('#ModalDisp').modal('show');
-        setTimeout(function () {
-          $('#ModalDisp').modal('hide');
-        }, 1000);
+
+        if (timout > 0) {
+          setTimeout(function () {
+            $('#ModalDisp').modal('hide');
+          }, timout);
+        }
       }
 
       function AdjustMessageareaHeight() {
@@ -212,11 +289,11 @@
   <div class="container-fluid">
     <div class="row mt-2">
       <div class="col pr-1">
-        <input type="text" class="form-control" id="send"
-          placeholder="Send application level protocol command, starting with command ID in HEX">
+        <input type="text" class="form-control" id="input-send" ata-toggle="tooltip" data-placement="top"
+          title="Send command ID , followed by data (all in HEX)" placeholder="only in HEX">
       </div>
       <div class="col* mr-3">
-        <button type="submit" id="btn1" class="btn btn-success">Send</button>
+        <button type="submit" id="btn-send" class="btn btn-success">Send</button>
       </div>
     </div>
     <div class="row">
@@ -227,7 +304,7 @@
             CAN Protocol:
           </div>
           <div class="col p-0">
-            <select class="custom-select" id="can-protocol">
+            <select class="custom-select" id="select-can-protocol">
               <option selected value="255">Select CAN Protocol</option>
               <option value="0">ISO15765-250KB-11BIT-CAN</option>
               <option value="1">ISO15765-250Kb-29BIT-CAN</option>
@@ -249,8 +326,11 @@
               <option value="17">OE-IVN-1MBPS-29BIT-CAN </option>
             </select>
           </div>
-          <div class=" col* ml-1 p-0"><button type="submit" id="btn2" class="btn btn-success">S</button> </div>
-          <div class=" col* ml-1 mr-3 p-0"><button type="submit" id="btn3" class="btn btn-success">R</button> </div>
+          <div class=" col* ml-1 p-0"><button type="submit" id="btn-can-protocol-s" class="btn btn-success">S</button>
+          </div>
+          <div class=" col* ml-1 mr-3 p-0"><button type="submit" id="btn-can-protocol-r"
+              class="btn btn-warning">R</button>
+          </div>
         </div>
       </div>
       <div class="col-xl mt-2">
@@ -259,10 +339,12 @@
             Rx CAN ID:
           </div>
           <div class="col p-0">
-            <input type="text" class="form-control" id="rx-can-id" placeholder="0000 in HEX">
+            <input type="text" class="form-control" id="input-rx-can-id" placeholder="0000 in HEX">
           </div>
-          <div class=" col* ml-1 p-0"><button type="submit" id="btn4" class="btn btn-success">S</button> </div>
-          <div class=" col* ml-1 mr-3 p-0"><button type="submit" id="btn5" class="btn btn-success">R</button> </div>
+          <div class=" col* ml-1 p-0"><button type="submit" id="btn-rx-can-id-s" class="btn btn-success">S</button>
+          </div>
+          <div class=" col* ml-1 mr-3 p-0"><button type="submit" id="btn-rx-can-id-r" class="btn btn-warning">R</button>
+          </div>
         </div>
       </div>
       <div class="col-xl mt-2">
@@ -271,19 +353,21 @@
             Tx CAN ID:
           </div>
           <div class="col p-0">
-            <input type="text" class="form-control" id="rx-can-id" placeholder="0000 in HEX">
+            <input type="text" class="form-control" id="input-tx-can-id" placeholder="0000 in HEX">
           </div>
-          <div class=" col* ml-1 p-0"><button type="submit" id="btn6" class="btn btn-success">S</button> </div>
-          <div class=" col* ml-1 mr-3 p-0"><button type="submit" id="btn7" class="btn btn-success">R</button> </div>
+          <div class=" col* ml-1 p-0"><button type="submit" id="btn-tx-can-id-s" class="btn btn-success">S</button>
+          </div>
+          <div class=" col* ml-1 mr-3 p-0"><button type="submit" id="btn-tx-can-id-r" class="btn btn-warning">R</button>
+          </div>
         </div>
       </div>
     </div>
     <div class="row mt-2">
       <div class="col pr-1">
-        <input type="text" class="form-control" id="send" placeholder="Send Message in HEX">
+        <input type="text" class="form-control" id="input-send-raw" placeholder="Send Message in HEX">
       </div>
       <div class="col* mr-3">
-        <button type="submit" id="btn8" class="btn btn-success">Send</button>
+        <button type="submit" id="btn-send-raw" class="btn btn-success">Send</button>
       </div>
     </div>
   </div>
@@ -291,7 +375,7 @@
   <div class="container-fluid">
     <div class="mt-2 card table-custom">
       <!-- <textarea class="form-control mt-2" id="response"></textarea> -->
-      <table id="output" class="table table-sm table-striped">
+      <table id="table-output" class="table table-sm table-striped">
         <thead class="thead-dark rounded-left  rounded-right">
           <tr>
             <th class="sticky-top" scope="col">#</th>
