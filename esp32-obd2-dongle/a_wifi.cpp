@@ -255,6 +255,18 @@ void WIFI_Init(void)
             request->send(response);
         });
 
+        HttpServer.on("/tooltip.min.js", HTTP_GET, [](AsyncWebServerRequest *request) {
+            AsyncWebServerResponse *response = request->beginResponse(SPIFFS, "/tooltip.min.js.gz", "text/javascript");
+            response->addHeader("Content-Encoding", "gzip");
+            request->send(response);
+        });
+
+        HttpServer.on("/popper.min.js", HTTP_GET, [](AsyncWebServerRequest *request) {
+            AsyncWebServerResponse *response = request->beginResponse(SPIFFS, "/popper.min.js.gz", "text/javascript");
+            response->addHeader("Content-Encoding", "gzip");
+            request->send(response);
+        });
+
         HttpServer.on("/autopeepal.png", HTTP_GET, [](AsyncWebServerRequest *request) {
             request->send(SPIFFS, "/autopeepal.png", "image/png");
         });

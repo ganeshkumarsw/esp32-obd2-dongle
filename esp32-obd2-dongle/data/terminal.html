@@ -15,11 +15,10 @@
 
     .table-custom {
       position: relative;
-      /* font-family: Segoe UI, Tahoma, Geneva, Verdana, sans-serif; */
+      font-family: Segoe UI, Tahoma, Geneva, Verdana, sans-serif;
       overflow: auto;
     }
 
-    .table-custom,
     input,
     tbody td {
       font-family: 'consolas', Segoe UI, Tahoma, Geneva, Verdana, sans-serif;
@@ -31,21 +30,26 @@
   </style>
 
   <script src="jquery.min.js"></script>
+  <script src="popper.min.js"></script>
   <script src="bootstrap.min.js"></script>
-  <script>
-    var socket;
-    var MesgCnt = 0;
-    $(document).ready(function () {
+  <script src="tooltip.min.js"></script>
 
+  <script>
+
+    $(document).ready(function () {
+      var socket;
+      var MesgCnt = 0;
       var pro_seqnum = 0;
       var RxMessageCount = 0;
       var TxMessageCount = 0;
+      var cmdRequested = 0;
       var AppCmd = {
-        AppCmd_CAN_Protocol: [0x02],
-        AppCmd_CAN_TxId: [0x04],
-        AppCmd_CAN_RxId: [0x06],
+        AppCmd_CAN_Protocol: 2,
+        AppCmd_CAN_TxId: 4,
+        AppCmd_CAN_RxId: 6,
       };
 
+      $('[data-toggle="tooltip"]').tooltip();
       Set_ConnectionStatus('Closed');
       Set_RxMessageCount(RxMessageCount);
       Set_TxMessageCount(TxMessageCount);
@@ -119,13 +123,13 @@
             var len = ((data[11] & 0x0F) << 8) + data[12];
             len = len - 3;
 
-            switch (data[13]) {
+            switch (cmdRequested) {
               case AppCmd["AppCmd_CAN_Protocol"]:
-                $('#select-can-protocol').val(data[14]);
+                $('#select-can-protocol').val(data[13]);
                 break;
 
               case AppCmd["AppCmd_CAN_RxId"]:
-                
+
                 $('#input-rx-can-id').val(len);
                 break;
 
@@ -135,6 +139,8 @@
             }
             break;
         }
+
+        cmdRequested = -1;
       }
 
       function WebSocketCheck() {
@@ -198,38 +204,43 @@
             send = true;
             break;
           case "btn-can-protocol-r":
-            var message = GeneratePDU(new Uint8Array([0x20, parseInt(AppCmd["AppCmd_CAN_Protocol"], 16) + 1]));
+            cmdRequested = parseInt(AppCmd["AppCmd_CAN_Protocol"], 16) + 1;
+            var message = GeneratePDU(new Uint8Array([0x20, cmdRequested]));
             send = true;
             break;
 
           case "btn-can-protocol-s":
-            var message = GeneratePDU(new Uint8Array([0x20, AppCmd["AppCmd_CAN_Protocol"], $('#select-can-protocol').val()]));
+            cmdRequested = parseInt(AppCmd["AppCmd_CAN_Protocol"], 16);
+            var message = GeneratePDU(new Uint8Array([0x20, cmdRequested, $('#select-can-protocol').val()]));
             send = true;
             break;
 
           case "btn-rx-can-id-r":
-
-            var message = GeneratePDU(new Uint8Array([0x20, parseInt(AppCmd["AppCmd_CAN_RxId"], 16) + 1]));
+            cmdRequested = parseInt(AppCmd["AppCmd_CAN_RxId"], 16) + 1;
+            var message = GeneratePDU(new Uint8Array([0x20, cmdRequested]));
             send = true;
             break;
 
           case "btn-rx-can-id-s":
+            cmdRequested = parseInt(AppCmd["AppCmd_CAN_RxId"], 16);
             var input = new Uint8Array($('#input-rx-can-id').val().match(/[\w]{1,2}/g).map(bin => parseInt(bin, 16)));
             var temp = new Uint8Array(2 + input.length);
-            temp.set([0x20, AppCmd["AppCmd_CAN_RxId"]], 0);
+            temp.set([0x20, cmdRequested], 0);
             temp.set(input, 2);
             var message = GeneratePDU(temp);
             send = true;
             break;
           case "btn-tx-can-id-r":
-            var message = GeneratePDU(new Uint8Array([0x20, parseInt(AppCmd["AppCmd_CAN_TxId"], 16) + 1]));
+            cmdRequested = parseInt(AppCmd["AppCmd_CAN_TxId"], 16) + 1;
+            var message = GeneratePDU(new Uint8Array([0x20, cmdRequested]));
             send = true;
             break;
 
           case "btn-tx-can-id-s":
+            cmdRequested = parseInt(AppCmd["AppCmd_CAN_TxId"], 16);
             var input = new Uint8Array($('#input-tx-can-id').val().match(/[\w]{1,2}/g).map(bin => parseInt(bin, 16)));
             var temp = new Uint8Array(2 + input.length);
-            temp.set([0x20, AppCmd["AppCmd_CAN_TxId"]], 0);
+            temp.set([0x20, cmdRequested], 0);
             temp.set(input, 2);
             var message = GeneratePDU(temp);
             send = true;
@@ -287,86 +298,75 @@
 
 <body>
   <div class="container-fluid">
-    <div class="row mt-2">
-      <div class="col pr-1">
-        <input type="text" class="form-control" id="input-send" ata-toggle="tooltip" data-placement="top"
-          title="Send command ID , followed by data (all in HEX)" placeholder="only in HEX">
-      </div>
-      <div class="col* mr-3">
+    <div class="row ml-0 mt-2 mr-3 input-group">
+      <input type="text" class="form-control" id="input-send" data-toggle="tooltip" data-placement="top"
+        title="Send command ID , followed by data (all in HEX)" placeholder="only in HEX">
+      <div class="input-group-append">
         <button type="submit" id="btn-send" class="btn btn-success">Send</button>
       </div>
     </div>
     <div class="row">
-
-      <div class="col-xl  mt-2">
-        <div class="row">
-          <div class="col* ml-3 pt-2 mr-1 font-weight-bold" for="can-protocol">
-            CAN Protocol:
+      <div class="col-xl mt-2">
+        <div class="input-group btn-group">
+          <div class="input-group-prepend font-weight-bold">
+            <div class="input-group-text">CAN Protocol</div>
           </div>
-          <div class="col p-0">
-            <select class="custom-select" id="select-can-protocol">
-              <option selected value="255">Select CAN Protocol</option>
-              <option value="0">ISO15765-250KB-11BIT-CAN</option>
-              <option value="1">ISO15765-250Kb-29BIT-CAN</option>
-              <option value="2">ISO15765-500KB-11BIT-CAN</option>
-              <option value="3">ISO15765-500KB-29BIT-CAN</option>
-              <option value="4">ISO15765-1MB-11BIT-CAN</option>
-              <option value="5">ISO15765-1MB-29BIT-CAN</option>
-              <option value="6">250KB-11BIT-CAN</option>
-              <option value="7">250Kb-29BIT-CAN</option>
-              <option value="8">500KB-11BIT-CAN</option>
-              <option value="9">500KB-29BIT-CAN</option>
-              <option value="10">1MB-11BIT-CAN</option>
-              <option value="11">1MB-29BIT-CAN</option>
-              <option value="12">OE-IVN-250KBPS-11BIT-CAN</option>
-              <option value="13">OE-IVN-250KBPS-29BIT-CAN</option>
-              <option value="14">OE-IVN-500KBPS-11BIT-CAN</option>
-              <option value="15">OE-IVN-500KBPS-29BIT-CAN</option>
-              <option value="16">OE-IVN-1MBPS-11BIT-CAN </option>
-              <option value="17">OE-IVN-1MBPS-29BIT-CAN </option>
-            </select>
-          </div>
-          <div class=" col* ml-1 p-0"><button type="submit" id="btn-can-protocol-s" class="btn btn-success">S</button>
-          </div>
-          <div class=" col* ml-1 mr-3 p-0"><button type="submit" id="btn-can-protocol-r"
-              class="btn btn-warning">R</button>
-          </div>
+          <select class="custom-select" id="select-can-protocol">
+            <option selected value="255">Select CAN Protocol</option>
+            <option value="0">ISO15765-250KB-11BIT-CAN</option>
+            <option value="1">ISO15765-250Kb-29BIT-CAN</option>
+            <option value="2">ISO15765-500KB-11BIT-CAN</option>
+            <option value="3">ISO15765-500KB-29BIT-CAN</option>
+            <option value="4">ISO15765-1MB-11BIT-CAN</option>
+            <option value="5">ISO15765-1MB-29BIT-CAN</option>
+            <option value="6">250KB-11BIT-CAN</option>
+            <option value="7">250Kb-29BIT-CAN</option>
+            <option value="8">500KB-11BIT-CAN</option>
+            <option value="9">500KB-29BIT-CAN</option>
+            <option value="10">1MB-11BIT-CAN</option>
+            <option value="11">1MB-29BIT-CAN</option>
+            <option value="12">OE-IVN-250KBPS-11BIT-CAN</option>
+            <option value="13">OE-IVN-250KBPS-29BIT-CAN</option>
+            <option value="14">OE-IVN-500KBPS-11BIT-CAN</option>
+            <option value="15">OE-IVN-500KBPS-29BIT-CAN</option>
+            <option value="16">OE-IVN-1MBPS-11BIT-CAN </option>
+            <option value="17">OE-IVN-1MBPS-29BIT-CAN </option>
+          </select>
+          <span class="btn-group" role="group">
+            <button type="submit" id="btn-can-protocol-s" class="btn btn-success">S</button>
+            <button type="submit" id="btn-can-protocol-r" class="btn btn-warning">R</button>
+          </span>
         </div>
       </div>
       <div class="col-xl mt-2">
-        <div class="row ml-0">
-          <div class="col* pt-2 mr-1 font-weight-bold" for="can-protocol">
-            Rx CAN ID:
+        <div class="input-group btn-group">
+          <div class="input-group-prepend font-weight-bold">
+            <div class="input-group-text">Rx CAN ID</div>
           </div>
-          <div class="col p-0">
-            <input type="text" class="form-control" id="input-rx-can-id" placeholder="0000 in HEX">
-          </div>
-          <div class=" col* ml-1 p-0"><button type="submit" id="btn-rx-can-id-s" class="btn btn-success">S</button>
-          </div>
-          <div class=" col* ml-1 mr-3 p-0"><button type="submit" id="btn-rx-can-id-r" class="btn btn-warning">R</button>
-          </div>
+          <input type="text" class="form-control" id="input-rx-can-id" placeholder="0000 in HEX">
+          <span class="btn-group" role="group">
+            <button type="submit" id="btn-rx-can-id-s" class="btn btn-success">S</button>
+            <button type="submit" id="btn-rx-can-id-r" class="btn btn-warning">R</button>
+          </span>
         </div>
       </div>
       <div class="col-xl mt-2">
-        <div class="row ml-0">
-          <div class="col* pt-2 mr-1 font-weight-bold" for="can-protocol">
-            Tx CAN ID:
+        <div class="input-group btn-group">
+          <div class="input-group-prepend font-weight-bold">
+            <div class="input-group-text">Tx CAN ID</div>
           </div>
-          <div class="col p-0">
-            <input type="text" class="form-control" id="input-tx-can-id" placeholder="0000 in HEX">
-          </div>
-          <div class=" col* ml-1 p-0"><button type="submit" id="btn-tx-can-id-s" class="btn btn-success">S</button>
-          </div>
-          <div class=" col* ml-1 mr-3 p-0"><button type="submit" id="btn-tx-can-id-r" class="btn btn-warning">R</button>
-          </div>
+          <input type="text" class="form-control" id="input-tx-can-id" placeholder="0000 in HEX">
+          <span class="btn-group" role="group">
+            <button type="submit" id="btn-tx-can-id-s" class="btn btn-success">S</button>
+            <button type="submit" id="btn-tx-can-id-r" class="btn btn-warning">R</button>
+          </span>
         </div>
       </div>
     </div>
-    <div class="row mt-2">
-      <div class="col pr-1">
-        <input type="text" class="form-control" id="input-send-raw" placeholder="Send Message in HEX">
-      </div>
-      <div class="col* mr-3">
+    <div class="row ml-0 mt-2 mr-3 input-group">
+      <input type="text" class="form-control" id="input-send-raw" data-toggle="tooltip" data-placement="top"
+        title="Send raw data (all in HEX)" placeholder="Send Message in HEX">
+      <div class="input-group-append">
         <button type="submit" id="btn-send-raw" class="btn btn-success">Send</button>
       </div>
     </div>
