@@ -4,9 +4,9 @@
 
 #pragma once
 
-#include "../Configuration.hpp"
-#include "../Operators/VariantOperators.hpp"
-#include "../Polyfills/type_traits.hpp"
+#include <ArduinoJson/Configuration.hpp>
+#include <ArduinoJson/Operators/VariantOperators.hpp>
+#include <ArduinoJson/Polyfills/type_traits.hpp>
 
 #ifdef _MSC_VER
 #pragma warning(push)
@@ -47,6 +47,14 @@ class MemberProxy : public VariantOperators<MemberProxy<TObject, TStringRef> >,
   FORCE_INLINE this_type &operator=(TChar *src) {
     getOrAddUpstreamMember().set(src);
     return *this;
+  }
+
+  FORCE_INLINE bool operator==(VariantConstRef rhs) const {
+    return static_cast<VariantConstRef>(getUpstreamMember()) == rhs;
+  }
+
+  FORCE_INLINE bool operator!=(VariantConstRef rhs) const {
+    return static_cast<VariantConstRef>(getUpstreamMember()) != rhs;
   }
 
   FORCE_INLINE void clear() const {

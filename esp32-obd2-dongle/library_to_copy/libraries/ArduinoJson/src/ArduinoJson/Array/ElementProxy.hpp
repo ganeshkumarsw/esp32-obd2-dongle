@@ -4,8 +4,9 @@
 
 #pragma once
 
-#include "../Configuration.hpp"
-#include "../Operators/VariantOperators.hpp"
+#include <ArduinoJson/Configuration.hpp>
+#include <ArduinoJson/Operators/VariantOperators.hpp>
+#include <ArduinoJson/Variant/VariantTo.hpp>
 
 #ifdef _MSC_VER
 #pragma warning(push)
@@ -45,6 +46,14 @@ class ElementProxy : public VariantOperators<ElementProxy<TArray> >,
   FORCE_INLINE this_type& operator=(T* src) {
     getUpstreamElement().set(src);
     return *this;
+  }
+
+  FORCE_INLINE bool operator==(VariantConstRef rhs) const {
+    return static_cast<VariantConstRef>(getUpstreamElement()) == rhs;
+  }
+
+  FORCE_INLINE bool operator!=(VariantConstRef rhs) const {
+    return static_cast<VariantConstRef>(getUpstreamElement()) != rhs;
   }
 
   FORCE_INLINE void clear() const {
