@@ -313,8 +313,10 @@
 <body>
   <div class="container-fluid">
     <div class="row ml-0 mt-2 mr-3 input-group">
-      <input type="text" class="form-control" id="input-send" data-toggle="tooltip" data-placement="top"
-        title="Send command ID , followed by data (all in HEX), seperate each byte by space">
+      <input type="text" class="form-control" id="input-send-cmdid" data-toggle="tooltip" data-placement="bottom"
+        title="command ID (in HEX)">
+      <input type="text" class="form-control" id="input-send" data-toggle="tooltip" data-placement="bottom"
+        title="data only withou length (all in HEX), seperate each byte by space">
       <div class="input-group-append">
         <button type="submit" id="btn-send" class="btn btn-success">Send</button>
       </div>
@@ -357,8 +359,8 @@
           <div class="input-group-prepend font-weight-bold">
             <div class="input-group-text">Rx CAN ID</div>
           </div>
-          <input type="text" class="form-control" id="input-rx-can-id" data-toggle="tooltip" data-placement="left"
-          title="in HEX, seperate each byte by space">
+          <input type="text" class="form-control" id="input-rx-can-id" data-toggle="tooltip" data-placement="bottom"
+            title="in HEX, seperate each byte by space">
           <span class="btn-group" role="group">
             <button type="submit" id="btn-rx-can-id-s" class="btn btn-success">S</button>
             <button type="submit" id="btn-rx-can-id-r" class="btn btn-warning">R</button>
@@ -370,8 +372,8 @@
           <div class="input-group-prepend font-weight-bold">
             <div class="input-group-text">Tx CAN ID</div>
           </div>
-          <input type="text" class="form-control" id="input-tx-can-id" data-toggle="tooltip" data-placement="left"
-          title="in HEX, seperate each byte by space">
+          <input type="text" class="form-control" id="input-tx-can-id" data-toggle="tooltip" data-placement="bottom"
+            title="in HEX, seperate each byte by space">
           <span class="btn-group" role="group">
             <button type="submit" id="btn-tx-can-id-s" class="btn btn-success">S</button>
             <button type="submit" id="btn-tx-can-id-r" class="btn btn-warning">R</button>

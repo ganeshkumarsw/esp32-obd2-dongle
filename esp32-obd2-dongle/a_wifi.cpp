@@ -10,6 +10,10 @@
 #include "app.h"
 #include "a_led.h"
 #include "a_wifi.h"
+// #include <DNSServer.h>
+
+// const byte DNS_PORT = 53;
+// DNSServer DNS_Server;
 
 AsyncWebServer HttpServer(80);
 AsyncWebSocket WebSocket("/ws"); // access at ws://[esp ip]/ws
@@ -66,17 +70,29 @@ void WIFI_Init(void)
 
     // preferences.end();
 
-    WiFi.mode(WIFI_AP_STA); //Both hotspot and client are enabled
+    // WiFi.mode(WIFI_AP_STA); //Both hotspot and client are enabled
     // WiFi.onEvent(WIFI_EventCb, SYSTEM_EVENT_MAX);
     // const IPAddress apIP = IPAddress(192, 168, 5, 1);
 
     // WiFi.waitForConnectResult();
     // WiFi.mode(WIFI_AP);
-    // WiFi.softAPConfig(IPAddress(192, 168, 178, 1), IPAddress(192, 168, 178, 1), IPAddress(255, 255, 255, 0));
-    if (!WiFi.softAP("OBD DONGLE", "password1"))
-    {
-        Serial.println("ESP32 SoftAP failed to start!");
-    }
+    // // WiFi.softAPConfig(IPAddress(192, 168, 178, 1), IPAddress(192, 168, 178, 1), IPAddress(255, 255, 255, 0));
+    // if (!WiFi.softAP("OBD DONGLE", "password1"))
+    // {
+    //     Serial.println("ESP32 SoftAP failed to start!");
+    // }
+
+    // modify TTL associated  with the domain name (in seconds)
+    // default is 60 seconds
+    // DNS_Server.setTTL(300);
+    // // set which return code will be used for all other domains (e.g. sending
+    // // ServerFailure instead of NonExistentDomain will reduce number of queries
+    // // sent by clients)
+    // // default is DNSReplyCode::NonExistentDomain
+    // DNS_Server.setErrorReplyCode(DNSReplyCode::ServerFailure);
+
+    // // start DNS server for a specific domain name
+    // DNS_Server.start(DNS_PORT, "obd2.ap", WiFi.softAPIP());
 
     // if (!WiFi.softAPenableIpV6())
     // {
@@ -90,7 +106,7 @@ void WIFI_Init(void)
     Serial.print("WIFI begin status: ");
     Serial.println(wifiStatus);
 
-    if (!MDNS.begin("esp32"))
+    if (!MDNS.begin("obd2"))
     {
         Serial.println("Error setting up MDNS responder!");
         while (1)
@@ -98,7 +114,7 @@ void WIFI_Init(void)
             delay(1000);
         }
     }
-    // Serial.println("mDNS responder started");
+    Serial.println("mDNS responder started");
 
     if (!SPIFFS.begin())
     {
@@ -148,8 +164,6 @@ void WIFI_Init(void)
                     crc16 = UTIL_CRC16_CCITT(0xFFFF, &buff[2], (len - 2));
                     buff[len++] = crc16 >> 8;
                     buff[len++] = crc16;
-
-                    
                 }
                 Serial.print("Data received: ");
 
@@ -279,6 +293,8 @@ void WIFI_Init(void)
 
     // Add service to MDNS-SD
     MDNS.addService("_http", "_tcp", 80);
+
+    WiFi.setSleep(false);
 }
 
 void WIFI_Task(void *pvParameters)
@@ -347,6 +363,7 @@ void WIFI_Task(void *pvParameters)
         }
 
         wifiStatus = WiFi.status();
+        // DNS_Server.processNextRequest();
         vTaskDelay(1 / portTICK_PERIOD_MS);
     }
 }
