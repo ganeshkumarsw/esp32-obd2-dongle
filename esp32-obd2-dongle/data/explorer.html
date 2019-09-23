@@ -11,18 +11,41 @@
   <script src="bootstrap.min.js"></script>
   <script>
     $(document).ready(function () {
-      $('#exampleModal').on('show.bs.modal', function (event) {
-        var button = $(event.relatedTarget) // Button that triggered the modal
-        var recipient = button.data('whatever') // Extract info from data-* attributes
-        // If necessary, you could initiate an AJAX request here (and then do the updating in a callback).
-        // Update the modal's content. We'll use jQuery here, but you could use a data binding library or other methods instead.
-        var modal = $(this)
-        modal.find('.modal-title').text('New message to ' + recipient)
-        modal.find('.modal-body input').val(recipient)
+
+      var eventSource = new EventSource("/events");
+      var fileSize;
+
+      eventSource.onmessage = function (event) {
+        console.log("New message", event.data);
+      };
+
+      eventSource.addEventListener("progress", function (event) {
+        console.log("New message", event.data);
+        var per = ((parseInt(event.data) / fileSize) * 100) + '%';
+        $('#progressUpload').css('width', per);
+        console.log("New message", per);
       });
 
+      eventSource.onerror = function (event) {
+        console.log("New message", event);
+      };
+
+      eventSource.onopen = function (event) {
+        console.log("New message", event);
+      };
+
+      // $('#exampleModal').on('show.bs.modal', function (event) {
+      //   var button = $(event.relatedTarget) // Button that triggered the modal
+      //   var recipient = button.data('whatever') // Extract info from data-* attributes
+      //   // If necessary, you could initiate an AJAX request here (and then do the updating in a callback).
+      //   // Update the modal's content. We'll use jQuery here, but you could use a data binding library or other methods instead.
+      //   var modal = $(this)
+      //   modal.find('.modal-title').text('New message to ' + recipient)
+      //   modal.find('.modal-body input').val(recipient)
+      // });
+
       $('#refresh').click(function () {
-        $.post("fsread", {}, function (result) {
+        $.post("/fsread", {}, function (result) {
           $('table').children('tbody').empty();
           $.each(result.data, function (key, value) {
             if (value != 'end') {
@@ -33,15 +56,58 @@
       });
 
       $('#task').click(function () {
-        $.post("tasklist", {}, function (result) {
+        $.post("/tasklist", {}, function (result) {
           $('table').children('tbody').empty();
           $('table').children('tbody').append(result);
 
         });
       });
 
+      $('#add').click(function (event) {
+        $('#progressUpload').css('width', '0%');
+        $('#labelFilename').html('');
+      });
+
+      $('#fileUpload').change(function (event) {
+        $('#labelFilename').html("/" + $('#fileUpload')[0].files[0].name);
+        $('#progressUpload').css('width', '0%');
+      });
+
+      $("#upload").click(function (event) {
+        // Create an FormData object 
+        var file = $('#fileUpload')[0].files[0];
+        fileSize = file.size;
+        var formData = new FormData();
+        formData.append('file', file);
+
+        console.log(file);
+
+        // disabled the submit button
+        $("#add").prop("disabled", true);
+
+        $.ajax({
+          type: "POST",
+          enctype: 'multipart/form-data',
+          url: "/fsupload",
+          data: formData,
+          processData: false,
+          contentType: false,
+          cache: false,
+          timeout: 600000,
+          success: function (data) {
+            $("#add").prop("disabled", false);
+            $('#refresh').click();
+          },
+          error: function (e) {
+            $("#add").prop("disabled", false);
+          }
+        });
+
+      });
+
       $('tbody').on('click', 'button', function (event) {
-        $.post("fsdelete", { file: $(this).parents()[1].children[1].innerHTML }, function (result) {
+        $.post("/fsdelete", { file: '/' + $(this).parents()[1].children[1].innerHTML }, function (result) {
+          $('#refresh').click();
         });
       });
     });
@@ -49,69 +115,69 @@
 
 </head>
 
-<body class="m-2">
-  <div>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-      <a class="navbar-brand" href="#">Navbar</a>
-      <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNavAltMarkup"
-        aria-controls="navbarNavAltMarkup" aria-expanded="false" aria-label="Toggle navigation">
-        <span class="navbar-toggler-icon"></span>
-      </button>
-      <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
-        <div class="navbar-nav">
-          <a class="nav-item nav-link active" href="#">Home <span class="sr-only">(current)</span></a>
-          <a class="nav-item nav-link" href="#">Features</a>
-          <a class="nav-item nav-link" href="#">Pricing</a>
-          <a class="nav-item nav-link disabled" href="#">Disabled</a>
-        </div>
+<body>
+  <nav class=" m-2 navbar navbar-expand-lg navbar-dark bg-dark">
+    <a class="navbar-brand" href="#">Navbar</a>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNavAltMarkup"
+      aria-controls="navbarNavAltMarkup" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
+      <div class="navbar-nav">
+        <a class="nav-item nav-link active" href="#">Home <span class="sr-only">(current)</span></a>
+        <a class="nav-item nav-link" href="#">Features</a>
+        <a class="nav-item nav-link" href="#">Pricing</a>
+        <a class="nav-item nav-link disabled" href="#">Disabled</a>
       </div>
-    </nav>
+    </div>
+  </nav>
+  <div class="m-2 d-flex d-flex justify-content-end">
+    <button type="button" id="add" class=" btn btn-success" data-toggle="modal" data-target="#uploadModal">Add</button>
+    <button type="button" id="refresh" class="ml-2 btn btn-primary">Refresh</button>
+    <button type="button" id="task" class="ml-2 btn btn-primary">Task</button>
   </div>
-  <div>
-    <button type="button" id="add" class="mt-2 mb-2 btn btn-success float-right" data-toggle="modal"
-      data-target="#exampleModal" data-whatever="@mdo">Add</button>
-    <button type="button" id="refresh" class="mt-2 mb-2 mr-2 btn btn-primary float-right">Refresh</button>
-    <button type="button" id="task" class="mt-2 mb-2 mr-2 btn btn-primary float-right">Task</button>
-  </div>
-  <div class="table-responsive-sm">
-    <table class="table table-hover">
-      <thead>
-        <tr>
-          <th scope="col">#</th>
-          <th scope="col">FileName</th>
-          <th scope="col">Options</th>
-        </tr>
-      </thead>
-      <tbody>
-      </tbody>
-    </table>
+  <div class="d-block">
+    <div class="d-flex m-2 card" style="overflow:auto">
+
+      <table class="table table-hover">
+        <thead>
+          <tr>
+            <th scope="col">#</th>
+            <th scope="col">FileName</th>
+            <th scope="col">Options</th>
+          </tr>
+        </thead>
+        <tbody>
+        </tbody>
+      </table>
+    </div>
   </div>
 
-  <div class="modal fade" id="exampleModal" tabindex="-1" data-backdrop="static" data-keyboard="false" role="dialog"
-    aria-labelledby="exampleModalLabel" aria-hidden="true">
+
+  <div class="modal fade" id="uploadModal" tabindex="-1" data-backdrop="static" data-keyboard="false" role="dialog">
     <div class="modal-dialog" role="document">
       <div class="modal-content">
         <div class="modal-header">
-          <h5 class="modal-title" id="exampleModalLabel">New message</h5>
+          <h5 class="modal-title" id="exampleModalLabel">New File</h5>
           <button type="button" class="close" data-dismiss="modal" aria-label="Close">
             <span aria-hidden="true">&times;</span>
           </button>
         </div>
         <div class="modal-body">
-          <form>
-            <div class="form-group">
-              <label for="recipient-name" class="col-form-label">Recipient:</label>
-              <input type="text" class="form-control" id="recipient-name">
+          <div class="input-group">
+            <label for="fileUpload" class="form-control" id="labelFilename"></label>
+            <div class="input-group-append">
+              <button type="submit" id="btn-send" class="btn btn-success" onclick="fileUpload.click();">Browse</button>
             </div>
-            <div class="form-group">
-              <label for="message-text" class="col-form-label">Message:</label>
-              <textarea class="form-control" id="message-text"></textarea>
-            </div>
-          </form>
+          </div>
+          <input type="file" style="display:none" id="fileUpload">
+          <div class="progress mt-2">
+            <div class="progress-bar progress-bar-striped bg-success" role="progressbar" id="progressUpload"></div>
+          </div>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-          <button type="button" class="btn btn-primary">Send message</button>
+          <button type="button" id="upload" class="btn btn-primary">Upload</button>
         </div>
       </div>
     </div>
