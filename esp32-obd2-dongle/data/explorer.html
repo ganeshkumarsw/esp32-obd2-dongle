@@ -21,7 +21,7 @@
 
       eventSource.addEventListener("progress", function (event) {
         console.log("New message", event.data);
-        var per = ((parseInt(event.data) / fileSize) * 100) + '%';
+        var per = (Math.round((parseInt(event.data) / fileSize) * 100)) + '%';
         $('#progressUpload').css('width', per);
         console.log("New message", per);
       });

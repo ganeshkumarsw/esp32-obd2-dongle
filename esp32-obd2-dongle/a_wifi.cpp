@@ -354,23 +354,19 @@ void WIFI_Init(void)
                               }
 
                               filename = "/" + filename;
-                              if(SPIFFS.exists(filename) == true)
-                              {
-                                  SPIFFS.remove(filename);
-                              }
+                              //   if(SPIFFS.exists(filename) == true)
+                              //   {
+                              //       SPIFFS.remove(filename);
+                              //   }
                               FsUploadFile = SPIFFS.open(filename, "w");
 
                               Serial.printf("Upload Start: %s\n", filename.c_str());
-                              Events.send(String(index + len).c_str(), "progress", millis());
                           }
-                          else
-                          {
-                              if (FsUploadFile)
-                              {
-                                  // Write the received bytes to the file
-                                  Events.send(String(index + FsUploadFile.write(data, len)).c_str(), "progress", millis());
 
-                              }
+                          if (FsUploadFile)
+                          {
+                              // Write the received bytes to the file
+                              Events.send(String(index + FsUploadFile.write(data, len)).c_str(), "progress", millis());
                           }
 
                           if (final)
@@ -381,7 +377,6 @@ void WIFI_Init(void)
                               }
 
                               Serial.printf("Update Success: %uB\n", index + len);
-                              Events.send(String(len).c_str(), "progress", millis());
                           }
                       });
 
