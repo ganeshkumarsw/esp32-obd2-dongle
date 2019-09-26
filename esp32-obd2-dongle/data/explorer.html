@@ -16,22 +16,30 @@
       var fileSize;
 
       eventSource.onmessage = function (event) {
-        console.log("New message", event.data);
+        console.log("OnMessage, Event: " + event.event + ": ", event.data);
       };
 
       eventSource.addEventListener("progress", function (event) {
-        console.log("New message", event.data);
         var per = (Math.round((parseInt(event.data) / fileSize) * 100)) + '%';
         $('#progressUpload').css('width', per);
-        console.log("New message", per);
+        $('#progressUpload').html(per);
+        console.log("Progress: ", per);
+      });
+
+      eventSource.addEventListener("success", function (event) {
+        console.log("Success: ", event.data);
+      });
+
+      eventSource.addEventListener("error", function (event) {
+        console.log("Error: ", event.data);
       });
 
       eventSource.onerror = function (event) {
-        console.log("New message", event);
+        console.log("OnError", event);
       };
 
       eventSource.onopen = function (event) {
-        console.log("New message", event);
+        console.log("OnOpen", event);
       };
 
       // $('#exampleModal').on('show.bs.modal', function (event) {
@@ -63,9 +71,16 @@
         });
       });
 
+      $('#flash').click(function (event) {
+        $('#progressUpload').css('width', '0%');
+        $('#labelFilename').html('');
+        $("#upload").val("/flash")
+      });
+
       $('#add').click(function (event) {
         $('#progressUpload').css('width', '0%');
         $('#labelFilename').html('');
+        $("#upload").val("/fsupload")
       });
 
       $('#fileUpload').change(function (event) {
@@ -88,7 +103,7 @@
         $.ajax({
           type: "POST",
           enctype: 'multipart/form-data',
-          url: "/fsupload",
+          url: $("#upload").val(),
           data: formData,
           processData: false,
           contentType: false,
@@ -132,7 +147,8 @@
     </div>
   </nav>
   <div class="m-2 d-flex d-flex justify-content-end">
-    <button type="button" id="add" class=" btn btn-success" data-toggle="modal" data-target="#uploadModal">Add</button>
+    <button type="button" id="add" class="btn btn-success" data-toggle="modal" data-target="#uploadModal">Add File</button>
+    <button type="button" id="flash" class="ml-2 btn btn-success" data-toggle="modal" data-target="#uploadModal">Flash</button>
     <button type="button" id="refresh" class="ml-2 btn btn-primary">Refresh</button>
     <button type="button" id="task" class="ml-2 btn btn-primary">Task</button>
   </div>
@@ -158,7 +174,7 @@
     <div class="modal-dialog" role="document">
       <div class="modal-content">
         <div class="modal-header">
-          <h5 class="modal-title" id="exampleModalLabel">New File</h5>
+          <h5 class="modal-title" id="modaltitle">New File</h5>
           <button type="button" class="close" data-dismiss="modal" aria-label="Close">
             <span aria-hidden="true">&times;</span>
           </button>
@@ -167,17 +183,17 @@
           <div class="input-group">
             <label for="fileUpload" class="form-control" id="labelFilename"></label>
             <div class="input-group-append">
-              <button type="submit" id="btn-send" class="btn btn-success" onclick="fileUpload.click();">Browse</button>
+              <button type="submit" id="btn-send" class="btn btn-warning" onclick="fileUpload.click();">Browse</button>
             </div>
           </div>
           <input type="file" style="display:none" id="fileUpload">
-          <div class="progress mt-2">
-            <div class="progress-bar progress-bar-striped bg-success" role="progressbar" id="progressUpload"></div>
+          <div class="progress mt-2" style="height: 20px;">
+            <div class="progress-bar bg-success" role="progressbar" id="progressUpload"></div>
           </div>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-          <button type="button" id="upload" class="btn btn-primary">Upload</button>
+          <button type="button" id="upload" value="" class="btn btn-primary">Upload</button>
         </div>
       </div>
     </div>

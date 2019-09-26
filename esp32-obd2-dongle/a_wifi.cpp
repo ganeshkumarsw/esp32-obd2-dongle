@@ -15,7 +15,7 @@
 
 #define WIFI_AP 0
 #define WIFI_AP_DNS 0
-#define WIFI_STA 1
+#define WIFI_STA 0
 
 #if WIFI_AP_DNS
 const byte DNS_PORT = 53;
@@ -41,6 +41,7 @@ static void WIFI_EventCb(system_event_id_t event);
 void WIFI_Init(void)
 {
     wl_status_t wifiStatus;
+    bool staConnected = false;
     // char apSSID[32];
     // char apPass[63];
     // char mac[6];
@@ -51,41 +52,97 @@ void WIFI_Init(void)
     LED_SetLedState(WIFI_CONN_LED, GPIO_STATE_TOGGLE, GPIO_TOGGLE_1HZ);
     ESP_LOGI("WIFI", "MAC: %s", WiFi.macAddress().c_str());
 
-// // WiFi.macAddress((uint8_t *)mac);
-// // sprintf(apSSID, "%s %x%x%x%x%x%x", AP_WIFI_SSID, mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
-// // preferences.putBytes("apSSID", apSSID, sizeof(apSSID));
+    // // WiFi.macAddress((uint8_t *)mac);
+    // // sprintf(apSSID, "%s %x%x%x%x%x%x", AP_WIFI_SSID, mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+    // // preferences.putBytes("apSSID", apSSID, sizeof(apSSID));
 
-// // sprintf(apPass, "%s", AP_WIFI_PASSWORD);
-// // preferences.putBytes("apPASS", apPass, sizeof(apPass));
+    // // sprintf(apPass, "%s", AP_WIFI_PASSWORD);
+    // // preferences.putBytes("apPASS", apPass, sizeof(apPass));
 
-// unsigned int len = preferences.getBytes("apSSID", apSSID, sizeof(apSSID));
-// if (len != sizeof(apSSID))
-// {
-// WiFi.macAddress((uint8_t *)mac);
-// sprintf(apSSID, "%s %x%x%x%x%x%x", AP_WIFI_SSID, mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
-//     preferences.putBytes("apSSID", apSSID, sizeof(apSSID));
-//     preferences.getBytes("apSSID", apSSID, sizeof(apSSID));
-// }
-// // Serial.println(apSSID);
+    // unsigned int len = preferences.getBytes("apSSID", apSSID, sizeof(apSSID));
+    // if (len != sizeof(apSSID))
+    // {
+    // WiFi.macAddress((uint8_t *)mac);
+    // sprintf(apSSID, "%s %x%x%x%x%x%x", AP_WIFI_SSID, mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+    //     preferences.putBytes("apSSID", apSSID, sizeof(apSSID));
+    //     preferences.getBytes("apSSID", apSSID, sizeof(apSSID));
+    // }
+    // // Serial.println(apSSID);
 
-// len = preferences.getBytes("apPASS", apPass, sizeof(apPass));
-// if (len != sizeof(apPass))
-// {
-// sprintf(apPass, "%s", AP_WIFI_PASSWORD);
-//     preferences.putBytes("apPASS", apPass, sizeof(apPass));
-//     preferences.getBytes("apPASS", apPass, sizeof(apPass));
-// }
-// // Serial.println(apPass);
+    // len = preferences.getBytes("apPASS", apPass, sizeof(apPass));
+    // if (len != sizeof(apPass))
+    // {
+    // sprintf(apPass, "%s", AP_WIFI_PASSWORD);
+    //     preferences.putBytes("apPASS", apPass, sizeof(apPass));
+    //     preferences.getBytes("apPASS", apPass, sizeof(apPass));
+    // }
+    // // Serial.println(apPass);
 
-// preferences.end();
+    // preferences.end();
 
-// WiFi.mode(WIFI_AP_STA); //Both hotspot and client are enabled
-// WiFi.onEvent(WIFI_EventCb, SYSTEM_EVENT_MAX);
-// const IPAddress apIP = IPAddress(192, 168, 5, 1);
+    // WiFi.mode(WIFI_AP_STA); //Both hotspot and client are enabled
+    // WiFi.onEvent(WIFI_EventCb, SYSTEM_EVENT_MAX);
+    // const IPAddress apIP = IPAddress(192, 168, 5, 1);
 
-// WiFi.waitForConnectResult();
-// WiFi.mode(WIFI_AP);
-// WiFi.softAPConfig(IPAddress(192, 168, 178, 1), IPAddress(192, 168, 178, 1), IPAddress(255, 255, 255, 0));
+    // WiFi.scanNetworks will return the number of networks found
+    int n = WiFi.scanNetworks();
+    Serial.println("scan done");
+    if (n == 0)
+    {
+        Serial.println("no networks found");
+    }
+    else
+    {
+        for (int i = 0; i < n; ++i)
+        {
+            Serial.println("SSID: " + WiFi.SSID(i));
+            // Print SSID and RSSI for each network found
+            if (WiFi.SSID(i).equals(WIFI_SSID) == true)
+            {
+                staConnected = true;
+                delay(10);
+                wifiStatus = WiFi.begin((char *)WIFI_SSID, (char *)WIFI_Password);
+                WiFi.setSleep(false);
+                Serial.print("WIFI STA begin");
+                Serial.println(wifiStatus);
+
+                if (WiFi.getAutoConnect() == false)
+                {
+                    WiFi.setAutoConnect(true);
+                }
+
+                if (WiFi.getAutoReconnect() == false)
+                {
+                    WiFi.setAutoReconnect(true);
+                }
+
+                if (!MDNS.begin("obd2"))
+                {
+                    Serial.println("Error setting up MDNS responder!");
+                    // while (1)
+                    // {
+                    //     delay(1000);
+                    // }
+                }
+                Serial.println("mDNS responder started");
+                // Add service to MDNS-SD
+                MDNS.addService("_http", "_tcp", 80);
+                break;
+            }
+        }
+    }
+
+    Serial.println("Wifi mode: " + WiFi.getMode());
+
+    if (staConnected == false)
+    {
+        Serial.print("WIFI AP begin");
+        if (!WiFi.softAP("OBD DONGLE", "password1"))
+        {
+            Serial.println("ESP32 SoftAP failed to start!");
+        }
+    }
+
 #if WIFI_AP
     if (!WiFi.softAP("OBD DONGLE", "password1"))
     {
@@ -194,7 +251,7 @@ void WIFI_Init(void)
         Events.onConnect([](AsyncEventSourceClient *client) {
             if (client->lastId())
             {
-                Serial.printf("Client reconnected! Last message ID that it gat is: %u\n", client->lastId());
+                Serial.printf("Client reconnected! Last message ID that it got is: %u\n", client->lastId());
             }
             //send event with message "hello!", id current millis
             // and set reconnect delay to 1 second
@@ -216,23 +273,36 @@ void WIFI_Init(void)
         HttpServer.on("/login", HTTP_GET, [](AsyncWebServerRequest *request) {
             if (!request->authenticate("admin", "admin"))
                 return request->requestAuthentication();
-            request->send(200, "text/plain", "Login Success!");
-        });
-
-        // Simple Firmware Update Form
-        HttpServer.on("/update", HTTP_GET, [](AsyncWebServerRequest *request) {
-            AsyncWebServerResponse *response = request->beginResponse(200, "text/html", "<form method='POST' action='/update' enctype='multipart/form-data'><input type='file' name='update'><input type='submit' value='Update'></form>");
+            AsyncWebServerResponse *response = request->beginResponse(200, "text/plain", "Login Success!");
             response->addHeader("Connection", "close");
             request->send(response);
         });
 
-        HttpServer.on("/update",
+        // Simple Firmware Update Form
+        HttpServer.on("/update", HTTP_GET, [](AsyncWebServerRequest *request) {
+            AsyncWebServerResponse *response = request->beginResponse(200, "text/html", "<form method='POST' action='/flash' enctype='multipart/form-data'><input type='file' name='update'><input type='submit' value='Update'></form>");
+            response->addHeader("Connection", "close");
+            request->send(response);
+        });
+
+        HttpServer.on("/flash",
                       HTTP_POST,
                       [](AsyncWebServerRequest *request) {
-                          bool shouldReboot = !Update.hasError();
-                          AsyncWebServerResponse *response = request->beginResponse(200, "text/plain", shouldReboot ? "OK" : "FAIL");
-                          response->addHeader("Connection", "close");
-                          request->send(response);
+                          if (Update.hasError() == false)
+                          {
+                              AsyncWebServerResponse *response = request->beginResponse(200);
+                              response->addHeader("Connection", "close");
+                              request->send(response);
+                              Events.send("Device being restarted", "success", millis(), 1000);
+                              Serial.println("Device being restarted");
+                              delay(100);
+                              ESP.restart();
+                          }
+                          else
+                          {
+                              Events.send((String("Update Error: ") + Update.getError()).c_str(), "error", millis(), 1000);
+                              request->send(200);
+                          }
                       },
                       [](AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final) {
                           if (!index)
@@ -242,30 +312,49 @@ void WIFI_Init(void)
                               if (!Update.begin((ESP.getFreeSketchSpace() - 0x1000) & 0xFFFFF000))
                               {
                                   Update.printError(Serial);
+                                  Events.send((String("Update Error: ") + Update.getError()).c_str(), "error", millis(), 1000);
+                                  request->send(200);
                               }
                           }
+
                           if (!Update.hasError())
                           {
                               if (Update.write(data, len) != len)
                               {
                                   Update.printError(Serial);
+                                  Events.send((String("Update Error: ") + Update.getError()).c_str(), "error", millis(), 1000);
+                                  request->send(200);
+                              }
+                              else
+                              {
+                                  Events.send(String(index + len).c_str(), "progress", millis());
                               }
                           }
+                          else
+                          {
+                              Update.printError(Serial);
+                              Events.send((String("Update Error: ") + Update.getError()).c_str(), "error", millis(), 1000);
+                              request->send(200);
+                          }
+
                           if (final)
                           {
                               if (Update.end(true))
                               {
                                   Serial.printf("Update Success: %uB\n", index + len);
+                                  Events.send(String(index + len).c_str(), "progress", millis());
                               }
                               else
                               {
                                   Update.printError(Serial);
+                                  Events.send((String("Update Error: ") + Update.getError()).c_str(), "error", millis(), 1000);
+                                  request->send(200);
                               }
                           }
                       });
 
         // attach filesystem root at URL /fs
-        HttpServer.serveStatic("/fs", SPIFFS, "/");
+        // HttpServer.serveStatic("/fs", SPIFFS, "/");
 
         HttpServer.on(
             "/login",
@@ -301,6 +390,7 @@ void WIFI_Init(void)
                     file.close();
                     file = root.openNextFile();
                 }
+                root.close();
 
                 json = json + "\"end\"]}";
                 request->send(200, "application/json", json);
@@ -333,26 +423,6 @@ void WIFI_Init(void)
                       [](AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final) {
                           if (!index)
                           {
-                              int params = request->params();
-                              for (int i = 0; i < params; i++)
-                              {
-                                  AsyncWebParameter *p = request->getParam(i);
-                                  if (p->isFile())
-                                  { //p->isPost() is also true
-                                      Serial.printf("FILE[%s]: %s, size: %u\n", p->name().c_str(), p->value().c_str(), p->size());
-                                      Events.send(String(p->size()).c_str(), "progress", millis(), 1000);
-                                      break;
-                                  }
-                                  else if (p->isPost())
-                                  {
-                                      Serial.printf("POST[%s]: %s\n", p->name().c_str(), p->value().c_str());
-                                  }
-                                  else
-                                  {
-                                      Serial.printf("GET[%s]: %s\n", p->name().c_str(), p->value().c_str());
-                                  }
-                              }
-
                               filename = "/" + filename;
                               //   if(SPIFFS.exists(filename) == true)
                               //   {
@@ -460,7 +530,6 @@ void WIFI_Init(void)
     // Add service to MDNS-SD
     MDNS.addService("_http", "_tcp", 80);
 #endif
-    WiFi.setSleep(false);
 }
 
 void WIFI_Task(void *pvParameters)
@@ -474,7 +543,6 @@ void WIFI_Task(void *pvParameters)
     ESP_LOGI("WIFI", "uxHighWaterMark = %d", uxHighWaterMark);
 
     WIFI_Init();
-    WiFi.reconnect();
 
     while (1)
     {

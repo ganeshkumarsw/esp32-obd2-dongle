@@ -317,24 +317,26 @@
 <body>
   <div class="container-fluid">
     <div class="row ml-0 mt-2 mr-3 input-group">
-      <select class="custom-select" id="select-cmd-id">
-        <option value="0">0</option>
-        <option value="1">1</option>
-        <option selected value="2">2</option>
-        <option value="3">1</option>
-        <option value="4">4</option>
-        <option value="5">5</option>
-        <option value="6">6</option>
-        <option value="7">7</option>
-        <option value="8">8</option>
-        <option value="9">9</option>
-        <option value="10">A</option>
-        <option value="11">B</option>
-        <option value="12">C</option>
-        <option value="13">D</option>
-        <option value="14">E</option>
-        <option value="15">F</option>
-      </select>
+      <div class="input-group-prepend">
+        <select class="custom-select" id="select-cmd-id">
+          <option value="0">0</option>
+          <option value="1">1</option>
+          <option selected value="2">2</option>
+          <option value="3">1</option>
+          <option value="4">4</option>
+          <option value="5">5</option>
+          <option value="6">6</option>
+          <option value="7">7</option>
+          <option value="8">8</option>
+          <option value="9">9</option>
+          <option value="10">A</option>
+          <option value="11">B</option>
+          <option value="12">C</option>
+          <option value="13">D</option>
+          <option value="14">E</option>
+          <option value="15">F</option>
+        </select>
+      </div>
       <input type="text" class="form-control" id="input-send" data-toggle="tooltip" data-placement="bottom"
         title="data only withou length (all in HEX), seperate each byte by space">
       <div class="input-group-append">
