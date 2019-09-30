@@ -133,7 +133,7 @@
         });
       });
 
-      $('tbody').on('click', 'button', function (event) {
+      $('.card').on('click', 'table button', function (event) {
         $.post("/fsdelete", { file: '/' + $(this).parents()[1].children[1].innerHTML }, function (result) {
           $('#refresh').click();
         });

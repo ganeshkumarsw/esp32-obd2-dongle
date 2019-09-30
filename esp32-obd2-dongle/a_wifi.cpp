@@ -300,7 +300,7 @@ void WIFI_Init(void)
                           }
                           else
                           {
-                              Events.send((String("Update Error: ") + Update.getError()).c_str(), "error", millis(), 1000);
+                              Events.send((String("Update Error: ") + Update.getError()).c_str(), "error", millis());
                               request->send(200);
                           }
                       },
@@ -312,8 +312,7 @@ void WIFI_Init(void)
                               if (!Update.begin((ESP.getFreeSketchSpace() - 0x1000) & 0xFFFFF000))
                               {
                                   Update.printError(Serial);
-                                  Events.send((String("Update Error: ") + Update.getError()).c_str(), "error", millis(), 1000);
-                                  request->send(200);
+                                  Events.send((String("Update Error: ") + Update.getError()).c_str(), "error", millis());
                               }
                           }
 
@@ -322,8 +321,7 @@ void WIFI_Init(void)
                               if (Update.write(data, len) != len)
                               {
                                   Update.printError(Serial);
-                                  Events.send((String("Update Error: ") + Update.getError()).c_str(), "error", millis(), 1000);
-                                  request->send(200);
+                                  Events.send((String("Update Error: ") + Update.getError()).c_str(), "error", millis());
                               }
                               else
                               {
@@ -333,8 +331,7 @@ void WIFI_Init(void)
                           else
                           {
                               Update.printError(Serial);
-                              Events.send((String("Update Error: ") + Update.getError()).c_str(), "error", millis(), 1000);
-                              request->send(200);
+                              Events.send((String("Update Error: ") + Update.getError()).c_str(), "error", millis());
                           }
 
                           if (final)
@@ -347,10 +344,11 @@ void WIFI_Init(void)
                               else
                               {
                                   Update.printError(Serial);
-                                  Events.send((String("Update Error: ") + Update.getError()).c_str(), "error", millis(), 1000);
-                                  request->send(200);
+                                  Events.send((String("Update Error: ") + Update.getError()).c_str(), "error", millis());
                               }
                           }
+
+                        //   request->send(200);
                       });
 
         // attach filesystem root at URL /fs
@@ -361,7 +359,7 @@ void WIFI_Init(void)
             HTTP_POST,
             [](AsyncWebServerRequest *request) {
                 String info = "{\"info\":{\"firmware\":";
-                info = info + "\"" + MAJOR_VERSION + "."+ MINOR_VERSION + "." + SUB_VERSION + "\"}}";
+                info = info + "\"" + MAJOR_VERSION + "." + MINOR_VERSION + "." + SUB_VERSION + "\"}}";
                 request->send(200, "application/json", info);
                 info.~String();
             });
@@ -436,8 +434,8 @@ void WIFI_Init(void)
                           request->send(200);
                       },
                       [](AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final) {
-                          if (!request->authenticate("admin", "admin"))
-                              return request->requestAuthentication();
+                        //   if (!request->authenticate("admin", "admin"))
+                        //       return request->requestAuthentication();
 
                           if (!index)
                           {
@@ -461,6 +459,8 @@ void WIFI_Init(void)
                               }
                               //   Serial.printf("Update Success: %uB\n", index + len);
                           }
+
+                        //   request->send(200);
                       });
 
         HttpServer.on(
@@ -613,7 +613,8 @@ void WIFI_Task(void *pvParameters)
 #if WIFI_AP_DNS
         DNS_Server.processNextRequest();
 #endif
-        vTaskDelay(1 / portTICK_PERIOD_MS);
+        vTaskDelay(100 / portTICK_PERIOD_MS);
+        WebSocket.cleanupClients();
     }
 }
 
