@@ -300,7 +300,7 @@ void WIFI_Init(void)
                           }
                           else
                           {
-                              Events.send((String("Update Error: ") + Update.getError()).c_str(), "error", millis(), 1000);
+                              Events.send((String("Update Error: ") + Update.getError()).c_str(), "error", millis());
                               request->send(200);
                           }
                       },
@@ -312,7 +312,7 @@ void WIFI_Init(void)
                               if (!Update.begin((ESP.getFreeSketchSpace() - 0x1000) & 0xFFFFF000))
                               {
                                   Update.printError(Serial);
-                                  Events.send((String("Update Error: ") + Update.getError()).c_str(), "error", millis(), 1000);
+                                  Events.send((String("Update Error: ") + Update.getError()).c_str(), "error", millis());
                               }
                           }
 
@@ -321,7 +321,7 @@ void WIFI_Init(void)
                               if (Update.write(data, len) != len)
                               {
                                   Update.printError(Serial);
-                                  Events.send((String("Update Error: ") + Update.getError()).c_str(), "error", millis(), 1000);
+                                  Events.send((String("Update Error: ") + Update.getError()).c_str(), "error", millis());
                               }
                               else
                               {
@@ -331,7 +331,7 @@ void WIFI_Init(void)
                           else
                           {
                               Update.printError(Serial);
-                              Events.send((String("Update Error: ") + Update.getError()).c_str(), "error", millis(), 1000);
+                              Events.send((String("Update Error: ") + Update.getError()).c_str(), "error", millis());
                           }
 
                           if (final)
@@ -344,7 +344,7 @@ void WIFI_Init(void)
                               else
                               {
                                   Update.printError(Serial);
-                                  Events.send((String("Update Error: ") + Update.getError()).c_str(), "error", millis(), 1000);
+                                  Events.send((String("Update Error: ") + Update.getError()).c_str(), "error", millis());
                               }
                           }
 
@@ -613,7 +613,8 @@ void WIFI_Task(void *pvParameters)
 #if WIFI_AP_DNS
         DNS_Server.processNextRequest();
 #endif
-        vTaskDelay(1 / portTICK_PERIOD_MS);
+        vTaskDelay(100 / portTICK_PERIOD_MS);
+        WebSocket.cleanupClients();
     }
 }
 
