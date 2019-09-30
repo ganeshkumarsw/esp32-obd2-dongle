@@ -86,10 +86,10 @@ void WIFI_Init(void)
 
     // WiFi.scanNetworks will return the number of networks found
     int n = WiFi.scanNetworks();
-    Serial.println("scan done");
+    Serial.println("Scan done");
     if (n == 0)
     {
-        Serial.println("no networks found");
+        Serial.println("No networks found");
     }
     else
     {
@@ -103,8 +103,8 @@ void WIFI_Init(void)
                 delay(10);
                 wifiStatus = WiFi.begin((char *)WIFI_SSID, (char *)WIFI_Password);
                 WiFi.setSleep(false);
-                Serial.print("WIFI STA begin");
-                Serial.println(wifiStatus);
+                Serial.println("WIFI STA begin");
+                // Serial.println(wifiStatus);
 
                 if (WiFi.getAutoConnect() == false)
                 {
@@ -136,7 +136,7 @@ void WIFI_Init(void)
 
     if (staConnected == false)
     {
-        Serial.print("WIFI AP begin");
+        Serial.println("WIFI AP begin");
         if (!WiFi.softAP("OBD DONGLE", "password1"))
         {
             Serial.println("ESP32 SoftAP failed to start!");
@@ -237,21 +237,21 @@ void WIFI_Init(void)
                     buff[len++] = crc16 >> 8;
                     buff[len++] = crc16;
                 }
-                Serial.print("Data received: ");
+                // Serial.print("Data received: ");
 
-                for (int i = 0; i < len; i++)
-                {
-                    Serial.print((char)data[i], HEX);
-                    Serial.print(' ');
-                }
-                Serial.println();
+                // for (int i = 0; i < len; i++)
+                // {
+                //     Serial.print((char)data[i], HEX);
+                //     Serial.print(' ');
+                // }
+                // Serial.println();
             }
         });
 
         Events.onConnect([](AsyncEventSourceClient *client) {
             if (client->lastId())
             {
-                Serial.printf("Client reconnected! Last message ID that it got is: %u\n", client->lastId());
+                Serial.printf("Client reconnected! Last message ID that it got is: %u\r\n", client->lastId());
             }
             //send event with message "hello!", id current millis
             // and set reconnect delay to 1 second
@@ -279,11 +279,11 @@ void WIFI_Init(void)
         });
 
         // Simple Firmware Update Form
-        HttpServer.on("/update", HTTP_GET, [](AsyncWebServerRequest *request) {
-            AsyncWebServerResponse *response = request->beginResponse(200, "text/html", "<form method='POST' action='/flash' enctype='multipart/form-data'><input type='file' name='update'><input type='submit' value='Update'></form>");
-            response->addHeader("Connection", "close");
-            request->send(response);
-        });
+        // HttpServer.on("/update", HTTP_GET, [](AsyncWebServerRequest *request) {
+        //     AsyncWebServerResponse *response = request->beginResponse(200, "text/html", "<form method='POST' action='/flash' enctype='multipart/form-data'><input type='file' name='update'><input type='submit' value='Update'></form>");
+        //     response->addHeader("Connection", "close");
+        //     request->send(response);
+        // });
 
         HttpServer.on("/flash",
                       HTTP_POST,
@@ -307,7 +307,7 @@ void WIFI_Init(void)
                       [](AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final) {
                           if (!index)
                           {
-                              Serial.printf("Update Start: %s\n", filename.c_str());
+                              //   Serial.printf("Update Start: %s\n", filename.c_str());
                               //   Update.runAsync(true);
                               if (!Update.begin((ESP.getFreeSketchSpace() - 0x1000) & 0xFFFFF000))
                               {
@@ -341,7 +341,7 @@ void WIFI_Init(void)
                           {
                               if (Update.end(true))
                               {
-                                  Serial.printf("Update Success: %uB\n", index + len);
+                                  //   Serial.printf("Update Success: %uB\n", index + len);
                                   Events.send(String(index + len).c_str(), "progress", millis());
                               }
                               else
@@ -357,16 +357,26 @@ void WIFI_Init(void)
         // HttpServer.serveStatic("/fs", SPIFFS, "/");
 
         HttpServer.on(
+            "/version",
+            HTTP_POST,
+            [](AsyncWebServerRequest *request) {
+                String info = "{\"info\":{\"firmware\":";
+                info = info + "\"" + MAJOR_VERSION + "."+ MINOR_VERSION + "." + SUB_VERSION + "\"}}";
+                request->send(200, "application/json", info);
+                info.~String();
+            });
+
+        HttpServer.on(
             "/login",
             HTTP_POST,
             [](AsyncWebServerRequest *request) {
                 // Serial.println("Received post request");
                 //List all parameters (Compatibility)
-                int args = request->args();
-                for (int i = 0; i < args; i++)
-                {
-                    Serial.printf("ARG[%s]: %s\n", request->argName(i).c_str(), request->arg(i).c_str());
-                }
+                // int args = request->args();
+                // for (int i = 0; i < args; i++)
+                // {
+                //     Serial.printf("ARG[%s]: %s\n", request->argName(i).c_str(), request->arg(i).c_str());
+                // }
 
                 request->send(200);
             });
@@ -376,37 +386,42 @@ void WIFI_Init(void)
             HTTP_POST,
             [](AsyncWebServerRequest *request) {
                 // DynamicJsonDocument doc(8000);
-                String json;
+                String json = "{\"data\":[";
+                ;
                 // Add an array.
                 //
                 // JsonArray data = doc.createNestedArray("data");
 
                 File root = SPIFFS.open("/");
                 File file = root.openNextFile();
-                json = "{\"data\":[";
+
                 while (file)
                 {
-                    json = json + "\"" + file.name() + "\",";
+                    json = json + "[\"" + file.name() + "\",\"" + file.size() + "\"],";
                     file.close();
                     file = root.openNextFile();
                 }
                 root.close();
 
-                json = json + "\"end\"]}";
+                json = json + "[\"end\", \"0\"]]}";
                 request->send(200, "application/json", json);
+                json.~String();
             });
 
         HttpServer.on(
             "/fsdelete",
             HTTP_POST,
             [](AsyncWebServerRequest *request) {
+                if (!request->authenticate("admin", "admin"))
+                    return request->requestAuthentication();
+
                 if (request->args() > 0)
                 {
                     int i = 0;
                     if (request->argName(i) == "file")
                     {
                         SPIFFS.remove(request->arg(i));
-                        Serial.printf("%s: %s removed\n", request->argName(i).c_str(), request->arg(i).c_str());
+                        // Serial.printf("%s: %s removed\n", request->argName(i).c_str(), request->arg(i).c_str());
                     }
                 }
                 request->send(200);
@@ -421,16 +436,14 @@ void WIFI_Init(void)
                           request->send(200);
                       },
                       [](AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final) {
+                          if (!request->authenticate("admin", "admin"))
+                              return request->requestAuthentication();
+
                           if (!index)
                           {
                               filename = "/" + filename;
-                              //   if(SPIFFS.exists(filename) == true)
-                              //   {
-                              //       SPIFFS.remove(filename);
-                              //   }
                               FsUploadFile = SPIFFS.open(filename, "w");
-
-                              Serial.printf("Upload Start: %s\n", filename.c_str());
+                              //   Serial.printf("Upload Start: %s\n", filename.c_str());
                           }
 
                           if (FsUploadFile)
@@ -442,11 +455,11 @@ void WIFI_Init(void)
                           if (final)
                           {
                               if (FsUploadFile)
-                              { // If the file was successfully created
+                              {
+                                  // If the file was successfully created
                                   FsUploadFile.close();
                               }
-
-                              Serial.printf("Update Success: %uB\n", index + len);
+                              //   Serial.printf("Update Success: %uB\n", index + len);
                           }
                       });
 
@@ -611,7 +624,7 @@ void WIFI_Soc_Write(uint8_t *payLoad, uint16_t len)
     uint16_t crc16;
     uint16_t idx;
     uint32_t tick;
-    Serial.println("App processed");
+    // Serial.println("App processed");
     // WiFiClient client = SocketServer.available();
 
     if (!WIFI_TxLen)
@@ -652,7 +665,7 @@ void WIFI_WebSoc_Write(uint8_t *payLoad, uint16_t len)
     uint16_t crc16;
     uint16_t idx;
     uint32_t tick;
-    Serial.println("App processed");
+    // Serial.println("App processed");
 
     if (!WIFI_TxLen)
     {

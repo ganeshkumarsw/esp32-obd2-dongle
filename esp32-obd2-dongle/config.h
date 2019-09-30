@@ -7,7 +7,7 @@ extern "C" {
 
 #define MAJOR_VERSION             0
 #define MINOR_VERSION             0
-#define SUB_VERSION               16
+#define SUB_VERSION               17
 
 // #define STA_WIFI_SSID       "SMARTRAC Guest"
 // #define STA_WIFI_PASSWORD   ""

@@ -49,6 +49,27 @@
         AppCmd_CAN_RxId: 6,
       };
 
+      var AppError = {
+        0x00: "Positive Response",
+        0x01: "Negative Response",
+        0x10: "Command Not Supported",
+        0x12: "Input Not supported",
+        0x13: "Invalid format or incorrect message length of input",
+        0x14: "Invalid operation",
+        0x15: "CRC failure",
+        0x16: "Protocol not set",
+        0x22: "Conditions not correct",
+        0x31: "Request out of range",
+        0x33: "security access denied",
+        0x78: "response pending",
+        0x24: "request sequence error",
+        0x35: "Invalid Key",
+        0x36: "exceeded number of attempts",
+        0x37: "required time delay not expired",
+        0x72: "General programming failure",
+        0x7E: "sub fn not supported in this diag session",
+      };
+
       $('[data-toggle="tooltip"]').tooltip();
       Set_ConnectionStatus('Closed');
       Set_RxMessageCount(RxMessageCount);
@@ -132,24 +153,30 @@
       }
 
       async function ParseRxMessage(data) {
-        switch ((data[11] & 0xF0)) {
+
+        switch ((data[0] & 0xF0)) {
           case 0x20:
-            var len = ((data[11] & 0x0F) << 8) + data[12];
-            len = len - 3;
+            if (data[2] == 0x00) {
+              var len = ((data[0] & 0x0F) << 8) + data[1];
+              len = len - 3;
 
-            switch (cmdRequested) {
-              case AppCmd["AppCmd_CAN_Protocol"]:
-                $('#select-can-protocol').val(data[13]);
-                break;
+              switch (cmdRequested) {
+                case AppCmd["AppCmd_CAN_Protocol"]:
+                  $('#select-can-protocol').val(data[3]);
+                  break;
 
-              case AppCmd["AppCmd_CAN_RxId"]:
+                case AppCmd["AppCmd_CAN_RxId"]:
 
-                $('#input-rx-can-id').val(len);
-                break;
+                  $('#input-rx-can-id').val(len);
+                  break;
 
-              case AppCmd["AppCmd_CAN_TxId"]:
-                $('#input-tx-can-id').val(len);
-                break;
+                case AppCmd["AppCmd_CAN_TxId"]:
+                  $('#input-tx-can-id').val(len);
+                  break;
+              }
+            }
+            else {
+              ModalDisp("error", AppError[data[3]], -1);
             }
             break;
         }
@@ -189,7 +216,7 @@
               return;
             }
 
-            ParseRxMessage(data);
+            ParseRxMessage(data.slice(11));
 
             var temp = "";
             data.forEach(function (val, idx, arr) {
