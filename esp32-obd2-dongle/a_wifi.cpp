@@ -132,8 +132,6 @@ void WIFI_Init(void)
         }
     }
 
-    Serial.println("Wifi mode: " + WiFi.getMode());
-
     if (staConnected == false)
     {
         Serial.println("WIFI AP begin");
