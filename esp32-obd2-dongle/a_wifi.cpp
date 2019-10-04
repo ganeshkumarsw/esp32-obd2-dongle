@@ -7,6 +7,7 @@
 #include "SPIFFS.h"
 #include <ArduinoJson.h>
 #include "ESPAsyncWebServer.h"
+#include "AsyncJson.h"
 #include "app.h"
 #include "a_led.h"
 #include "a_wifi.h"
@@ -291,7 +292,7 @@ void WIFI_Init(void)
                               AsyncWebServerResponse *response = request->beginResponse(200);
                               response->addHeader("Connection", "close");
                               request->send(response);
-                              Events.send("Device being restarted", "success", millis(), 1000);
+                              Events.send("Device being restarted", "success", millis());
                               Serial.println("Device being restarted");
                               delay(100);
                               ESP.restart();
@@ -307,7 +308,7 @@ void WIFI_Init(void)
                           {
                               //   Serial.printf("Update Start: %s\n", filename.c_str());
                               //   Update.runAsync(true);
-                              if (!Update.begin((ESP.getFreeSketchSpace() - 0x1000) & 0xFFFFF000))
+                              if (!Update.begin())
                               {
                                   Update.printError(Serial);
                                   Events.send((String("Update Error: ") + Update.getError()).c_str(), "error", millis());
@@ -346,7 +347,7 @@ void WIFI_Init(void)
                               }
                           }
 
-                        //   request->send(200);
+                          //   request->send(200);
                       });
 
         // attach filesystem root at URL /fs
@@ -356,8 +357,51 @@ void WIFI_Init(void)
             "/version",
             HTTP_POST,
             [](AsyncWebServerRequest *request) {
+                AsyncJsonResponse *jsonResp = new AsyncJsonResponse();
+                JsonVariant root = jsonResp->getRoot();
+                JsonVariant info = root.createNestedObject("info");
+                JsonVariant firmware = info.createNestedObject("Firmware");
+                firmware["MAJOR VER"] = MAJOR_VERSION;
+                firmware["MINOR VER"] = MINOR_VERSION;
+                firmware["SUB VER"] = SUB_VERSION;
+                info["SDK"] = ESP.getSdkVersion();
+                info["CPU FREQ"] = getCpuFrequencyMhz();
+                info["APB FREQ"] = getApbFrequency();
+                info["FLASH SIZE"] = ESP.getFlashChipSize();
+                info["RAM SIZE"] = ESP.getHeapSize();
+                info["FREE RAM"] = ESP.getFreeHeap();
+                info["MAX RAM ALLOC"] = ESP.getMaxAllocHeap();
+                // Serial.println("MHz");
+                // Serial.print("ESP32 FLASH SIZE: ");
+                // Serial.print(ESP.getFlashChipSize() / (1024.0 * 1024), 2);
+                // Serial.println("MB");
+                // Serial.print("ESP32 RAM SIZE: ");
+                // Serial.print(ESP.getHeapSize() / 1024.0, 2);
+                // Serial.println("KB");
+                // Serial.print("ESP32 FREE RAM: ");
+                // Serial.print(ESP.getFreeHeap() / 1024.0, 2);
+                // Serial.println("KB");
+                // Serial.print("ESP32 MAX RAM ALLOC: ");
+                // Serial.print(ESP.getMaxAllocHeap() / 1024.0, 2);
+                // Serial.println("KB");
+                // Serial.print("ESP32 FREE PSRAM: ");
+                // Serial.print(ESP.getFreePsram() / 1024.0, 2);
+                // Serial.println("KB");
+
+                // String info = "{\"info\":{\"firmware\":";
+                // info = info + "\"" + MAJOR_VERSION + "." + MINOR_VERSION + "." + SUB_VERSION + "_" + ESP.getSdkVersion() + "\"}}";
+                jsonResp->setLength();
+                // serializeJson(doc, Serial);
+                request->send(jsonResp);
+                // info.~String();
+            });
+
+        HttpServer.on(
+            "/info",
+            HTTP_POST,
+            [](AsyncWebServerRequest *request) {
                 String info = "{\"info\":{\"firmware\":";
-                info = info + "\"" + MAJOR_VERSION + "." + MINOR_VERSION + "." + SUB_VERSION + "\"}}";
+                info = info + "\"" + MAJOR_VERSION + "." + MINOR_VERSION + "." + SUB_VERSION + "_" + ESP.getSdkVersion() + "\"}}";
                 request->send(200, "application/json", info);
                 info.~String();
             });
@@ -381,13 +425,7 @@ void WIFI_Init(void)
             "/fsread",
             HTTP_POST,
             [](AsyncWebServerRequest *request) {
-                // DynamicJsonDocument doc(8000);
                 String json = "{\"data\":[";
-                ;
-                // Add an array.
-                //
-                // JsonArray data = doc.createNestedArray("data");
-
                 File root = SPIFFS.open("/");
                 File file = root.openNextFile();
 
@@ -432,8 +470,8 @@ void WIFI_Init(void)
                           request->send(200);
                       },
                       [](AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final) {
-                        //   if (!request->authenticate("admin", "admin"))
-                        //       return request->requestAuthentication();
+                          //   if (!request->authenticate("admin", "admin"))
+                          //       return request->requestAuthentication();
 
                           if (!index)
                           {
@@ -458,7 +496,7 @@ void WIFI_Init(void)
                               //   Serial.printf("Update Success: %uB\n", index + len);
                           }
 
-                        //   request->send(200);
+                          //   request->send(200);
                       });
 
         HttpServer.on(

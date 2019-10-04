@@ -12,11 +12,12 @@ void setup()
 {
   Serial.begin(115200);
   Serial.setRxBufferSize(4096);
-  // String ver = "OBDII USB/Wifi/BT Dongle v";
+  String ver = "OBDII USB/Wifi/BT Dongle v" + MAJOR_VERSION;
+  ver = ver  + "." + MINOR_VERSION + "." + SUB_VERSION + "_" + ESP.getSdkVersion();
 
   // ver = ver + MAJOR_VERSION + MINOR_VERSION + SUB_VERSION + "\r\n";
-  printf("OBDII USB/Wifi/BT Dongle v%02d.%02d.%02d\r\n", MAJOR_VERSION, MINOR_VERSION, SUB_VERSION);
-  // Serial.print(ver);
+  // printf("OBDII USB/Wifi/BT Dongle v%02d.%02d.%02d\r\n", MAJOR_VERSION, MINOR_VERSION, SUB_VERSION);
+  Serial.println(ver);
 
   // MQTT_Init();
   // disableCore0WDT();

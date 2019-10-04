@@ -246,4 +246,3 @@ public:
   }
   virtual bool isRequestHandlerTrivial() override final {return _onRequest ? false : true;}
 };
-#endif

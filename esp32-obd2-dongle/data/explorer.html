@@ -16,34 +16,33 @@
       var fileSize;
 
       AdjustCardeareaHeight();
-      GetFirmwareInfo();
       $(window).resize(AdjustCardeareaHeight);
 
       eventSource.onmessage = function (event) {
-        console.log("OnMessage, Event: " + event.event + ": ", event.data);
+        // console.log("OnMessage, Event: " + event.event + ": ", event.data);
       };
 
       eventSource.addEventListener("progress", function (event) {
         var per = (Math.round((parseInt(event.data) / fileSize) * 100)) + '%';
         $('#progressUpload').css('width', per);
         $('#progressUpload').html(per);
-        console.log("Progress: ", per);
+        // console.log("Progress: ", per);
       });
 
       eventSource.addEventListener("success", function (event) {
-        console.log("Success: ", event.data);
+        // console.log("Success: ", event.data);
       });
 
       eventSource.addEventListener("error", function (event) {
-        console.log("Error: ", event.data);
+        // console.log("Error: ", event.data);
       });
 
       eventSource.onerror = function (event) {
-        console.log("OnError", event);
+        // console.log("OnError", event);
       };
 
       eventSource.onopen = function (event) {
-        console.log("OnOpen", event);
+        // console.log("OnOpen", event);
       };
 
       // $('#exampleModal').on('show.bs.modal', function (event) {
@@ -139,15 +138,56 @@
         });
       });
 
+      $('#info').click(function (event) {
+        GetInfo();
+      });
+
       function AdjustCardeareaHeight() {
         // $('div textarea').css('height', window.innerHeight - parseInt($('div').css('height')) - 30);
         $('.card').css('height', window.innerHeight - (parseInt($('div').css('height')) + parseInt($('nav').css('height'))) - 80);
       }
 
-      function GetFirmwareInfo() {
+      function GetInfo() {
         $.post("/version", {}, function (result) {
-          $('.navbar-brand').append(" v" + result["info"]["firmware"]);
+          var html = "";
+          $('infoModal .modal-body').empty();
+          html = '<table class="table table-sm table-hover"><tbody>';
+
+          $.each(result.info, function (key, value) {
+            html = html + '<tr><th scope="row">' + key + '</th><td>';
+            if (key == 'Firmware') {
+              html = html + value["MAJOR VER"] + '.' + value["MINOR VER"] + '.' + value["SUB VER"];
+            }
+            else {
+              html = html + value;
+            }
+
+            html = html + '</td></tr>';
+          });
+
+          html = html + '</tbody></table>';
+          ModalDisp($('#infoModal'), "Info", html, -1);
+          // $('infoModal .modal-body').html(html);
         });
+      }
+
+      function ModalDisp(modal, title, html, timout = 1000) {
+        if (title === "error") {
+          modal.find('.modal-header').addClass('alert-danger');
+        }
+        else {
+          modal.find('.modal-header').addClass('alert-success');
+        }
+
+        modal.find('.modal-title').text(title);
+        modal.find('.modal-body').html(html);
+        modal.modal('show');
+
+        if (timout > 0) {
+          setTimeout(function (modal) {
+            modal.modal('hide');
+          }, timout, modal);
+        }
       }
     });
   </script>
@@ -163,8 +203,8 @@
     </button>
     <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
       <div class="navbar-nav">
-        <!-- <a class="nav-item nav-link active" href="#">Home <span class="sr-only">(current)</span></a>
-        <a class="nav-item nav-link" href="#">Features</a>
+        <a class="nav-item nav-link active" id="info" href="#">Info</a>
+        <!-- <a class="nav-item nav-link" href="#">Features</a>
         <a class="nav-item nav-link" href="#">Pricing</a>
         <a class="nav-item nav-link disabled" href="#">Disabled</a> -->
       </div>
@@ -208,6 +248,24 @@
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
           <button type="button" id="upload" value="" class="btn btn-primary">Upload</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal fade" id="infoModal" tabindex="-1" data-backdrop="static" data-keyboard="false" role="dialog">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="modaltitle"></h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
         </div>
       </div>
     </div>
