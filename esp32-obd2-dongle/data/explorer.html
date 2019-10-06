@@ -62,10 +62,14 @@
             '<thead><tr><th scope="col">#</th><th scope="col">FileName</th><th scope="col">Size</th><th scope="col">Options</th></tr></thead>' +
             '<tbody></tbody></table>');
           $('table').children('tbody').empty();
-          $.each(result.data, function (key, value) {
-            if (value[0] != 'end') {
-              $('table').children('tbody').append('<tr><th scope="row">' + key + '</th><td>' + value[0].replace('/', '') + '</td><td>' + (parseInt(value[1]) / 1024).toFixed(2) + ' KB</td><td><button type="button" id="delete" class="btn btn-danger">Delete</button></td></tr>');
-            }
+          var val = 0;
+          $.each(result, function (key, value) {
+            $('table').children('tbody').append('<tr>' +
+                                                  '<th scope="row">' + (val++) + '</th>' + 
+                                                  '<td>' + key.replace('/', '') + '</td>' + 
+                                                  '<td>' + (parseInt(value) / 1024).toFixed(2) + ' KB</td>' + 
+                                                  '<td><button type="button" id="delete" class="btn btn-danger">Delete</button></td>' + 
+                                                '</tr>');
           });
         });
       });

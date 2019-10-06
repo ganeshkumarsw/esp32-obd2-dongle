@@ -396,15 +396,15 @@ void WIFI_Init(void)
                 // info.~String();
             });
 
-        HttpServer.on(
-            "/info",
-            HTTP_POST,
-            [](AsyncWebServerRequest *request) {
-                String info = "{\"info\":{\"firmware\":";
-                info = info + "\"" + MAJOR_VERSION + "." + MINOR_VERSION + "." + SUB_VERSION + "_" + ESP.getSdkVersion() + "\"}}";
-                request->send(200, "application/json", info);
-                info.~String();
-            });
+        // HttpServer.on(
+        //     "/info",
+        //     HTTP_POST,
+        //     [](AsyncWebServerRequest *request) {
+        //         String info = "{\"info\":{\"firmware\":";
+        //         info = info + "\"" + MAJOR_VERSION + "." + MINOR_VERSION + "." + SUB_VERSION + "_" + ESP.getSdkVersion() + "\"}}";
+        //         request->send(200, "application/json", info);
+        //         info.~String();
+        //     });
 
         HttpServer.on(
             "/login",
@@ -421,25 +421,47 @@ void WIFI_Init(void)
                 request->send(200);
             });
 
+        // HttpServer.on(
+        //     "/fsread",
+        //     HTTP_POST,
+        //     [](AsyncWebServerRequest *request) {
+        //         String json = "{\"data\":[";
+        //         File root = SPIFFS.open("/");
+        //         File file = root.openNextFile();
+
+        //         while (file)
+        //         {
+        //             json = json + "[\"" + file.name() + "\",\"" + file.size() + "\"],";
+        //             file.close();
+        //             file = root.openNextFile();
+        //         }
+        //         root.close();
+
+        //         json = json + "[\"end\", \"0\"]]}";
+        //         request->send(200, "application/json", json);
+        //         json.~String();
+        //     });
+
         HttpServer.on(
             "/fsread",
             HTTP_POST,
             [](AsyncWebServerRequest *request) {
-                String json = "{\"data\":[";
+                AsyncJsonResponse *jsonResp = new AsyncJsonResponse();
+                JsonVariant rootJson = jsonResp->getRoot();
+
                 File root = SPIFFS.open("/");
                 File file = root.openNextFile();
 
                 while (file)
                 {
-                    json = json + "[\"" + file.name() + "\",\"" + file.size() + "\"],";
+                    rootJson[String(file.name())] = file.size();
                     file.close();
                     file = root.openNextFile();
                 }
-                root.close();
 
-                json = json + "[\"end\", \"0\"]]}";
-                request->send(200, "application/json", json);
-                json.~String();
+                root.close();
+                jsonResp->setLength();
+                request->send(jsonResp);
             });
 
         HttpServer.on(
