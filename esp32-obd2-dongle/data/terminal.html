@@ -112,7 +112,7 @@
         message[idx++] = data.length;
         message.set(pro_time.match(/[\w]{1,2}/g).slice(0, 8), idx);
         idx = idx + 8;
-        message[idx++] = (data[0] & 0xF0) | (((data.length - 1) + 2) >> 8);
+        message[idx++] = ((data[0] << 4 ) & 0xF0) | (((data.length - 1) + 2) >> 8);
         message[idx++] = ((data.length - 1) + 2);
         message.set(data.subarray(1), idx);
         idx = idx + (data.length - 1);
@@ -250,19 +250,19 @@
             break;
           case "btn-can-protocol-r":
             cmdRequested = parseInt(AppCmd["AppCmd_CAN_Protocol"], 16) + 1;
-            var message = GeneratePDU(new Uint8Array([0x20, cmdRequested]));
+            var message = GeneratePDU(new Uint8Array([2, cmdRequested]));
             send = true;
             break;
 
           case "btn-can-protocol-s":
             cmdRequested = parseInt(AppCmd["AppCmd_CAN_Protocol"], 16);
-            var message = GeneratePDU(new Uint8Array([0x20, cmdRequested, $('#select-can-protocol').val()]));
+            var message = GeneratePDU(new Uint8Array([2, cmdRequested, $('#select-can-protocol').val()]));
             send = true;
             break;
 
           case "btn-rx-can-id-r":
             cmdRequested = parseInt(AppCmd["AppCmd_CAN_RxId"], 16) + 1;
-            var message = GeneratePDU(new Uint8Array([0x20, cmdRequested]));
+            var message = GeneratePDU(new Uint8Array([2, cmdRequested]));
             send = true;
             break;
 
@@ -270,14 +270,14 @@
             cmdRequested = parseInt(AppCmd["AppCmd_CAN_RxId"], 16);
             var input = new Uint8Array($('#input-rx-can-id').val().match(/[\w]{1,2}/g).map(bin => parseInt(bin, 16)));
             var temp = new Uint8Array(2 + input.length);
-            temp.set([0x20, cmdRequested], 0);
+            temp.set([2, cmdRequested], 0);
             temp.set(input, 2);
             var message = GeneratePDU(temp);
             send = true;
             break;
           case "btn-tx-can-id-r":
             cmdRequested = parseInt(AppCmd["AppCmd_CAN_TxId"], 16) + 1;
-            var message = GeneratePDU(new Uint8Array([0x20, cmdRequested]));
+            var message = GeneratePDU(new Uint8Array([2, cmdRequested]));
             send = true;
             break;
 
@@ -285,7 +285,7 @@
             cmdRequested = parseInt(AppCmd["AppCmd_CAN_TxId"], 16);
             var input = new Uint8Array($('#input-tx-can-id').val().match(/[\w]{1,2}/g).map(bin => parseInt(bin, 16)));
             var temp = new Uint8Array(2 + input.length);
-            temp.set([0x20, cmdRequested], 0);
+            temp.set([2, cmdRequested], 0);
             temp.set(input, 2);
             var message = GeneratePDU(temp);
             send = true;
