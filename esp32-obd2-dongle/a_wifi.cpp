@@ -28,7 +28,7 @@ AsyncWebSocket WebSocket("/ws"); // access at ws://[esp ip]/ws
 AsyncEventSource Events("/events");
 AsyncWebSocketClient *p_WebSocketClient;
 File FsUploadFile;
-// WiFiServer SocketServer(6888);
+WiFiServer SocketServer(6888);
 
 char WIFI_SSID[50] = STA_WIFI_SSID;
 char WIFI_Password[50] = STA_WIFI_PASSWORD;
@@ -596,7 +596,7 @@ void WIFI_Init(void)
     }
 
     ESP_LOGI("WIFI", "AP IP address: %s", WiFi.softAPIP().toString().c_str());
-    // SocketServer.begin();
+    SocketServer.begin();
 #if WIFI_STA
     // Add service to MDNS-SD
     MDNS.addService("_http", "_tcp", 80);
@@ -617,40 +617,40 @@ void WIFI_Task(void *pvParameters)
 
     while (1)
     {
-        // WiFiClient client = SocketServer.available();
+        WiFiClient client = SocketServer.available();
 
-        // if (client)
-        // {
-        //     uint16_t len = 0;
-        //     Serial.println("Client connected");
+        if (client)
+        {
+            uint16_t len = 0;
+            Serial.println("Client connected");
 
-        //     while (client.connected())
-        //     {
-        //         while (client.available())
-        //         {
-        //             len = client.read(WIFI_RxBuff, sizeof(WIFI_RxBuff));
-        //         }
+            while (client.connected())
+            {
+                while (client.available())
+                {
+                    len = client.read(WIFI_RxBuff, sizeof(WIFI_RxBuff));
+                }
 
-        //         if (len)
-        //         {
-        //             WIFI_SeqNo = WIFI_RxBuff[0];
-        //             APP_ProcessData(&WIFI_RxBuff[11], (len - 13), APP_CHANNEL_TCP_SOC);
-        //             // client.write(WIFI_RxBuff, len);
-        //             len = 0;
-        //         }
+                if (len)
+                {
+                    WIFI_SeqNo = WIFI_RxBuff[0];
+                    APP_ProcessData(&WIFI_RxBuff[11], (len - 13), APP_CHANNEL_TCP_SOC);
+                    // client.write(WIFI_RxBuff, len);
+                    len = 0;
+                }
 
-        //         if (WIFI_TxLen)
-        //         {
-        //             client.write(WIFI_TxBuff, WIFI_TxLen);
-        //             WIFI_TxLen = 0;
-        //         }
+                if (WIFI_TxLen)
+                {
+                    client.write(WIFI_TxBuff, WIFI_TxLen);
+                    WIFI_TxLen = 0;
+                }
 
-        //         vTaskDelay(1 / portTICK_PERIOD_MS);
-        //     }
+                vTaskDelay(1 / portTICK_PERIOD_MS);
+            }
 
-        //     // client.stop();
-        //     Serial.println("Client disconnected");
-        // }
+            // client.stop();
+            Serial.println("Client disconnected");
+        }
 
         if (wifiStatus != WiFi.status())
         {
@@ -683,8 +683,9 @@ void WIFI_Soc_Write(uint8_t *payLoad, uint16_t len)
     uint16_t crc16;
     uint16_t idx;
     uint32_t tick;
-    // Serial.println("App processed");
-    // WiFiClient client = SocketServer.available();
+    
+    Serial.println("App processed");
+    WiFiClient client = SocketServer.available();
 
     if (!WIFI_TxLen)
     {
