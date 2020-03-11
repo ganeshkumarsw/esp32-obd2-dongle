@@ -39,7 +39,7 @@ void CreateTask_Task(void *pvParameters)
 {
   UBaseType_t uxHighWaterMark;
 
-  LED_SetLedState(HEART_BEAT_LED, GPIO_STATE_TOGGLE, GPIO_TOGGLE_1HZ);
+  LED_SetLedState(HEART_BEAT_LED, LED_STATE_TOGGLE, LED_TOGGLE_RATE_1HZ);
 
   ESP_LOGI("CREATE", "Task Started");
 

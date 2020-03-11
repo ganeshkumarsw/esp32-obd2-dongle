@@ -2,46 +2,81 @@
 #include "config.h"
 #include "a_led.h"
 
-gpio_state_t LED_HeartBeatLedState;
-gpio_state_t LED_ErrorLedState;
-gpio_state_t LED_CommLedState;
-gpio_state_t LED_SecurityLedState;
-gpio_state_t LED_WifiConnLedState;
-
-uint8_t LED_HeartBeatLedFreq;
-uint8_t LED_ErrorLedFreq;
-uint8_t LED_CommLedFreq;
-uint8_t LED_SecurityLedFreq;
-uint8_t LED_WifiConnLedFreq;
+#if 0
+const LED_Config_t LED_OutConfig[LED_OUT_MAX] = {
+    // [LED_OUT_1]
+    {GPIO_NUM_12, LED_STATE_LOW},
+    // [LED_OUT_2]
+    {GPIO_NUM_14, LED_STATE_LOW},
+    // [LED_OUT_3]
+    {GPIO_NUM_32, LED_STATE_LOW},
+    // [LED_OUT_4]
+    {GPIO_NUM_33, LED_STATE_LOW},
+    // [LED_OUT_5]
+    {GPIO_NUM_26, LED_STATE_LOW},
+    // [LED_OUT_6]
+    {GPIO_NUM_25, LED_STATE_LOW},
+    // [LED_OUT_7]
+    {GPIO_NUM_27, LED_STATE_LOW},
+};
+#else
+const LED_Config_t LED_OutConfig[LED_OUT_MAX] = {
+    // [LED_OUT_1]
+    {GPIO_NUM_18, LED_STATE_LOW},
+    // [LED_OUT_2]
+    {GPIO_NUM_19, LED_STATE_LOW},
+    // [LED_OUT_3]
+    {GPIO_NUM_32, LED_STATE_LOW},
+    // [LED_OUT_4]
+    {GPIO_NUM_33, LED_STATE_LOW},
+    // [LED_OUT_5]
+    {GPIO_NUM_26, LED_STATE_LOW},
+    // [LED_OUT_6]
+    {GPIO_NUM_25, LED_STATE_LOW},
+    // [LED_OUT_7]
+    {GPIO_NUM_27, LED_STATE_LOW},
+};
+#endif
+struct
+{
+    LED_Toggle_Rate_t ToggleRate;
+    const LED_Op_Mode_t OpMode;
+    LED_State_t IO_State;
+}LED_OutParams[LED_OUT_MAX] = {
+    // [LED_OUT_1]
+    {LED_TOGGLE_RATE_1HZ, LED_OP_MODE_TOGGLE, LED_STATE_LOW},
+    // [LED_OUT_2]
+    {LED_TOGGLE_RATE_1HZ, LED_OP_MODE_TOGGLE, LED_STATE_LOW},
+    // [LED_OUT_3]
+    {LED_TOGGLE_RATE_1HZ, LED_OP_MODE_TOGGLE, LED_STATE_LOW},
+    // [LED_OUT_4]
+    {LED_TOGGLE_RATE_1HZ, LED_OP_MODE_TOGGLE, LED_STATE_LOW},
+    // [LED_OUT_5]
+    {LED_TOGGLE_RATE_5HZ, LED_OP_MODE_TOGGLE, LED_STATE_LOW},
+    // [LED_OUT_6]
+    {LED_TOGGLE_RATE_1HZ, LED_OP_MODE_TOGGLE, LED_STATE_LOW},
+    // [LED_OUT_7]
+    {LED_TOGGLE_RATE_1HZ, LED_OP_MODE_TOGGLE, LED_STATE_LOW},
+};
 
 void LED_Init(void)
 {
-    pinMode(GPIO_NUM_18, OUTPUT);
-    pinMode(GPIO_NUM_19, OUTPUT);
-    pinMode(GPIO_NUM_25, OUTPUT);
-    pinMode(GPIO_NUM_26, OUTPUT);
-    pinMode(GPIO_NUM_27, OUTPUT);
-    pinMode(GPIO_NUM_32, OUTPUT);
-    pinMode(GPIO_NUM_33, OUTPUT);
+    uint8_t idx;
+    const LED_Config_t *p_config;
 
-    LED_HeartBeatLedState = GPIO_STATE_TOGGLE;
-    LED_HeartBeatLedFreq = GPIO_TOGGLE_1HZ;
-
-    LED_ErrorLedState = GPIO_STATE_LOW;
-    LED_CommLedState = GPIO_STATE_LOW;
-    LED_SecurityLedState = GPIO_STATE_TOGGLE;
-    LED_WifiConnLedState = GPIO_STATE_TOGGLE;
+    for(idx = 0; idx < LED_OUT_MAX; idx++)
+    {
+        p_config = &LED_OutConfig[idx];
+        pinMode(p_config->PinNo, OUTPUT);
+        digitalWrite(p_config->PinNo, p_config->Default);
+    }
 }
 
 void LED_Task(void *pvParameters)
 {
+    uint8_t idx;
     UBaseType_t uxHighWaterMark;
-    uint32_t heartBeatLedState;
-    uint32_t errorLedState;
-    uint32_t commLedState;
-    uint32_t securityLedState;
-    uint32_t wifiConnState;
-    uint32_t freqCntr;
+    uint32_t togglefreqCntr;
 
     ESP_LOGI("LED", "Task Started");
 
@@ -50,152 +85,50 @@ void LED_Task(void *pvParameters)
 
     LED_Init();
 
-    freqCntr = 0;
+    togglefreqCntr = 0;
 
     while (1)
     {
         vTaskDelay(10 / portTICK_PERIOD_MS);
-        freqCntr++;
+        togglefreqCntr++;
 
-        if (LED_HeartBeatLedState == GPIO_STATE_TOGGLE)
+        for(idx = 0; idx < LED_OUT_MAX; idx++)
         {
-            if (LED_HeartBeatLedFreq && ((freqCntr % LED_HeartBeatLedFreq) == 0))
+            if (LED_OutParams[idx].OpMode == LED_OP_MODE_TOGGLE)
             {
-                // if the LED is off turn it on and vice-versa:
-                if (heartBeatLedState == GPIO_STATE_LOW)
+                if (LED_OutParams[idx].ToggleRate && ((togglefreqCntr % LED_OutParams[idx].ToggleRate) == 0))
                 {
-                    heartBeatLedState = GPIO_STATE_HIGH;
-                }
-                else
-                {
-                    heartBeatLedState = GPIO_STATE_LOW;
+                    // if the LED is off turn it on and vice-versa:
+                    if (LED_OutParams[idx].IO_State == LED_STATE_LOW)
+                    {
+                        LED_OutParams[idx].IO_State = LED_STATE_HIGH;
+                    }
+                    else
+                    {
+                        LED_OutParams[idx].IO_State = LED_STATE_LOW;
+                    }
                 }
             }
-        }
-        else
-        {
-            heartBeatLedState = LED_HeartBeatLedState;
-        }
 
-        if (LED_CommLedState == GPIO_STATE_TOGGLE)
-        {
-            if (LED_CommLedFreq && ((freqCntr % LED_CommLedFreq) == 0))
-            {
-                // if the LED is off turn it on and vice-versa:
-                if (commLedState == GPIO_STATE_LOW)
-                {
-                    commLedState = GPIO_STATE_HIGH;
-                }
-                else
-                {
-                    commLedState = GPIO_STATE_LOW;
-                }
-            }
+            digitalWrite(LED_OutConfig[idx].PinNo, LED_OutParams[idx].IO_State);
         }
-        else
-        {
-            commLedState = LED_CommLedState;
-        }
-
-        if (LED_WifiConnLedState == GPIO_STATE_TOGGLE)
-        {
-            if (LED_WifiConnLedFreq && ((freqCntr % LED_WifiConnLedFreq) == 0))
-            {
-                // if the LED is off turn it on and vice-versa:
-                if (wifiConnState == GPIO_STATE_LOW)
-                {
-                    wifiConnState = GPIO_STATE_HIGH;
-                }
-                else
-                {
-                    wifiConnState = GPIO_STATE_LOW;
-                }
-            }
-        }
-        else
-        {
-            wifiConnState = LED_WifiConnLedState;
-        }
-
-        if (LED_SecurityLedState == GPIO_STATE_TOGGLE)
-        {
-            if (LED_SecurityLedFreq && ((freqCntr % LED_SecurityLedFreq) == 0))
-            {
-                // if the LED is off turn it on and vice-versa:
-                if (securityLedState == GPIO_STATE_LOW)
-                {
-                    securityLedState = GPIO_STATE_HIGH;
-                }
-                else
-                {
-                    securityLedState = GPIO_STATE_LOW;
-                }
-            }
-        }
-        else
-        {
-            securityLedState = LED_SecurityLedState;
-        }
-
-        if (LED_ErrorLedState == GPIO_STATE_TOGGLE)
-        {
-            if (LED_ErrorLedFreq && ((freqCntr % LED_ErrorLedFreq) == 0))
-            {
-                // if the LED is off turn it on and vice-versa:
-                if (errorLedState == GPIO_STATE_LOW)
-                {
-                    errorLedState = GPIO_STATE_HIGH;
-                }
-                else
-                {
-                    errorLedState = GPIO_STATE_LOW;
-                }
-            }
-        }
-        else
-        {
-            errorLedState = LED_ErrorLedState;
-        }
-
-        // set the LED with the ledState of the variable:
-        digitalWrite(HEART_BEAT_LED, heartBeatLedState);
-        digitalWrite(COMM_LED, commLedState);
-        digitalWrite(WIFI_CONN_LED, wifiConnState);
-        digitalWrite(SECURITY_LED, securityLedState);
-        digitalWrite(ERROR_LED, errorLedState);
     }
 }
 
-void LED_SetLedState(gpio_num_t gpio, gpio_state_t state, gpio_toggle_t freq)
+void LED_SetLedState(led_num_t gpio, LED_State_t state, LED_Toggle_Rate_t toggleRate)
 {
-    switch (gpio)
+    if(gpio < LED_OUT_MAX)
     {
-    case HEART_BEAT_LED:
-        LED_HeartBeatLedState = state;
-        LED_HeartBeatLedFreq = (uint8_t)freq;
-        break;
-
-    case COMM_LED:
-        LED_CommLedState = state;
-        LED_CommLedFreq = (uint8_t)freq;
-        break;
-
-    case WIFI_CONN_LED:
-        LED_WifiConnLedState = state;
-        LED_WifiConnLedFreq = (uint8_t)freq;
-        break;
-
-    case SECURITY_LED:
-        LED_SecurityLedState = state;
-        LED_SecurityLedFreq = (uint8_t)freq;
-        break;
-
-    case ERROR_LED:
-        LED_ErrorLedState = state;
-        LED_ErrorLedFreq = (uint8_t)freq;
-        break;
-
-    default:
-        break;
+        // Serial.println(String("PIN: ") + state + ", Freq: " + toggleRate);
+        if(LED_OutParams[gpio].OpMode == LED_OP_MODE_FIXED)
+        {
+            LED_OutParams[gpio].IO_State = state;
+            LED_OutParams[gpio].ToggleRate = LED_TOGGLE_RATE_NONE;
+        }
+        else
+        {
+            
+            LED_OutParams[gpio].ToggleRate = toggleRate;
+        }
     }
 }

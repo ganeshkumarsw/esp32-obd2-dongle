@@ -101,7 +101,7 @@ void APP_Init(void)
     APP_CAN_RqRspMaxTime = 500;
     APP_Channel = APP_CHANNEL_NONE;
 
-    LED_SetLedState(SECURITY_LED, GPIO_STATE_TOGGLE, GPIO_TOGGLE_1HZ);
+    LED_SetLedState(SECURITY_LED, LED_STATE_TOGGLE, LED_TOGGLE_RATE_1HZ);
 }
 
 void APP_Task(void *pvParameters)
@@ -184,12 +184,12 @@ void APP_Task(void *pvParameters)
 
             APP_YellowFlashCntr--;
 
-            LED_SetLedState(COMM_LED, GPIO_STATE_TOGGLE, GPIO_TOGGLE_1HZ);
+            LED_SetLedState(COMM_LED, LED_STATE_TOGGLE, LED_TOGGLE_RATE_1HZ);
             APP_YellowLedTmr = (xTaskGetTickCount() / portTICK_PERIOD_MS) + 100;
         }
         else if (APP_YellowFlashCntr == 0)
         {
-            LED_SetLedState(COMM_LED, GPIO_STATE_LOW, GPIO_TOGGLE_NONE);
+            LED_SetLedState(COMM_LED, LED_STATE_LOW, LED_TOGGLE_RATE_NONE);
         }
 
         if ((APP_CAN_COMM_Flag || APP_GreenFlashCntr) && (APP_GreenLedTmr < (xTaskGetTickCount() / portTICK_PERIOD_MS)))
@@ -1225,12 +1225,12 @@ void APP_Frame5(uint8_t *p_buff, uint16_t len, uint8_t channel)
         if (memcmp(p_buff, APP_SecuityCode, sizeof(APP_SecuityCode)) == 0)
         {
             APP_SecurityChk = true;
-            LED_SetLedState(SECURITY_LED, GPIO_STATE_HIGH, GPIO_TOGGLE_NONE);
+            LED_SetLedState(SECURITY_LED, LED_STATE_HIGH, LED_TOGGLE_RATE_NONE);
         }
         else
         {
             APP_SecurityChk = false;
-            LED_SetLedState(SECURITY_LED, GPIO_STATE_TOGGLE, GPIO_TOGGLE_5HZ);
+            LED_SetLedState(SECURITY_LED, LED_STATE_TOGGLE, LED_TOGGLE_RATE_5HZ);
         }
     }
 

@@ -10,7 +10,7 @@ extern "C" {
 
 #define MAJOR_VERSION             0
 #define MINOR_VERSION             0
-#define SUB_VERSION               22
+#define SUB_VERSION               23
 
 #define STA_WIFI_SSID       "FRITZ!Box 7560 UU"
 #define STA_WIFI_PASSWORD   "aksharaa9003755682"
@@ -23,24 +23,25 @@ extern "C" {
 #define CAN_RX_QUEUE_SIZE   50
 #define CAN_TX_QUEUE_SIZE   50
 
-#define BLE_CONN_LED    GPIO_NUM_33     // Blue LED
+typedef enum
+{
+    LED_OUT_1 = 0,
+    LED_OUT_2,
+    LED_OUT_3,
+    LED_OUT_4,
+    LED_OUT_5,
+    LED_OUT_6,
+    LED_OUT_7,
+    LED_OUT_MAX,
+}led_num_t;
+
+#define BLE_CONN_LED    LED_OUT_4     // Blue LED
 #define HEART_BEAT_LED  BLE_CONN_LED
-#define COMM_LED        GPIO_NUM_25     // Yellow LED
-#define WIFI_CONN_LED   GPIO_NUM_27     // Green LED
-#define SECURITY_LED    GPIO_NUM_26     // Amber LED
-#define ERROR_LED       GPIO_NUM_32     // Red LED
+#define COMM_LED        LED_OUT_6     // Yellow LED
+#define WIFI_CONN_LED   LED_OUT_7     // Green LED
+#define SECURITY_LED    LED_OUT_5     // Amber LED
+#define ERROR_LED       LED_OUT_3     // Red LED
 
-typedef enum {
-    GPIO_STATE_LOW = 0,
-    GPIO_STATE_HIGH,
-    GPIO_STATE_TOGGLE,
-}gpio_state_t;
-
-typedef enum {
-    GPIO_TOGGLE_NONE = 0,
-    GPIO_TOGGLE_5HZ = 10,
-    GPIO_TOGGLE_1HZ = 50,
-}gpio_toggle_t;
 
 #ifdef __cplusplus
 }
