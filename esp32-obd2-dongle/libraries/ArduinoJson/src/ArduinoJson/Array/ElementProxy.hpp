@@ -1,5 +1,5 @@
 // ArduinoJson - arduinojson.org
-// Copyright Benoit Blanchon 2014-2019
+// Copyright Benoit Blanchon 2014-2020
 // MIT License
 
 #pragma once
@@ -160,12 +160,6 @@ class ElementProxy : public VariantOperators<ElementProxy<TArray> >,
   TArray _array;
   const size_t _index;
 };
-
-template <typename TArray>
-inline ElementProxy<const TArray&> ArrayShortcuts<TArray>::operator[](
-    size_t index) const {
-  return ElementProxy<const TArray&>(*impl(), index);
-}
 
 }  // namespace ARDUINOJSON_NAMESPACE
 

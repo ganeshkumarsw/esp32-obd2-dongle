@@ -1,6 +1,53 @@
 ArduinoJson: change log
 =======================
 
+v6.14.1 (2020-01-27)
+-------
+
+* Fixed regression in UTF16 decoding (issue #1173)
+* Fixed `containsKey()` on `JsonVariantConst`
+* Added `getElement()` and `getMember()` to `JsonVariantConst`
+
+v6.14.0 (2020-01-16)
+-------
+
+* Added `BasicJsonDocument::shrinkToFit()`
+* Added support of `uint8_t` for `serializeJson()`, `serializeJsonPretty()`, and `serializeMsgPack()` (issue #1142)
+* Added `ARDUINOJSON_ENABLE_COMMENTS` to enable support for comments (defaults to 0)
+* Auto enable support for `std::string` and `std::stream` on modern compilers (issue #1156)
+  (No need to define `ARDUINOJSON_ENABLE_STD_STRING` and `ARDUINOJSON_ENABLE_STD_STREAM` anymore)
+* Improved decoding of UTF-16 surrogate pairs (PR #1157 by @kaysievers)
+  (ArduinoJson now produces standard UTF-8 instead of CESU-8)
+* Added `measureJson`, `measureJsonPretty`, and `measureMsgPack` to `keywords.txt`
+  (This file is used for syntax highlighting in the Arduino IDE) 
+* Fixed `variant.is<nullptr_t>()`
+* Fixed value returned by `serializeJson()`, `serializeJsonPretty()`, and `serializeMsgPack()` when writing to a `String`
+* Improved speed of `serializeJson()`, `serializeJsonPretty()`, and `serializeMsgPack()` when writing to a `String`
+
+> ### BREAKING CHANGES
+> 
+> #### Comments
+> 
+> Support for comments in input is now optional and disabled by default.
+>
+> If you need support for comments, you must defined `ARDUINOJSON_ENABLE_COMMENTS` to `1`; otherwise, you'll receive `InvalidInput` errors.
+>
+> ```c++
+> #define ARDUINOJSON_ENABLE_COMMENTS 1
+> #include <ArduinoJson.h>
+> ```
+
+v6.13.0 (2019-11-01)
+-------
+
+* Added support for custom writer/reader classes (issue #1088)
+* Added conversion from `JsonArray` and `JsonObject` to `bool`, to be consistent with `JsonVariant`
+* Fixed `deserializeJson()` when input contains duplicate keys (issue #1095)
+* Improved `deserializeMsgPack()` speed by reading several bytes at once
+* Added detection of Atmel AVR8/GNU C Compiler (issue #1112)
+* Fixed deserializer that stopped reading at the first `0xFF` (PR #1118 by @mikee47)
+* Fixed dangling reference in copies of `MemberProxy` and `ElementProxy` (issue #1120)
+
 v6.12.0 (2019-09-05)
 -------
 

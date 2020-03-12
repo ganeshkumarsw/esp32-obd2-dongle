@@ -1,11 +1,12 @@
 // ArduinoJson - arduinojson.org
-// Copyright Benoit Blanchon 2014-2019
+// Copyright Benoit Blanchon 2014-2020
 // MIT License
 
 #pragma once
 
 #include <ArduinoJson/Deserialization/deserialize.hpp>
 #include <ArduinoJson/Json/EscapeSequence.hpp>
+#include <ArduinoJson/Json/Utf16.hpp>
 #include <ArduinoJson/Json/Utf8.hpp>
 #include <ArduinoJson/Memory/MemoryPool.hpp>
 #include <ArduinoJson/Numbers/parseNumber.hpp>
@@ -130,15 +131,21 @@ class JsonDeserializer {
 
     // Read each key value pair
     for (;;) {
-      // Allocate slot in object
-      VariantSlot *slot = object.addSlot(_pool);
-      if (!slot) return DeserializationError::NoMemory;
-
       // Parse key
       const char *key;
       err = parseKey(key);
       if (err) return err;
-      slot->setOwnedKey(make_not_null(key));
+
+      VariantData *variant = object.get(adaptString(key));
+      if (!variant) {
+        // Allocate slot in object
+        VariantSlot *slot = object.addSlot(_pool);
+        if (!slot) return DeserializationError::NoMemory;
+
+        slot->setOwnedKey(make_not_null(key));
+
+        variant = slot->data();
+      }
 
       // Skip spaces
       err = skipSpacesAndComments();
@@ -147,7 +154,7 @@ class JsonDeserializer {
 
       // Parse value
       _nestingLimit--;
-      err = parseVariant(*slot->data());
+      err = parseVariant(*variant);
       _nestingLimit++;
       if (err) return err;
 
@@ -183,6 +190,9 @@ class JsonDeserializer {
 
   DeserializationError parseQuotedString(const char *&result) {
     StringBuilder builder = _stringStorage.startString();
+#if ARDUINOJSON_DECODE_UNICODE
+    Utf16::Codepoint codepoint;
+#endif
     const char stopChar = current();
 
     move();
@@ -198,11 +208,12 @@ class JsonDeserializer {
         if (c == '\0') return DeserializationError::IncompleteInput;
         if (c == 'u') {
 #if ARDUINOJSON_DECODE_UNICODE
-          uint16_t codepoint;
           move();
-          DeserializationError err = parseCodepoint(codepoint);
+          uint16_t codeunit;
+          DeserializationError err = parseHex4(codeunit);
           if (err) return err;
-          Utf8::encodeCodepoint(codepoint, builder);
+          if (codepoint.append(codeunit))
+            Utf8::encodeCodepoint(codepoint.value(), builder);
           continue;
 #else
           return DeserializationError::NotSupported;
@@ -291,14 +302,14 @@ class JsonDeserializer {
     return DeserializationError::InvalidInput;
   }
 
-  DeserializationError parseCodepoint(uint16_t &codepoint) {
-    codepoint = 0;
+  DeserializationError parseHex4(uint16_t &result) {
+    result = 0;
     for (uint8_t i = 0; i < 4; ++i) {
       char digit = current();
       if (!digit) return DeserializationError::IncompleteInput;
       uint8_t value = decodeHex(digit);
       if (value > 0x0F) return DeserializationError::InvalidInput;
-      codepoint = uint16_t((codepoint << 4) | value);
+      result = uint16_t((result << 4) | value);
       move();
     }
     return DeserializationError::Ok;
@@ -338,6 +349,7 @@ class JsonDeserializer {
           move();
           continue;
 
+#if ARDUINOJSON_ENABLE_COMMENTS
         // comments
         case '/':
           move();  // skip '/'
@@ -375,6 +387,7 @@ class JsonDeserializer {
               return DeserializationError::InvalidInput;
           }
           break;
+#endif
 
         default:
           return DeserializationError::Ok;

@@ -1,5 +1,5 @@
 // ArduinoJson - arduinojson.org
-// Copyright Benoit Blanchon 2014-2019
+// Copyright Benoit Blanchon 2014-2020
 // MIT License
 
 #pragma once
@@ -34,6 +34,10 @@ class ArrayRefBase {
 
   FORCE_INLINE bool isNull() const {
     return _data == 0;
+  }
+
+  FORCE_INLINE operator bool() const {
+    return _data != 0;
   }
 
   FORCE_INLINE size_t memoryUsage() const {

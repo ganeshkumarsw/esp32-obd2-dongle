@@ -1,5 +1,5 @@
 // ArduinoJson - arduinojson.org
-// Copyright Benoit Blanchon 2014-2019
+// Copyright Benoit Blanchon 2014-2020
 // MIT License
 
 #pragma once
@@ -17,7 +17,7 @@ namespace ARDUINOJSON_NAMESPACE {
 template <typename TWriter>
 class TextFormatter {
  public:
-  explicit TextFormatter(TWriter &writer) : _writer(writer), _length(0) {}
+  explicit TextFormatter(TWriter writer) : _writer(writer), _length(0) {}
 
   // Returns the number of bytes sent to the TWriter implementation.
   size_t bytesWritten() const {
@@ -147,7 +147,7 @@ class TextFormatter {
   }
 
  protected:
-  TWriter &_writer;
+  TWriter _writer;
   size_t _length;
 
  private:
