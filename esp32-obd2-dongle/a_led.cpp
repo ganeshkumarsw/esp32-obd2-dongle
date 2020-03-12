@@ -3,6 +3,7 @@
 #include "a_led.h"
 
 #if 0
+// v1 Hardware
 const LED_Config_t LED_OutConfig[LED_OUT_MAX] = {
     // [LED_OUT_1]
     {GPIO_NUM_12, LED_STATE_LOW},
@@ -20,6 +21,7 @@ const LED_Config_t LED_OutConfig[LED_OUT_MAX] = {
     {GPIO_NUM_27, LED_STATE_LOW},
 };
 #else
+// v2 Hardware
 const LED_Config_t LED_OutConfig[LED_OUT_MAX] = {
     // [LED_OUT_1]
     {GPIO_NUM_18, LED_STATE_LOW},
@@ -44,19 +46,19 @@ struct
     LED_State_t IO_State;
 }LED_OutParams[LED_OUT_MAX] = {
     // [LED_OUT_1]
-    {LED_TOGGLE_RATE_1HZ, LED_OP_MODE_TOGGLE, LED_STATE_LOW},
+    {LED_TOGGLE_RATE_5HZ, LED_OP_MODE_TOGGLE, LED_STATE_LOW},
     // [LED_OUT_2]
-    {LED_TOGGLE_RATE_1HZ, LED_OP_MODE_TOGGLE, LED_STATE_LOW},
+    {LED_TOGGLE_RATE_5HZ, LED_OP_MODE_TOGGLE, LED_STATE_LOW},
     // [LED_OUT_3]
-    {LED_TOGGLE_RATE_1HZ, LED_OP_MODE_TOGGLE, LED_STATE_LOW},
+    {LED_TOGGLE_RATE_5HZ, LED_OP_MODE_TOGGLE, LED_STATE_LOW},
     // [LED_OUT_4]
-    {LED_TOGGLE_RATE_1HZ, LED_OP_MODE_TOGGLE, LED_STATE_LOW},
+    {LED_TOGGLE_RATE_5HZ, LED_OP_MODE_TOGGLE, LED_STATE_LOW},
     // [LED_OUT_5]
     {LED_TOGGLE_RATE_5HZ, LED_OP_MODE_TOGGLE, LED_STATE_LOW},
     // [LED_OUT_6]
-    {LED_TOGGLE_RATE_1HZ, LED_OP_MODE_TOGGLE, LED_STATE_LOW},
+    {LED_TOGGLE_RATE_5HZ, LED_OP_MODE_TOGGLE, LED_STATE_LOW},
     // [LED_OUT_7]
-    {LED_TOGGLE_RATE_1HZ, LED_OP_MODE_TOGGLE, LED_STATE_LOW},
+    {LED_TOGGLE_RATE_5HZ, LED_OP_MODE_TOGGLE, LED_STATE_LOW},
 };
 
 void LED_Init(void)
@@ -127,7 +129,6 @@ void LED_SetLedState(led_num_t gpio, LED_State_t state, LED_Toggle_Rate_t toggle
         }
         else
         {
-            
             LED_OutParams[gpio].ToggleRate = toggleRate;
         }
     }
