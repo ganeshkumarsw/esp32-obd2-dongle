@@ -45,7 +45,6 @@ void WIFI_Init(void)
     bool staConnected = false;
     char apSSID[32];
     char apPass[63];
-    char buff[100];
     char mac[6];
     Preferences preferences;
 
@@ -57,22 +56,14 @@ void WIFI_Init(void)
     WiFi.macAddress((uint8_t *)mac);
     sprintf(apSSID, "%s %x%x%x%x%x%x", AP_WIFI_SSID, mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
     Serial.printf("SSID: %s\r\n", apSSID);
-    if(preferences.getString("apSSID") != "")
+    if(preferences.getString("apSSID").equals(apSSID) == 0)
     {
-        Serial.println("apSSID Key is available");
-        if(String(apSSID).equals(buff) == 0)
-        {
-            Serial.println("apSSID is corrupted or diff updated");
-            preferences.putString("apSSID", apSSID);
-        }
-        else
-        {
-            Serial.println("apSSID is same");
-        }
+        Serial.println("apSSID is corrupted or diff updated");
+        preferences.putString("apSSID", apSSID);
     }
     else
     {
-        Serial.println("apSSID Key is missing");
+        Serial.println("apSSID is same");
         preferences.putString("apSSID", apSSID);
     }
 
@@ -777,7 +768,7 @@ void WIFI_Set_STA_SSID(char *p_str)
     preferences.begin("config", false);
     preferences.putString("stSSID", p_str);
 
-    Preferences.end();
+    preferences.end();
 }
 
 void WIFI_Set_STA_Pass(char *p_str)
@@ -787,7 +778,7 @@ void WIFI_Set_STA_Pass(char *p_str)
     preferences.begin("config", false);
     preferences.putString("stPASS", p_str);
 
-    Preferences.end();
+    preferences.end();
 }
 
 void WIFI_EventCb(system_event_id_t event)
