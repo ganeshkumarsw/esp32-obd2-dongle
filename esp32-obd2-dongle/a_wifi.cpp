@@ -30,8 +30,8 @@ AsyncWebSocketClient *p_WebSocketClient;
 File FsUploadFile;
 WiFiServer SocketServer(6888);
 
-char WIFI_SSID[50] = STA_WIFI_SSID;
-char WIFI_Password[50] = STA_WIFI_PASSWORD;
+char WIFI_STA_SSID[50] = STA_WIFI_SSID;
+char WIFI_STA_Password[50] = STA_WIFI_PASSWORD;
 uint8_t WIFI_SeqNo;
 uint8_t WIFI_RxBuff[4130];
 uint8_t WIFI_TxBuff[4130];
@@ -43,43 +43,58 @@ void WIFI_Init(void)
 {
     wl_status_t wifiStatus;
     bool staConnected = false;
-    // char apSSID[32];
-    // char apPass[63];
-    // char mac[6];
-    // Preferences preferences;
+    char apSSID[32];
+    char apPass[63];
+    char buff[100];
+    char mac[6];
+    Preferences preferences;
 
-    // preferences.begin("config", false);
+    preferences.begin("config", false);
 
     LED_SetLedState(WIFI_CONN_LED, LED_STATE_TOGGLE, LED_TOGGLE_RATE_1HZ);
     ESP_LOGI("WIFI", "MAC: %s", WiFi.macAddress().c_str());
 
-    // // WiFi.macAddress((uint8_t *)mac);
-    // // sprintf(apSSID, "%s %x%x%x%x%x%x", AP_WIFI_SSID, mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
-    // // preferences.putBytes("apSSID", apSSID, sizeof(apSSID));
+    WiFi.macAddress((uint8_t *)mac);
+    sprintf(apSSID, "%s %x%x%x%x%x%x", AP_WIFI_SSID, mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+    Serial.printf("SSID: %s\r\n", apSSID);
+    if(preferences.getString("apSSID") != "")
+    {
+        Serial.println("apSSID Key is available");
+        if(String(apSSID).equals(buff) == 0)
+        {
+            Serial.println("apSSID is corrupted or diff updated");
+            preferences.putString("apSSID", apSSID);
+        }
+        else
+        {
+            Serial.println("apSSID is same");
+        }
+    }
+    else
+    {
+        Serial.println("apSSID Key is missing");
+        preferences.putString("apSSID", apSSID);
+    }
 
-    // // sprintf(apPass, "%s", AP_WIFI_PASSWORD);
-    // // preferences.putBytes("apPASS", apPass, sizeof(apPass));
+    if(preferences.getString("apPASS") == "")
+    {
+        Serial.println("apPASS Key is missing");
+        preferences.putString("apPASS", AP_WIFI_PASSWORD);
+    }
+    else
+    {
+        Serial.println("apPASS Key is available");
+    }
 
-    // unsigned int len = preferences.getBytes("apSSID", apSSID, sizeof(apSSID));
-    // if (len != sizeof(apSSID))
-    // {
-    // WiFi.macAddress((uint8_t *)mac);
-    // sprintf(apSSID, "%s %x%x%x%x%x%x", AP_WIFI_SSID, mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
-    //     preferences.putBytes("apSSID", apSSID, sizeof(apSSID));
-    //     preferences.getBytes("apSSID", apSSID, sizeof(apSSID));
-    // }
-    // // Serial.println(apSSID);
+    if(preferences.getString("stSSID") == "")
+    {
+        Serial.println("stSSID Key is missing, updated SSID through command");
+    }
 
-    // len = preferences.getBytes("apPASS", apPass, sizeof(apPass));
-    // if (len != sizeof(apPass))
-    // {
-    // sprintf(apPass, "%s", AP_WIFI_PASSWORD);
-    //     preferences.putBytes("apPASS", apPass, sizeof(apPass));
-    //     preferences.getBytes("apPASS", apPass, sizeof(apPass));
-    // }
-    // // Serial.println(apPass);
-
-    // preferences.end();
+    if(preferences.getString("stPASS") == "")
+    {
+        Serial.println("stPASS Key is missing, updated SSID through command");
+    }
 
     // WiFi.mode(WIFI_AP_STA); //Both hotspot and client are enabled
     // WiFi.onEvent(WIFI_EventCb, SYSTEM_EVENT_MAX);
@@ -98,11 +113,11 @@ void WIFI_Init(void)
         {
             Serial.println("SSID: " + WiFi.SSID(i));
             // Print SSID and RSSI for each network found
-            if (WiFi.SSID(i).equals(WIFI_SSID) == true)
+            if (WiFi.SSID(i).equals(preferences.getString("stSSID")) == true)
             {
                 staConnected = true;
                 delay(10);
-                wifiStatus = WiFi.begin((char *)WIFI_SSID, (char *)WIFI_Password);
+                wifiStatus = WiFi.begin((char *)preferences.getString("stSSID").c_str(), (char *)preferences.getString("stPASS").c_str());
                 WiFi.setSleep(false);
                 Serial.println("WIFI STA begin");
                 // Serial.println(wifiStatus);
@@ -136,7 +151,7 @@ void WIFI_Init(void)
     if (staConnected == false)
     {
         Serial.println("WIFI AP begin");
-        if (!WiFi.softAP("OBD DONGLE", "password1"))
+        if (!WiFi.softAP(preferences.getString("apSSID").c_str(), preferences.getString("apPASS").c_str()))
         {
             Serial.println("ESP32 SoftAP failed to start!");
         }
@@ -163,14 +178,6 @@ void WIFI_Init(void)
     DNS_Server.start(DNS_PORT, "*", WiFi.softAPIP());
 #endif
 
-// if (!WiFi.softAPenableIpV6())
-// {
-//     Serial.println("ESP32 SoftAP IpV6 failed to start!");
-// }
-
-// Serial.println(WiFi.softAPIPv6().toString());
-
-// vTaskDelay(50 / portTICK_PERIOD_MS);
 #if WIFI_STA
     wifiStatus = WiFi.begin((char *)WIFI_SSID, (char *)WIFI_Password);
     Serial.print("WIFI begin status: ");
@@ -599,6 +606,7 @@ void WIFI_Init(void)
     // Add service to MDNS-SD
     MDNS.addService("_http", "_tcp", 80);
 #endif
+    preferences.end();
 }
 
 void WIFI_Task(void *pvParameters)
@@ -760,6 +768,26 @@ void WIFI_WebSoc_Write(uint8_t *payLoad, uint16_t len)
             WIFI_SeqNo = 0xFE;
         }
     }
+}
+
+void WIFI_Set_STA_SSID(char *p_str)
+{
+    Preferences preferences;
+
+    preferences.begin("config", false);
+    preferences.putString("stSSID", p_str);
+
+    Preferences.end();
+}
+
+void WIFI_Set_STA_Pass(char *p_str)
+{
+    Preferences preferences;
+
+    preferences.begin("config", false);
+    preferences.putString("stPASS", p_str);
+
+    Preferences.end();
 }
 
 void WIFI_EventCb(system_event_id_t event)

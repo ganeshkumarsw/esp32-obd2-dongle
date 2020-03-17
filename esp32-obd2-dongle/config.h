@@ -16,8 +16,8 @@ extern "C" {
 #define STA_WIFI_PASSWORD   "aksharaa9003755682"
 // #define STA_WIFI_SSID       "AndroidAP"
 // #define STA_WIFI_PASSWORD   "9003755682"
-#define AP_WIFI_SSID        "ap"
-#define AP_WIFI_PASSWORD    "password"
+#define AP_WIFI_SSID        "dongle"
+#define AP_WIFI_PASSWORD    "password1"
 #define MQTT_URL            "ec2-13-126-50-237.ap-south-1.compute.amazonaws.com"
 
 #define CAN_RX_QUEUE_SIZE   50

@@ -31,6 +31,8 @@ extern "C"
         APP_REQ_CMD_STPTXPAD = 19,
         APP_REQ_CMD_GETFWVER = 20,
         APP_REQ_CMD_GETSFR = 21,
+        APP_REQ_CMD_SETSTASSID = 22,
+        APP_REQ_CMD_SETSTAPASS = 23,
     } APP_REQ_CMD_t;
 
     typedef enum

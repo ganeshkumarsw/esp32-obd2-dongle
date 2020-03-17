@@ -353,8 +353,6 @@ void APP_Task(void *pvParameters)
                             break;
 
                         case APP_ISO_STATE_SEND_TO_APP:
-                            // if ((APP_Channel == APP_CHANNEL_MQTT) || (APP_Channel == APP_CHANNEL_UART))
-                            // {
                             APP_CAN_COMM_Flag = true;
 
                             respLen = 0;
@@ -380,7 +378,6 @@ void APP_Task(void *pvParameters)
                             APP_BuffDataRdyFlag = false;
                             APP_BuffLockedBy = APP_BUFF_LOCKED_BY_NONE;
                             APP_SendToAppWaitTmr = 0;
-                            // }
                             break;
 
                         case APP_ISO_STATE_IDLE:
@@ -550,7 +547,7 @@ void APP_ProcessData(uint8_t *p_buff, uint16_t len, APP_CHANNEL_t channel)
     respType = APP_RESP_ACK;
     respNo = APP_RESP_ACK;
 
-    // Serial.println(String("Data Received from channel ") + String(channel));
+    // Serial.println(String("Data Received from channel ") + channel);
 
     if (APP_ProcDataBusyFlag == false)
     {
@@ -1123,6 +1120,31 @@ void APP_Frame2(uint8_t *p_buff, uint16_t len, uint8_t channel)
             respBuff[2] = SUB_VERSION;
             respLen = 3;
             break;
+
+        case APP_REQ_CMD_SETSTASSID:
+            if (len < 5)
+            {
+                respType = APP_RESP_NACK;
+                respNo = APP_RESP_NACK_13;
+                break;
+            }
+            p_buff[len - 1] = 0;
+
+            WIFI_Set_STA_SSID((char *)&p_buff[1]);
+
+            break;
+
+        case APP_REQ_CMD_SETSTAPASS:
+            if (len < 5)
+            {
+                respType = APP_RESP_NACK;
+                respNo = APP_RESP_NACK_13;
+                break;
+            }
+
+            p_buff[len - 1] = 0;
+            WIFI_Set_STA_Pass((char *)&p_buff[1]);
+            break;    
 
         default:
             respType = APP_RESP_NACK;
