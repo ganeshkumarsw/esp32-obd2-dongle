@@ -1168,6 +1168,23 @@ void APP_Frame2(uint8_t *p_buff, uint16_t len, uint8_t channel)
  */
 void APP_Frame3(uint8_t *p_buff, uint16_t len, uint8_t channel)
 {
+    uint8_t respType;
+    uint8_t respNo;
+
+    respType = APP_RESP_ACK;
+    respNo = APP_RESP_ACK;
+
+    if (p_buff[0] == 1)
+    {
+        ESP.restart();
+    }
+    else
+    {
+        respType = APP_RESP_NACK;
+        respNo = APP_RESP_NACK_22;
+    }
+
+    APP_SendRespToFrame(respType, respNo, NULL, 0, channel, false);
 }
 
 /**
