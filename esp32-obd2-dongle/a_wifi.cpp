@@ -54,7 +54,7 @@ void WIFI_Init(void)
     ESP_LOGI("WIFI", "MAC: %s", WiFi.macAddress().c_str());
 
     WiFi.macAddress((uint8_t *)mac);
-    sprintf(apSSID, "%s %x%x%x%x%x%x", AP_WIFI_SSID, mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+    sprintf(apSSID, "%s-%02X%02X", AP_WIFI_SSID, mac[4], mac[5]);
     Serial.printf("SSID: %s\r\n", apSSID);
     if(preferences.getString("apSSID").equals(apSSID) == 0)
     {

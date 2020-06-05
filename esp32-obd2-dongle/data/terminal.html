@@ -5,7 +5,7 @@
   <title>Dongle Terminal</title>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="stylesheet" href="bootstrap.min.css">
+  <!-- <link rel="stylesheet" href="bootstrap.min.css"> -->
   <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
   <style>
     /* textarea {
@@ -30,12 +30,44 @@
   </style>
 
   <script src="jquery.min.js"></script>
-  <script src="bootstrap.bundle.min.js"></script>
-  <script src="tooltip.min.js"></script>
+  <!-- <script src="bootstrap.bundle.min.js"></script>
+  <script src="tooltip.min.js"></script> -->
 
   <script>
+    var DOMReady = function (callback) {
+      if (document.readyState === "interactive" || document.readyState === "complete") {
+        callback();
+      } else if (document.addEventListener) {
+        document.addEventListener('DOMContentLoaded', callback());
+      } else if (document.attachEvent) {
+        document.attachEvent('onreadystatechange', function () {
+          if (document.readyState != 'loading') {
+            callback();
+          }
+        });
+      }
+    };
 
-    $(document).ready(function () {
+    var LoadScripts = function (done) {
+      $.getScript("bootstrap.bundle.min.js", function () {
+        $.getScript("tooltip.min.js", function () {
+          done();
+        });
+      });
+    }
+
+    var LoadCSS = function (url) {
+      if (!$('link[href="' + url + '"]').length)
+        $('head').append('<link rel="stylesheet" type="text/css" href="' + url + '">');
+    };
+
+    DOMReady(function () {
+      LoadScripts(function () {
+        ScriptLoaded();
+      });
+    });
+
+    var ScriptLoaded = function () {
       var socket;
       var MesgCnt = 0;
       var pro_seqnum = 0;
@@ -69,6 +101,7 @@
         0x7E: "sub fn not supported in this diag session",
       };
 
+      LoadCSS("bootstrap.min.css");
       $('[data-toggle="tooltip"]').tooltip();
       Set_ConnectionStatus('Closed');
       Set_RxMessageCount(RxMessageCount);
@@ -111,7 +144,7 @@
         message[idx++] = data.length;
         message.set(pro_time.match(/[\w]{1,2}/g).slice(0, 8), idx);
         idx = idx + 8;
-        message[idx++] = ((data[0] << 4 ) & 0xF0) | (((data.length - 1) + 2) >> 8);
+        message[idx++] = ((data[0] << 4) & 0xF0) | (((data.length - 1) + 2) >> 8);
         message[idx++] = ((data.length - 1) + 2);
         message.set(data.subarray(1), idx);
         idx = idx + (data.length - 1);
@@ -336,7 +369,7 @@
         $('.table-custom').css('height', window.innerHeight - parseInt($('div').css('height')) - 30);
       }
 
-    });
+    };
   </script>
 </head>
 
@@ -348,7 +381,7 @@
           <option value="0">0</option>
           <option value="1">1</option>
           <option selected value="2">2</option>
-          <option value="3">1</option>
+          <option value="3">3</option>
           <option value="4">4</option>
           <option value="5">5</option>
           <option value="6">6</option>
@@ -364,7 +397,7 @@
         </select>
       </div>
       <input type="text" class="form-control" id="input-send" data-toggle="tooltip" data-placement="bottom"
-        title="data only withou length (all in HEX), seperate each byte by space">
+        title="data only without length (all in HEX), seperate each byte by space">
       <div class="input-group-append">
         <button type="submit" id="btn-send" class="btn btn-success">Send</button>
       </div>

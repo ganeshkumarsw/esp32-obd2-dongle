@@ -12,11 +12,11 @@ extern "C" {
 #define MINOR_VERSION             0
 #define SUB_VERSION               25
 
-#define STA_WIFI_SSID       "FRITZ!Box 7560 UU"
-#define STA_WIFI_PASSWORD   "aksharaa9003755682"
+#define STA_WIFI_SSID       "Vodafone-6046"
+#define STA_WIFI_PASSWORD   "AksharAa9003755682"
 // #define STA_WIFI_SSID       "AndroidAP"
 // #define STA_WIFI_PASSWORD   "9003755682"
-#define AP_WIFI_SSID        "dongle"
+#define AP_WIFI_SSID        "OBD2"
 #define AP_WIFI_PASSWORD    "password1"
 #define MQTT_URL            "ec2-13-126-50-237.ap-south-1.compute.amazonaws.com"
 

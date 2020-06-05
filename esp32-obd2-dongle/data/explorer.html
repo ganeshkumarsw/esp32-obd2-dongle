@@ -5,13 +5,45 @@
   <title>Dongle Explorer</title>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="stylesheet" href="bootstrap.min.css">
+  <!-- <link rel="stylesheet" href="bootstrap.min.css"> -->
   <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
   <script src="jquery.min.js"></script>
-  <script src="bootstrap.bundle.min.js"></script>
+  <!-- <script src="bootstrap.bundle.min.js"></script> -->
   <script>
-    $(document).ready(function () {
+    var DOMReady = function (callback) {
+      if (document.readyState === "interactive" || document.readyState === "complete") {
+        callback();
+      } else if (document.addEventListener) {
+        document.addEventListener('DOMContentLoaded', callback());
+      } else if (document.attachEvent) {
+        document.attachEvent('onreadystatechange', function () {
+          if (document.readyState != 'loading') {
+            callback();
+          }
+        });
+      }
+    };
 
+    var LoadScripts = function (done) {
+      $.getScript("bootstrap.bundle.min.js", function () {
+        done();
+      });
+    }
+
+    var LoadCSS = function (url) {
+      if (!$('link[href="' + url + '"]').length)
+        $('head').append('<link rel="stylesheet" type="text/css" href="' + url + '">');
+    };
+
+    DOMReady(function () {
+      LoadScripts(function () {
+        ScriptLoaded();
+      });
+    });
+
+    var ScriptLoaded = function () {
+
+      LoadCSS("bootstrap.min.css");
       var eventSource = new EventSource("/events");
       var fileSize;
 
@@ -65,11 +97,11 @@
           var val = 0;
           $.each(result, function (key, value) {
             $('table').children('tbody').append('<tr>' +
-                                                  '<th scope="row">' + (val++) + '</th>' + 
-                                                  '<td>' + key.replace('/', '') + '</td>' + 
-                                                  '<td>' + (parseInt(value) / 1024).toFixed(2) + ' KB</td>' + 
-                                                  '<td><button type="button" id="delete" class="btn btn-danger">Delete</button></td>' + 
-                                                '</tr>');
+              '<th scope="row">' + (val++) + '</th>' +
+              '<td>' + key.replace('/', '') + '</td>' +
+              '<td>' + (parseInt(value) / 1024).toFixed(2) + ' KB</td>' +
+              '<td><button type="button" id="delete" class="btn btn-danger">Delete</button></td>' +
+              '</tr>');
           });
         });
       });
@@ -193,7 +225,7 @@
           }, timout, modal);
         }
       }
-    });
+    };
   </script>
 
 </head>
