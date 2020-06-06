@@ -1,7 +1,7 @@
  #ifndef __VERSION_H__
  #define __VERSION_H__
     
- #define SW_VERSION	"heads/master-0-g13dcc6d"
+ #define SW_VERSION	"heads/Mukund/Hardware_v2/Master-0-g0473188-dirty"
    
   
   

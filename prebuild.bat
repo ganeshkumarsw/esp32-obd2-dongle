@@ -15,4 +15,4 @@ echo:
 echo:  
 echo:  
 echo: #endif
-) > %1\version.h
+) > esp32-obd2-dongle\version.h
