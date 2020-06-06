@@ -1,6 +1,7 @@
 #include <Arduino.h>
 #include <Preferences.h>
 #include "config.h"
+#include "version.h"
 #include "util.h"
 #include <WiFi.h>
 #include <ESPmDNS.h>
@@ -147,6 +148,8 @@ void WIFI_Init(void)
             Serial.println("ESP32 SoftAP failed to start!");
         }
     }
+
+    WiFi.setHostname("ESP32_OBD2");
 
 #if WIFI_AP
     if (!WiFi.softAP("OBD DONGLE", "password1"))
@@ -362,6 +365,7 @@ void WIFI_Init(void)
                 firmware["MAJOR VER"] = MAJOR_VERSION;
                 firmware["MINOR VER"] = MINOR_VERSION;
                 firmware["SUB VER"] = SUB_VERSION;
+                info["COMMIT"] = SW_VERSION;
                 info["SDK"] = ESP.getSdkVersion();
                 info["CPU FREQ"] = getCpuFrequencyMhz();
                 info["APB FREQ"] = getApbFrequency();
