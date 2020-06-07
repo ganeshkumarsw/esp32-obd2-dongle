@@ -129,6 +129,7 @@
       $('#fileUpload').change(function (event) {
         $('#labelFilename').html("/" + $('#fileUpload')[0].files[0].name);
         $('#progressUpload').css('width', '0%');
+        $('#progressUpload').html('0%');
       });
 
       $("#upload").click(function (event) {

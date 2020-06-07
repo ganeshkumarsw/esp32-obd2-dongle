@@ -30,8 +30,8 @@
   </style>
 
   <script src="jquery.min.js"></script>
-  <!-- <script src="bootstrap.bundle.min.js"></script>
-  <script src="tooltip.min.js"></script> -->
+  <!-- <script defer src="bootstrap.bundle.min.js"></script>
+  <script defer src="tooltip.min.js"></script> -->
 
   <script>
     var DOMReady = function (callback) {
@@ -63,6 +63,7 @@
 
     DOMReady(function () {
       LoadScripts(function () {
+        LoadCSS("bootstrap.min.css");
         ScriptLoaded();
       });
     });
@@ -101,7 +102,8 @@
         0x7E: "sub fn not supported in this diag session",
       };
 
-      LoadCSS("bootstrap.min.css");
+
+      
       $('[data-toggle="tooltip"]').tooltip();
       Set_ConnectionStatus('Closed');
       Set_RxMessageCount(RxMessageCount);
@@ -369,6 +371,9 @@
         $('.table-custom').css('height', window.innerHeight - parseInt($('div').css('height')) - 30);
       }
 
+      var BodyLoad = function () {
+
+      }
     };
   </script>
 </head>
