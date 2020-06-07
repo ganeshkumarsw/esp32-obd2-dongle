@@ -1,6 +1,6 @@
 @echo off 
 setlocal enableextensions 
-for /f %%i in ('git describe --all --long --dirty') do set VER=%%i
+for /f %%i in ('git describe --all --long') do set VER=%%i
 (
 echo: #ifndef __VERSION_H__
 echo: #define __VERSION_H__
