@@ -126,8 +126,8 @@
         $("#upload").val("/fsupload")
       });
 
-      $('#fileUpload').change(function (event) {
-        $('#labelFilename').html("/" + $('#fileUpload')[0].files[0].name);
+      $('#fileUpload').change(function (e) {
+        $('#labelFilename').html(e.target.files[0].name);
         $('#progressUpload').css('width', '0%');
         $('#progressUpload').html('0%');
       });
@@ -135,10 +135,10 @@
       $("#upload").click(function (event) {
         // Create an FormData object 
         var file = $('#fileUpload')[0].files[0];
+
         fileSize = file.size;
         var formData = new FormData();
         formData.append('file', file);
-
         console.log(file);
 
         // disabled the submit button
