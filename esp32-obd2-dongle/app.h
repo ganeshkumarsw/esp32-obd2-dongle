@@ -6,6 +6,22 @@ extern "C"
 {
 #endif
 
+#define IsTimerElapsed(x) ((x) && (x <= (xTaskGetTickCount() / portTICK_PERIOD_MS)))
+#define IsTimerRunning(x) ((x) && (x > (xTaskGetTickCount() / portTICK_PERIOD_MS)))
+#define IsTimerEnabled(x) ((x) > 0)
+#define StartTimer(x, y)   \
+    {                      \
+        x = (xTaskGetTickCount() / portTICK_PERIOD_MS) + y; \
+    }
+#define ResetTimer(x, y)   \
+    {                      \
+        x = (xTaskGetTickCount() / portTICK_PERIOD_MS) + y; \
+    }
+#define StopTimer(x) \
+    {                \
+        x = 0;       \
+    }
+
 #define APP_ISO_FC_WAIT_TIME 10000
 
     typedef enum

@@ -72,13 +72,12 @@
 
     DOMReady(function () {
       LoadScripts(function () {
+        LoadCSS("bootstrap.min.css");
         ScriptLoaded();
       });
     });
 
     var ScriptLoaded = function () {
-      LoadCSS("bootstrap.min.css");
-
       $("#login").click(function () {
         $.post("login", { name: $("#inputEmail").val(), pass: $("#inputPassword").val() });
       });

@@ -57,7 +57,7 @@ void WIFI_Init(void)
     WiFi.macAddress((uint8_t *)mac);
     sprintf(apSSID, "%s-%02X%02X", AP_WIFI_SSID, mac[4], mac[5]);
     Serial.printf("SSID: %s\r\n", apSSID);
-    if(preferences.getString("apSSID").equals(apSSID) == 0)
+    if (preferences.getString("apSSID").equals(apSSID) == 0)
     {
         Serial.println("apSSID is corrupted or diff updated");
         preferences.putString("apSSID", apSSID);
@@ -68,7 +68,7 @@ void WIFI_Init(void)
         preferences.putString("apSSID", apSSID);
     }
 
-    if(preferences.getString("apPASS") == "")
+    if (preferences.getString("apPASS") == "")
     {
         Serial.println("apPASS Key is missing");
         preferences.putString("apPASS", AP_WIFI_PASSWORD);
@@ -78,12 +78,12 @@ void WIFI_Init(void)
         Serial.println("apPASS Key is available");
     }
 
-    if(preferences.getString("stSSID") == "")
+    if (preferences.getString("stSSID") == "")
     {
         Serial.println("stSSID Key is missing, updated SSID through command");
     }
 
-    if(preferences.getString("stPASS") == "")
+    if (preferences.getString("stPASS") == "")
     {
         Serial.println("stPASS Key is missing, updated SSID through command");
     }
@@ -285,71 +285,72 @@ void WIFI_Init(void)
         //     request->send(response);
         // });
 
-        HttpServer.on("/flash",
-                      HTTP_POST,
-                      [](AsyncWebServerRequest *request) {
-                          if (Update.hasError() == false)
-                          {
-                              AsyncWebServerResponse *response = request->beginResponse(200);
-                              response->addHeader("Connection", "close");
-                              request->send(response);
-                              Events.send("Device being restarted", "success", millis());
-                              Serial.println("Device being restarted");
-                              delay(100);
-                              ESP.restart();
-                          }
-                          else
-                          {
-                              Events.send((String("Update Error: ") + Update.getError()).c_str(), "error", millis());
-                              request->send(200);
-                          }
-                      },
-                      [](AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final) {
-                          if (!index)
-                          {
-                              //   Serial.printf("Update Start: %s\n", filename.c_str());
-                              //   Update.runAsync(true);
-                              if (!Update.begin())
-                              {
-                                  Update.printError(Serial);
-                                  Events.send((String("Update Error: ") + Update.getError()).c_str(), "error", millis());
-                              }
-                          }
+        HttpServer.on(
+            "/flash",
+            HTTP_POST,
+            [](AsyncWebServerRequest *request) {
+                if (Update.hasError() == false)
+                {
+                    AsyncWebServerResponse *response = request->beginResponse(200);
+                    response->addHeader("Connection", "close");
+                    request->send(response);
+                    Events.send("Device being restarted", "success", millis());
+                    Serial.println("Device being restarted");
+                    delay(100);
+                    ESP.restart();
+                }
+                else
+                {
+                    Events.send((String("Update Error: ") + Update.getError()).c_str(), "error", millis());
+                    request->send(200);
+                }
+            },
+            [](AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final) {
+                if (!index)
+                {
+                    //   Serial.printf("Update Start: %s\n", filename.c_str());
+                    //   Update.runAsync(true);
+                    if (!Update.begin())
+                    {
+                        Update.printError(Serial);
+                        Events.send((String("Update Error: ") + Update.getError()).c_str(), "error", millis());
+                    }
+                }
 
-                          if (!Update.hasError())
-                          {
-                              if (Update.write(data, len) != len)
-                              {
-                                  Update.printError(Serial);
-                                  Events.send((String("Update Error: ") + Update.getError()).c_str(), "error", millis());
-                              }
-                              else
-                              {
-                                  Events.send(String(index + len).c_str(), "progress", millis());
-                              }
-                          }
-                          else
-                          {
-                              Update.printError(Serial);
-                              Events.send((String("Update Error: ") + Update.getError()).c_str(), "error", millis());
-                          }
+                if (!Update.hasError())
+                {
+                    if (Update.write(data, len) != len)
+                    {
+                        Update.printError(Serial);
+                        Events.send((String("Update Error: ") + Update.getError()).c_str(), "error", millis());
+                    }
+                    else
+                    {
+                        Events.send(String(index + len).c_str(), "progress", millis());
+                    }
+                }
+                else
+                {
+                    Update.printError(Serial);
+                    Events.send((String("Update Error: ") + Update.getError()).c_str(), "error", millis());
+                }
 
-                          if (final)
-                          {
-                              if (Update.end(true))
-                              {
-                                  //   Serial.printf("Update Success: %uB\n", index + len);
-                                  Events.send(String(index + len).c_str(), "progress", millis());
-                              }
-                              else
-                              {
-                                  Update.printError(Serial);
-                                  Events.send((String("Update Error: ") + Update.getError()).c_str(), "error", millis());
-                              }
-                          }
+                if (final)
+                {
+                    if (Update.end(true))
+                    {
+                        //   Serial.printf("Update Success: %uB\n", index + len);
+                        Events.send(String(index + len).c_str(), "progress", millis());
+                    }
+                    else
+                    {
+                        Update.printError(Serial);
+                        Events.send((String("Update Error: ") + Update.getError()).c_str(), "error", millis());
+                    }
+                }
 
-                          //   request->send(200);
-                      });
+                //   request->send(200);
+            });
 
         // attach filesystem root at URL /fs
         // HttpServer.serveStatic("/fs", SPIFFS, "/");
@@ -475,53 +476,68 @@ void WIFI_Init(void)
 
                 if (request->args() > 0)
                 {
-                    int i = 0;
-                    if (request->argName(i) == "file")
-                    {
-                        SPIFFS.remove(request->arg(i));
-                        // Serial.printf("%s: %s removed\n", request->argName(i).c_str(), request->arg(i).c_str());
-                    }
+                    SPIFFS.remove(request->arg("file"));
+                    // Serial.printf("%s: %s removed\n", request->argName(i).c_str(), request->arg(i).c_str());
                 }
                 request->send(200);
             });
 
-        HttpServer.on("/fsupload",
-                      HTTP_POST,
-                      [](AsyncWebServerRequest *request) {
-                          //   bool shouldReboot = !Update.hasError();
-                          //   AsyncWebServerResponse *response = request->beginResponse(200, "text/plain", shouldReboot ? "OK" : "FAIL");
-                          //   response->addHeader("Connection", "close");
-                          request->send(200);
-                      },
-                      [](AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final) {
-                          //   if (!request->authenticate("admin", "admin"))
-                          //       return request->requestAuthentication();
+        HttpServer.on(
+            "/fsupload",
+            HTTP_POST,
+            [](AsyncWebServerRequest *request) {
+                //   bool shouldReboot = !Update.hasError();
+                //   AsyncWebServerResponse *response = request->beginResponse(200, "text/plain", shouldReboot ? "OK" : "FAIL");
+                //   response->addHeader("Connection", "close");
+                Serial.println("Header");
+                if (request->args() > 2)
+                {
+                    Serial.println(request->arg("username"));
+                    Serial.println(request->arg("password"));
+                    if ((request->arg("username").equals("admin") == true) && (request->arg("password").equals("ADmiNPaSSworD") == true))
+                    {
+                        request->send(200);
+                    }
+                    else
+                    {
+                        request->send(401);
+                    }
+                }
+            },
+            [](AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final) {
+                Serial.println("File");
+                if (!index)
+                {
+                    Serial.println(request->arg("username"));
+                    Serial.println(request->arg("password"));
 
-                          if (!index)
-                          {
-                              filename = "/" + filename;
-                              FsUploadFile = SPIFFS.open(filename, "w");
-                              //   Serial.printf("Upload Start: %s\n", filename.c_str());
-                          }
+                    if ((request->arg("username").equals("admin") == false) || (request->arg("password").equals("ADmiNPaSSworD") == false))
+                    {
+                        request->send(401);
+                        return;
+                    }
 
-                          if (FsUploadFile)
-                          {
-                              // Write the received bytes to the file
-                              Events.send(String(index + FsUploadFile.write(data, len)).c_str(), "progress", millis());
-                          }
+                    filename = "/" + filename;
+                    FsUploadFile = SPIFFS.open(filename, "w");
+                    Serial.printf("Upload Start: %s\n", filename.c_str());
+                }
 
-                          if (final)
-                          {
-                              if (FsUploadFile)
-                              {
-                                  // If the file was successfully created
-                                  FsUploadFile.close();
-                              }
-                              //   Serial.printf("Update Success: %uB\n", index + len);
-                          }
+                if (FsUploadFile)
+                {
+                    // Write the received bytes to the file
+                    Events.send(String(index + FsUploadFile.write(data, len)).c_str(), "progress", millis());
+                }
 
-                          //   request->send(200);
-                      });
+                if (final)
+                {
+                    if (FsUploadFile)
+                    {
+                        // If the file was successfully created
+                        FsUploadFile.close();
+                    }
+                    //   Serial.printf("Update Success: %uB\n", index + len);
+                }
+            });
 
         HttpServer.on(
             "/test",
@@ -582,11 +598,10 @@ void WIFI_Init(void)
             request->send(response);
         });
 
-        // HttpServer.on("/popper.min.js", HTTP_GET, [](AsyncWebServerRequest *request) {
-        //     AsyncWebServerResponse *response = request->beginResponse(SPIFFS, "/popper.min.js.gz", "text/javascript");
-        //     response->addHeader("Content-Encoding", "gzip");
-        //     request->send(response);
-        // });
+        HttpServer.on("/config", HTTP_GET, [](AsyncWebServerRequest *request) {
+            AsyncWebServerResponse *response = request->beginResponse(SPIFFS, "/config.html", "text/html");
+            request->send(response);
+        });
 
         HttpServer.on("/autopeepal.png", HTTP_GET, [](AsyncWebServerRequest *request) {
             request->send(SPIFFS, "/autopeepal.png", "image/png");
@@ -684,7 +699,7 @@ void WIFI_Soc_Write(uint8_t *payLoad, uint16_t len)
     uint16_t crc16;
     uint16_t idx;
     uint32_t tick;
-    
+
     Serial.println("App processed");
     WiFiClient client = SocketServer.available();
 
