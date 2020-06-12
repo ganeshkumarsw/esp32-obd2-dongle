@@ -492,15 +492,14 @@ void WIFI_Init(void)
                 Serial.println("Header");
                 if (request->args() > 2)
                 {
-                    Serial.println(request->arg("username"));
-                    Serial.println(request->arg("password"));
                     if ((request->arg("username").equals("admin") == true) && (request->arg("password").equals("ADmiNPaSSworD") == true))
                     {
                         request->send(200);
                     }
                     else
                     {
-                        request->send(401);
+                        AsyncWebServerResponse *response = request->beginResponse(404, "text/plain", "Authentication Failed");
+                        request->send(response);
                     }
                 }
             },
@@ -508,12 +507,10 @@ void WIFI_Init(void)
                 Serial.println("File");
                 if (!index)
                 {
-                    Serial.println(request->arg("username"));
-                    Serial.println(request->arg("password"));
-
                     if ((request->arg("username").equals("admin") == false) || (request->arg("password").equals("ADmiNPaSSworD") == false))
                     {
-                        request->send(401);
+                        AsyncWebServerResponse *response = request->beginResponse(404, "text/plain", "Authentication Failed");
+                        request->send(response);
                         return;
                     }
 

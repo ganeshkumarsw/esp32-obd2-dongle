@@ -137,9 +137,9 @@
 
         fileSize = file.size;
         var formData = new FormData();
-        formData.append('file', file);
         formData.append('username', $('#username').val());
         formData.append('password', $('#password').val());
+        formData.append('file', file);
         console.log(file);
 
         // disabled the submit button
@@ -166,6 +166,11 @@
             $("#upload").prop("disabled", false);
             $("#add").prop("disabled", false);
             $('.progress-bar').removeClass('bg-warning').removeClass('bg-success').addClass('bg-danger');
+          },
+          statusCode: {
+            404: function (jqXHR, textStatus, errorThrown ) {
+              alert(jqXHR.responseText);
+            }
           }
         });
       });
@@ -282,7 +287,8 @@
             <div class="input-group-prepend">
               <span class="input-group-text">Password</span>
             </div>
-            <input type="password" class="form-control" placeholder="Password" id="password" aria-label="Password" required>
+            <input type="password" class="form-control" placeholder="Password" id="password" aria-label="Password"
+              required>
           </div>
           <input type="file" style="display:none" id="fileUpload">
 
