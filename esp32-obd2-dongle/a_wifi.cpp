@@ -154,7 +154,6 @@ void WIFI_Init(void)
         }
     }
 
-    staConnected = true;
     if (staConnected == false)
     {
         Serial.println("WIFI AP begin");
