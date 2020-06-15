@@ -144,6 +144,7 @@
           return
         }
 
+        fileSize = file.size;
         var formData = new FormData();
         formData.append('username', username);
         formData.append('password', password);
@@ -268,6 +269,7 @@
       }
 
       function ModalDisp(modal, title, html_body, timout = 1000, html_footer = '', msgtype = 'success') {
+        modal.find('.modal-header').attr('class').split(' ').filter(x => x.includes('alert'))
         modal.find('.modal-header').addClass('alert-' + msgtype);
 
         modal.find('.modal-title').text(title);

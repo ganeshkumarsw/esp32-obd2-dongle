@@ -93,7 +93,21 @@ void WIFI_Init(void)
     // const IPAddress apIP = IPAddress(192, 168, 5, 1);
 
     // WiFi.scanNetworks will return the number of networks found
-    int n = WiFi.scanNetworks();
+    WiFi.begin((char *)preferences.getString("stSSID").c_str(), (char *)preferences.getString("stPASS").c_str());
+
+    if (!MDNS.begin("obd2"))
+    {
+        Serial.println("Error setting up MDNS responder!");
+        // while (1)
+        // {
+        //     delay(1000);
+        // }
+    }
+    Serial.println("mDNS responder started");
+    // Add service to MDNS-SD
+    MDNS.addService("_http", "_tcp", 80);
+
+    int n = 0; //WiFi.scanNetworks();
     Serial.println("Scan done");
     if (n == 0)
     {
@@ -124,22 +138,23 @@ void WIFI_Init(void)
                     WiFi.setAutoReconnect(true);
                 }
 
-                if (!MDNS.begin("obd2"))
-                {
-                    Serial.println("Error setting up MDNS responder!");
-                    // while (1)
-                    // {
-                    //     delay(1000);
-                    // }
-                }
-                Serial.println("mDNS responder started");
-                // Add service to MDNS-SD
-                MDNS.addService("_http", "_tcp", 80);
+                // if (!MDNS.begin("obd2"))
+                // {
+                //     Serial.println("Error setting up MDNS responder!");
+                //     // while (1)
+                //     // {
+                //     //     delay(1000);
+                //     // }
+                // }
+                // Serial.println("mDNS responder started");
+                // // Add service to MDNS-SD
+                // MDNS.addService("_http", "_tcp", 80);
                 break;
             }
         }
     }
 
+    staConnected = true;
     if (staConnected == false)
     {
         Serial.println("WIFI AP begin");
@@ -289,20 +304,31 @@ void WIFI_Init(void)
             "/flash",
             HTTP_POST,
             [](AsyncWebServerRequest *request) {
-                if (Update.hasError() == false)
+                if ((request->arg("username").equals("admin") == true) && (request->arg("password").equals("ADmiNPaSSworD") == true))
                 {
-                    AsyncWebServerResponse *response = request->beginResponse(200);
-                    response->addHeader("Connection", "close");
-                    request->send(response);
-                    Events.send("Device being restarted", "success", millis());
-                    Serial.println("Device being restarted");
-                    delay(100);
-                    ESP.restart();
+                    if (Update.hasError() == false)
+                    {
+                        AsyncWebServerResponse *response = request->beginResponse(200);
+                        response->addHeader("Connection", "close");
+
+                        Events.send("Device being restarted", "success", millis());
+                        Serial.println("Device being restarted");
+                        request->send(response);
+                        delay(100);
+                        ESP.restart();
+                    }
+                    else
+                    {
+                        Events.send((String("Update Error: ") + Update.getError()).c_str(), "error", millis());
+                        AsyncWebServerResponse *response = request->beginResponse(401, "text/plain", String("Update Error: ") + Update.getError());
+                        request->send(response);
+                    }
+                    
                 }
                 else
                 {
-                    Events.send((String("Update Error: ") + Update.getError()).c_str(), "error", millis());
-                    request->send(200);
+                    AsyncWebServerResponse *response = request->beginResponse(401, "text/plain", "Authentication Failed");
+                    request->send(response);
                 }
             },
             [](AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final) {
@@ -310,6 +336,13 @@ void WIFI_Init(void)
                 {
                     //   Serial.printf("Update Start: %s\n", filename.c_str());
                     //   Update.runAsync(true);
+                    if ((request->arg("username").equals("admin") == false) || (request->arg("password").equals("ADmiNPaSSworD") == false))
+                    {
+                        AsyncWebServerResponse *response = request->beginResponse(401, "text/plain", "Authentication Failed");
+                        request->send(response);
+                        return;
+                    }
+
                     if (!Update.begin())
                     {
                         Update.printError(Serial);
@@ -483,7 +516,7 @@ void WIFI_Init(void)
                         AsyncWebServerResponse *response = request->beginResponse(401, "text/plain", "Authentication Failed");
                         request->send(response);
                     }
-                    
+
                     // Serial.printf("%s: %s removed\n", request->argName(i).c_str(), request->arg(i).c_str());
                 }
                 request->send(200);
@@ -496,7 +529,6 @@ void WIFI_Init(void)
                 //   bool shouldReboot = !Update.hasError();
                 //   AsyncWebServerResponse *response = request->beginResponse(200, "text/plain", shouldReboot ? "OK" : "FAIL");
                 //   response->addHeader("Connection", "close");
-                Serial.println("Header");
                 if (request->args() > 2)
                 {
                     if ((request->arg("username").equals("admin") == true) && (request->arg("password").equals("ADmiNPaSSworD") == true))
@@ -511,7 +543,6 @@ void WIFI_Init(void)
                 }
             },
             [](AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final) {
-                Serial.println("File");
                 if (!index)
                 {
                     if ((request->arg("username").equals("admin") == false) || (request->arg("password").equals("ADmiNPaSSworD") == false))
@@ -523,7 +554,6 @@ void WIFI_Init(void)
 
                     filename = "/" + filename;
                     FsUploadFile = SPIFFS.open(filename, "w");
-                    Serial.printf("Upload Start: %s\n", filename.c_str());
                 }
 
                 if (FsUploadFile)
@@ -623,6 +653,76 @@ void WIFI_Init(void)
     preferences.end();
 }
 
+void WIFI_SupportTask(void *pvParameters)
+{
+    wl_status_t wifiStatus = WL_NO_SHIELD;
+    wl_status_t wifiStatusTmp;
+    bool wifiConnect;
+    Preferences preferences;
+
+    while (1)
+    {
+        preferences.begin("config", false);
+        wifiStatusTmp = WiFi.status();
+        wifiConnect = false;
+
+        if (wifiStatus != wifiStatusTmp)
+        {
+            wifiStatus = wifiStatusTmp;
+            switch (wifiStatus)
+            {
+            case WL_CONNECTED:
+                Serial.printf("WiFi connected, IP address: %s\r\n", WiFi.localIP().toString().c_str());
+                LED_SetLedState(WIFI_CONN_LED, LED_STATE_HIGH, LED_TOGGLE_RATE_NONE);
+                break;
+
+            case WL_DISCONNECTED:
+                // WiFi.reconnect();
+                Serial.println(str(WL_DISCONNECTED));
+                LED_SetLedState(WIFI_CONN_LED, LED_STATE_TOGGLE, LED_TOGGLE_RATE_1HZ);
+                wifiConnect = true;
+                break;
+
+            case WL_IDLE_STATUS:
+                Serial.println(str(WL_IDLE_STATUS));
+                wifiConnect = true;
+                break;
+
+            case WL_NO_SSID_AVAIL:
+                Serial.println(str(WL_NO_SSID_AVAIL));
+                wifiConnect = true;
+                break;
+
+            case WL_SCAN_COMPLETED:
+                Serial.println(str(WL_SCAN_COMPLETED));
+                break;
+
+            case WL_CONNECT_FAILED:
+                Serial.println(str(WL_CONNECT_FAILED));
+                wifiConnect = true;
+                break;
+
+            case WL_CONNECTION_LOST:
+                Serial.println(str(WL_CONNECTION_LOST));
+                wifiConnect = true;
+                break;
+
+            default:
+                break;
+            }
+
+            if (wifiConnect == true)
+            {
+                wifiConnect = false;
+                WiFi.begin((char *)preferences.getString("stSSID").c_str(), (char *)preferences.getString("stPASS").c_str());
+            }
+        }
+
+        preferences.end();
+        vTaskDelay(5000 / portTICK_PERIOD_MS);
+    }
+}
+
 void WIFI_Task(void *pvParameters)
 {
     wl_status_t wifiStatus = WL_IDLE_STATUS;
@@ -634,6 +734,11 @@ void WIFI_Task(void *pvParameters)
     ESP_LOGI("WIFI", "uxHighWaterMark = %d", uxHighWaterMark);
 
     WIFI_Init();
+
+    if (xTaskCreate(WIFI_SupportTask, "WIFI_SupportTask", 5000, NULL, tskIDLE_PRIORITY, NULL) != pdTRUE)
+    {
+        configASSERT(0);
+    }
 
     while (1)
     {
@@ -671,23 +776,6 @@ void WIFI_Task(void *pvParameters)
             // client.stop();
             Serial.println("Client disconnected");
         }
-
-        if (wifiStatus != WiFi.status())
-        {
-            if (WiFi.status() == WL_CONNECTED)
-            {
-                Serial.printf("WiFi connected, IP address: %s\r\n", WiFi.localIP().toString().c_str());
-                LED_SetLedState(WIFI_CONN_LED, LED_STATE_HIGH, LED_TOGGLE_RATE_NONE);
-            }
-            else if (WiFi.status() == WL_DISCONNECTED)
-            {
-                // WiFi.reconnect();
-                Serial.println("WiFi Disconnected");
-                LED_SetLedState(WIFI_CONN_LED, LED_STATE_TOGGLE, LED_TOGGLE_RATE_1HZ);
-            }
-        }
-
-        wifiStatus = WiFi.status();
 #if WIFI_AP_DNS
         DNS_Server.processNextRequest();
 #endif

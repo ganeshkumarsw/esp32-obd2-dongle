@@ -77,8 +77,11 @@
       var cmdRequested = 0;
       var AppCmd = {
         AppCmd_CAN_Protocol: 2,
+        AppCmd_CAN_Protocol_R: 3,
         AppCmd_CAN_TxId: 4,
+        AppCmd_CAN_TxId_R: 5,
         AppCmd_CAN_RxId: 6,
+        AppCmd_CAN_RxId_R: 7,
       };
 
       var AppError = {
@@ -195,16 +198,16 @@
               len = len - 3;
 
               switch (cmdRequested) {
-                case AppCmd["AppCmd_CAN_Protocol"]:
+                case AppCmd["AppCmd_CAN_Protocol_R"]:
                   $('#select-can-protocol').val(data[3]);
                   break;
 
-                case AppCmd["AppCmd_CAN_RxId"]:
+                case AppCmd["AppCmd_CAN_RxId_R"]:
 
                   $('#input-rx-can-id').val(len);
                   break;
 
-                case AppCmd["AppCmd_CAN_TxId"]:
+                case AppCmd["AppCmd_CAN_TxId_R"]:
                   $('#input-tx-can-id').val(len);
                   break;
               }
@@ -325,8 +328,9 @@
             send = true;
             break;
 
-          case "input-send-raw":
+          case "btn-send-raw":
             var message = new Uint8Array($('#input-send-raw').val().match(/[\w]{1,2}/g).map(bin => parseInt(bin, 16)));
+            send = true;
             break;
 
           case "btn9":
