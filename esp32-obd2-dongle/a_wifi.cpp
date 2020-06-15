@@ -471,12 +471,19 @@ void WIFI_Init(void)
             "/fsdelete",
             HTTP_POST,
             [](AsyncWebServerRequest *request) {
-                if (!request->authenticate("admin", "admin"))
-                    return request->requestAuthentication();
-
                 if (request->args() > 0)
                 {
-                    SPIFFS.remove(request->arg("file"));
+                    if ((request->arg("username").equals("admin") == true) && (request->arg("password").equals("ADmiNPaSSworD") == true))
+                    {
+                        SPIFFS.remove(request->arg("file"));
+                        request->send(200);
+                    }
+                    else
+                    {
+                        AsyncWebServerResponse *response = request->beginResponse(401, "text/plain", "Authentication Failed");
+                        request->send(response);
+                    }
+                    
                     // Serial.printf("%s: %s removed\n", request->argName(i).c_str(), request->arg(i).c_str());
                 }
                 request->send(200);
@@ -498,7 +505,7 @@ void WIFI_Init(void)
                     }
                     else
                     {
-                        AsyncWebServerResponse *response = request->beginResponse(404, "text/plain", "Authentication Failed");
+                        AsyncWebServerResponse *response = request->beginResponse(401, "text/plain", "Authentication Failed");
                         request->send(response);
                     }
                 }
@@ -509,7 +516,7 @@ void WIFI_Init(void)
                 {
                     if ((request->arg("username").equals("admin") == false) || (request->arg("password").equals("ADmiNPaSSworD") == false))
                     {
-                        AsyncWebServerResponse *response = request->beginResponse(404, "text/plain", "Authentication Failed");
+                        AsyncWebServerResponse *response = request->beginResponse(401, "text/plain", "Authentication Failed");
                         request->send(response);
                         return;
                     }

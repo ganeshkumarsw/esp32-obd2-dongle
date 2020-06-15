@@ -115,18 +115,20 @@
 
       $('#flash').click(function (event) {
         $('#progressUpload').css('width', '0%');
-        $('#labelFilename').html('');
+        $('#labelFilename').text('');
         $("#upload").val("/flash");
       });
 
       $('#add').click(function (event) {
         $('#progressUpload').css('width', '0%');
-        $('#labelFilename').html('');
+        $('#labelFilename').text('');
+        $('#uploadModal').find('.modal-body .txt-username').val('');
+        $('#uploadModal').find('.modal-body .txt-password').val('');
         $("#upload").val("/fsupload");
       });
 
       $('#fileUpload').change(function (e) {
-        $('#labelFilename').html(e.target.files[0].name);
+        $('#labelFilename').text(typeof e.target.files[0] == 'undefined'? '' : e.target.files[0].name);
         $('#progressUpload').css('width', '0%');
         $('#progressUpload').html('0%');
       });
@@ -134,13 +136,26 @@
       $("#upload").click(function (event) {
         // Create an FormData object 
         var file = $('#fileUpload')[0].files[0];
+        $('#fileUpload').val('');
+        var username = $('#uploadModal').find('.modal-body .txt-username').val();
+        var password = $('#uploadModal').find('.modal-body .txt-password').val();
+        if ((typeof file == 'undefined') || (file.name == '')) {
+          alert('No File selected');
+          return
+        }
 
-        fileSize = file.size;
         var formData = new FormData();
-        formData.append('username', $('#username').val());
-        formData.append('password', $('#password').val());
+        formData.append('username', username);
+        formData.append('password', password);
         formData.append('file', file);
-        console.log(file);
+
+        if ((username == '') || (password == '')) {
+          alert('Either Username or Password is empty');
+          return;
+        }
+
+        $('#uploadModal').find('.modal-body .txt-username').val('');
+        $('#uploadModal').find('.modal-body .txt-password').val('');
 
         // disabled the submit button
         $("#upload").prop("disabled", true);
@@ -161,6 +176,8 @@
             $("#add").prop("disabled", false);
             $('#refresh').click();
             $('.progress-bar').removeClass('bg-warning').removeClass('bg-danger').addClass('bg-success');
+            $('#uploadModal').modal('hide');
+            ModalDisp($('#infoModal'), "Upload success", 'File ' + file.name + ' Uploaded successfully', -1, '', 'success');
           },
           error: function (e) {
             $("#upload").prop("disabled", false);
@@ -168,15 +185,51 @@
             $('.progress-bar').removeClass('bg-warning').removeClass('bg-success').addClass('bg-danger');
           },
           statusCode: {
-            404: function (jqXHR, textStatus, errorThrown ) {
-              alert(jqXHR.responseText);
+            401: function (jqXHR, textStatus, errorThrown) {
+              ModalDisp($('#infoModal'), "Upload Error", jqXHR.responseText, -1, '', 'danger');
             }
           }
         });
       });
 
       $('.card').on('click', 'table button', function (event) {
-        $.post("/fsdelete", { file: '/' + $(this).parents()[1].children[1].innerHTML }, function (result) {
+        var html_body = "";
+        var html_footer = "";
+        $('#infoModal .modal-body').empty();
+        $('#infoModal .modal-footer').empty();
+        html_body = 'Do you want to delete the file ' + $(this).parents()[1].children[1].innerHTML + '?';
+        html_body += '<div class="input-group mt-3 mb-2">';
+        html_body += '<div class="input-group-prepend">';
+        html_body += '<span class="input-group-text">Username</span>';
+        html_body += '</div>';
+        html_body += '<input type="text" class="form-control txt-username" placeholder="Username" aria-label="Username" required>';
+        html_body += '</div>';
+        html_body += '<div class="input-group mb-3">';
+        html_body += '<div class="input-group-prepend">';
+        html_body += '<span class="input-group-text">Password</span>';
+        html_body += '</div>';
+        html_body += '<input type="password" class="form-control txt-password" placeholder="Password" aria-label="Password" required>';
+        html_body += '</div>';
+        html_footer = '<button type="button" id="deleteyes" data-file="' + $(this).parents()[1].children[1].innerHTML + '" class="btn btn-success btn-delete">Yes</button>';
+        html_footer += '<button type="button" class="btn btn-danger" data-dismiss="modal">No</button>';
+        ModalDisp($('#infoModal'), "Delete Confirm", html_body, -1, html_footer, 'success');
+      });
+
+      $('#infoModal .modal-footer').on('click', '.btn-delete', function (event) {
+        var filename = $(this).data("file");
+        var username = $('#infoModal').find('.modal-body .txt-username').val();
+        var password = $('#infoModal').find('.modal-body .txt-password').val();
+
+        if ((username == '') || (password == '')) {
+          alert('Either Username or Password is empty');
+          return;
+        }
+
+        $('#infoModal').find('.modal-body .txt-username').val('');
+        $('#infoModal').find('.modal-body .txt-password').val('');
+
+        $.post("/fsdelete", { file: '/' + filename, username: username, password: password }, function (result) {
+          ModalDisp($('#infoModal'), "Delete Success", 'File ' + filename + ' Deleted successfully', -1, '', 'success');
           $('#refresh').click();
         });
       });
@@ -193,7 +246,7 @@
       function GetInfo() {
         $.post("/version", {}, function (result) {
           var html = "";
-          $('infoModal .modal-body').empty();
+          $('#infoModal .modal-body').empty();
           html = '<table class="table table-sm table-hover"><tbody>';
 
           $.each(result.info, function (key, value) {
@@ -209,21 +262,22 @@
           });
 
           html = html + '</tbody></table>';
-          ModalDisp($('#infoModal'), "Info", html, -1);
+          ModalDisp($('#infoModal'), "Info", html, -1, '', 'success');
           // $('infoModal .modal-body').html(html);
         });
       }
 
-      function ModalDisp(modal, title, html, timout = 1000) {
-        if (title === "error") {
-          modal.find('.modal-header').addClass('alert-danger');
-        }
-        else {
-          modal.find('.modal-header').addClass('alert-success');
-        }
+      function ModalDisp(modal, title, html_body, timout = 1000, html_footer = '', msgtype = 'success') {
+        modal.find('.modal-header').addClass('alert-' + msgtype);
 
         modal.find('.modal-title').text(title);
-        modal.find('.modal-body').html(html);
+        modal.find('.modal-body').html(html_body);
+        if (html_footer != '') {
+          modal.find('.modal-footer').html(html_footer);
+        }
+        else {
+          modal.find('.modal-footer').html('<button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>');
+        }
         modal.modal('show');
 
         if (timout > 0) {
@@ -238,9 +292,9 @@
 </head>
 
 <body>
-  <nav class=" m-2 navbar navbar-expand-lg navbar-dark bg-light">
+  <nav class=" m-2 navbar navbar-expand-lg navbar-dark" style="background-color:rgb(255, 239, 213);">
     <a class="navbar-brand" href="#"><img src="autopeepal.png" alt="" width="auto" height="auto"></a>
-    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNavAltMarkup"
+    <button class="navbar-toggler bg-dark" type="button" data-toggle="collapse" data-target="#navbarNavAltMarkup"
       aria-controls="navbarNavAltMarkup" aria-expanded="false" aria-label="Toggle navigation">
       <span class="navbar-toggler-icon"></span>
     </button>
@@ -281,14 +335,15 @@
             <div class="input-group-prepend">
               <span class="input-group-text">Username</span>
             </div>
-            <input type="text" class="form-control" placeholder="Username" id="username" aria-label="Username" required>
+            <input type="text" class="form-control txt-username" placeholder="Username" id="username"
+              aria-label="Username" required>
           </div>
           <div class="input-group mb-3">
             <div class="input-group-prepend">
               <span class="input-group-text">Password</span>
             </div>
-            <input type="password" class="form-control" placeholder="Password" id="password" aria-label="Password"
-              required>
+            <input type="password" class="form-control txt-password" placeholder="Password" id="password"
+              aria-label="Password" required>
           </div>
           <input type="file" style="display:none" id="fileUpload">
 
@@ -318,7 +373,6 @@
         <div class="modal-body">
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
         </div>
       </div>
     </div>
