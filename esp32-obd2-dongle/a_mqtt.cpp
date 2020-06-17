@@ -24,7 +24,7 @@ void MQTT_ReceivedCallback(char *topic, byte *payload, unsigned int length)
     // }
     // Serial.println();
 
-    APP_ProcessData(payload, length, APP_CHANNEL_MQTT);
+    APP_ProcessData(payload, length, APP_MSG_CHANNEL_MQTT);
 }
 
 void MQTT_Init(void)

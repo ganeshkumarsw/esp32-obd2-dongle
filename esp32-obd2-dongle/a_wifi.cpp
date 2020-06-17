@@ -234,7 +234,7 @@ void WIFI_Init(void)
 
                 if (crc16Act == crc16Calc)
                 {
-                    APP_ProcessData(&data[11], (len - 13), APP_CHANNEL_WEB_SOC);
+                    APP_ProcessData(&data[11], (len - 13), APP_MSG_CHANNEL_WEB_SOC);
                 }
                 else
                 {
@@ -758,7 +758,7 @@ void WIFI_Task(void *pvParameters)
                 if (len)
                 {
                     WIFI_SeqNo = WIFI_RxBuff[0];
-                    APP_ProcessData(&WIFI_RxBuff[11], (len - 13), APP_CHANNEL_TCP_SOC);
+                    APP_ProcessData(&WIFI_RxBuff[11], (len - 13), APP_MSG_CHANNEL_TCP_SOC);
                     // client.write(WIFI_RxBuff, len);
                     len = 0;
                 }

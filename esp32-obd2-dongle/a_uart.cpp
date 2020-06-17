@@ -37,7 +37,7 @@ void UART_Task(void *pvParameters)
                 UART_Buff[idx++] = Serial.read();
             }
 
-            APP_ProcessData(UART_Buff, idx, APP_CHANNEL_UART);
+            APP_ProcessData(UART_Buff, idx, APP_MSG_CHANNEL_UART);
         }
 
         vTaskDelay(5 / portTICK_PERIOD_MS);

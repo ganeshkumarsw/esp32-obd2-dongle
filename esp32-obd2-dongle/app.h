@@ -6,8 +6,8 @@ extern "C"
 {
 #endif
 
-#define IsTimerElapsed(x) ((x) && (x <= (xTaskGetTickCount() / portTICK_PERIOD_MS)))
-#define IsTimerRunning(x) ((x) && (x > (xTaskGetTickCount() / portTICK_PERIOD_MS)))
+#define IsTimerElapsed(x) ((x > 0) && (x <= (xTaskGetTickCount() / portTICK_PERIOD_MS)))
+#define IsTimerRunning(x) ((x > 0) && (x > (xTaskGetTickCount() / portTICK_PERIOD_MS)))
 #define IsTimerEnabled(x) ((x) > 0)
 #define StartTimer(x, y)   \
     {                      \
@@ -83,22 +83,22 @@ extern "C"
 
     typedef enum
     {
-        APP_ISO_STATE_SINGLE = 0,
-        APP_ISO_STATE_FIRST,
-        APP_ISO_STATE_CONSECUTIVE,
-        APP_ISO_STATE_SEP_TIME,
-        APP_ISO_STATE_FC_WAIT_TIME,
-        APP_ISO_STATE_SEND_TO_APP,
-        APP_ISO_STATE_IDLE,
-    } APP_ISO_STATE_t;
+        APP_STATE_CAN_ISO_SINGLE = 0,
+        APP_STATE_CAN_ISO_FIRST,
+        APP_STATE_CAN_ISO_CONSECUTIVE,
+        APP_STATE_CAN_ISO_SEP_TIME,
+        APP_STATE_CAN_ISO_FC_WAIT_TIME,
+        APP_STATE_SEND_TO_APP,
+        APP_STATE_IDLE,
+    } APP_STATE_t;
 
     typedef enum
     {
-        APP_ISO_TYPE_SINGLE = 0,
-        APP_ISO_TYPE_FIRST,
-        APP_ISO_TYPE_CONSECUTIVE,
-        APP_ISO_TYPE_FLOWCONTROL,
-    } APP_ISO_TYPE_t;
+        APP_CAN_ISO_TYPE_SINGLE = 0,
+        APP_CAN_ISO_TYPE_FIRST,
+        APP_CAN_ISO_TYPE_CONSECUTIVE,
+        APP_CAN_ISO_TYPE_FLOWCONTROL,
+    } APP_CAN_ISO_TYPE_t;
 
     typedef enum
     {
@@ -112,13 +112,13 @@ extern "C"
 
     typedef enum
     {
-        APP_CHANNEL_NONE = -1,
-        APP_CHANNEL_UART = 0,
-        APP_CHANNEL_MQTT,
-        APP_CHANNEL_BLE,
-        APP_CHANNEL_TCP_SOC,
-        APP_CHANNEL_WEB_SOC,
-        APP_CHANNEL_MAX,
+        APP_MSG_CHANNEL_NONE = -1,
+        APP_MSG_CHANNEL_UART = 0,
+        APP_MSG_CHANNEL_MQTT,
+        APP_MSG_CHANNEL_BLE,
+        APP_MSG_CHANNEL_TCP_SOC,
+        APP_MSG_CHANNEL_WEB_SOC,
+        APP_MSG_CHANNEL_MAX,
     } APP_CHANNEL_t;
 
     void APP_Init(void);
