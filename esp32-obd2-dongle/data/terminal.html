@@ -69,6 +69,7 @@
     });
 
     var ScriptLoaded = function () {
+      var tableToJSON = [];
       var socket;
       var MesgCnt = 0;
       var pro_seqnum = 0;
@@ -106,7 +107,7 @@
       };
 
 
-      
+
       $('[data-toggle="tooltip"]').tooltip();
       Set_ConnectionStatus('Closed');
       Set_RxMessageCount(RxMessageCount);
@@ -261,11 +262,11 @@
               temp = temp + (hex.length < 2 ? "0" : "") + hex + " ";
             });
 
+            tableToJSON.push({msg: MesgCnt, dir: 1, data: temp});
             $('#table-output').children('tbody').append('<tr><th scope="row">' + (MesgCnt++) + '</th><td><span class="badge badge-warning"><-</span></td><td>' + temp + '</td></tr>');
             // $('#response').val($('#response').val() + temp + "\n");
             $('.table-custom').scrollTop($('.table-custom')[0].scrollHeight);
             Set_RxMessageCount(++RxMessageCount);
-            console.log('Message from server ', data);
           });
         }
         else {
@@ -273,6 +274,21 @@
           ModalDisp("error", "WebSocket NOT supported by your Browser!", -1);
         }
       }
+
+      $('#save').click(function () {
+        var a = document.createElement('a');
+        var file = new Blob([JSON.stringify(tableToJSON)], { type: 'application/json' });
+        a.href = URL.createObjectURL(file);
+        a.download = "data.json";
+        a.click();
+      });
+
+      $('#clear').click(function () {
+        tableToJSON = [];
+        $('#table-output').children('tbody').empty();
+        Set_RxMessageCount(0);
+        Set_TxMessageCount(0);
+      });
 
       $('button').click(function () {
         var send = false;
@@ -345,6 +361,7 @@
             var hex = val.toString(16).toUpperCase();
             temp = temp + (hex.length < 2 ? "0" : "") + hex + " ";
           });
+          tableToJSON.push({msg: MesgCnt, dir: 0, data: temp});
           $('#table-output').children('tbody').append('<tr><th scope="row">' + (MesgCnt++) + '</th><td><span class="badge badge-success">-></span></td><td>' + temp + '</td></tr>');
           $('.table-custom').scrollTop($('.table-custom')[0].scrollHeight);
           Set_TxMessageCount(++TxMessageCount);
@@ -494,6 +511,8 @@
                 <span id="connectionStatus" class="badge badge-pill badge-success"></span>
                 <span id="messageTx" class="badge badge-success">0</span>
                 <span id="messageRx" class="badge badge-warning">0</span>
+                <button type="submit" id="save" class="btn badge btn-primary">Save</button>
+                <button type="submit" id="clear" class="btn badge btn-primary">Clear</button>
               </div>
             </th>
           </tr>

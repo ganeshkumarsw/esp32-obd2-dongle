@@ -86,7 +86,14 @@
       //   modal.find('.modal-body input').val(recipient)
       // });
 
-      $('#refresh').click(function () {
+      $('#fileExplorer').click(function () {
+        $('.card').empty();
+        $('.card').html('<div class="d-flex justify-content-center">' +
+          '<div class="spinner-border mt-4" role="status">' +
+          '<span class="sr-only">Loading...</span>' +
+          '</div>' +
+          '</div>');
+
         $.post("/fsread", {}, function (result) {
           $('.card').empty();
           $('.card').html('<table class="table table-hover">' +
@@ -127,8 +134,36 @@
         $("#upload").val("/fsupload");
       });
 
+      $('#scan').click(function () {
+        $('.card').empty();
+        $('.card').html('<div class="d-flex justify-content-center">' +
+          '<div class="spinner-border mt-4" role="status">' +
+          '<span class="sr-only">Loading...</span>' +
+          '</div>' +
+          '</div>');
+
+        $.post("/scan", {}, function (result) {
+          $('.card').empty();
+          $('.card').html('<table class="table table-hover">' +
+            '<thead><tr><th scope="col">#</th><th scope="col">SSID</th><th scope="col">BSSID</th><th scope="col">Signal</th><th scope="col">Channel</th><th scope="col">Security</th></tr></thead>' +
+            '<tbody></tbody></table>');
+          $('table').children('tbody').empty();
+          var val = 0;
+          $.each(result, function (key, value) {
+            $('table').children('tbody').append('<tr>' +
+              '<th scope="row">' + (val++) + '</th>' +
+              '<td>' + value.ssid + '</td>' +
+              '<td>' + value.bssid + '</td>' +
+              '<td>' + value.rssi + '</td>' +
+              '<td>' + value.channel + '</td>' +
+              '<td>' + value.secure + '</td>' +
+              '</tr>');
+          });
+        });
+      });
+
       $('#fileUpload').change(function (e) {
-        $('#labelFilename').text(typeof e.target.files[0] == 'undefined'? '' : e.target.files[0].name);
+        $('#labelFilename').text(typeof e.target.files[0] == 'undefined' ? '' : e.target.files[0].name);
         $('#progressUpload').css('width', '0%');
         $('#progressUpload').html('0%');
       });
@@ -175,7 +210,7 @@
           success: function (data) {
             $("#upload").prop("disabled", false);
             $("#add").prop("disabled", false);
-            $('#refresh').click();
+            $('#fileExplorer').click();
             $('.progress-bar').removeClass('bg-warning').removeClass('bg-danger').addClass('bg-success');
             $('#uploadModal').modal('hide');
             ModalDisp($('#infoModal'), "Upload success", 'File ' + file.name + ' Uploaded successfully', -1, '', 'success');
@@ -231,7 +266,7 @@
 
         $.post("/fsdelete", { file: '/' + filename, username: username, password: password }, function (result) {
           ModalDisp($('#infoModal'), "Delete Success", 'File ' + filename + ' Deleted successfully', -1, '', 'success');
-          $('#refresh').click();
+          $('#fileExplorer').click();
         });
       });
 
@@ -306,9 +341,10 @@
           File</button>
         <button type="button" id="flash" class="btn btn-success" data-toggle="modal"
           data-target="#uploadModal">Flash</button>
-        <button type="button" id="refresh" class="btn btn-primary">Refresh</button>
+        <button type="button" id="fileExplorer" class="btn btn-primary">Explorer</button>
         <button type="button" id="task" class="btn btn-primary">Task</button>
         <button type="button" id="info" class="btn btn-primary">Info</button>
+        <button type="button" id="scan" class="btn btn-primary">Scan Network</button>
       </div>
     </div>
   </nav>

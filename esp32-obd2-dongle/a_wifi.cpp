@@ -322,7 +322,6 @@ void WIFI_Init(void)
                         AsyncWebServerResponse *response = request->beginResponse(401, "text/plain", String("Update Error: ") + Update.getError());
                         request->send(response);
                     }
-                    
                 }
                 else
                 {
@@ -456,26 +455,38 @@ void WIFI_Init(void)
                 request->send(200);
             });
 
-        // HttpServer.on(
-        //     "/fsread",
-        //     HTTP_POST,
-        //     [](AsyncWebServerRequest *request) {
-        //         String json = "{\"data\":[";
-        //         File root = SPIFFS.open("/");
-        //         File file = root.openNextFile();
-
-        //         while (file)
-        //         {
-        //             json = json + "[\"" + file.name() + "\",\"" + file.size() + "\"],";
-        //             file.close();
-        //             file = root.openNextFile();
-        //         }
-        //         root.close();
-
-        //         json = json + "[\"end\", \"0\"]]}";
-        //         request->send(200, "application/json", json);
-        //         json.~String();
-        //     });
+        HttpServer.on(
+            "/scan",
+            HTTP_POST,
+            [](AsyncWebServerRequest *request) {
+                const char *encryptionType[] = {"AUTH_OPEN",            /**< authenticate mode : open */
+                                                "AUTH_WEP",             /**< authenticate mode : WEP */
+                                                "AUTH_WPA_PSK",         /**< authenticate mode : WPA_PSK */
+                                                "AUTH_WPA2_PSK",        /**< authenticate mode : WPA2_PSK */
+                                                "AUTH_WPA_WPA2_PSK",    /**< authenticate mode : WPA_WPA2_PSK */
+                                                "AUTH_WPA2_ENTERPRISE", /**< authenticate mode : WPA2_ENTERPRISE */
+                                                "AUTH_MAX"};
+                String json = "[";
+                int n = WiFi.scanNetworks();
+                if (n > 0)
+                {
+                    for (int i = 0; i < n; ++i)
+                    {
+                        if (i)
+                            json += ",";
+                        json += "{";
+                        json += "\"rssi\":" + String(WiFi.RSSI(i));
+                        json += ",\"ssid\":\"" + WiFi.SSID(i) + "\"";
+                        json += ",\"bssid\":\"" + WiFi.BSSIDstr(i) + "\"";
+                        json += ",\"channel\":" + String(WiFi.channel(i));
+                        json += ",\"secure\":\"" + String(encryptionType[WiFi.encryptionType(i)]) + "\"";
+                        json += "}";
+                    }
+                    WiFi.scanDelete();
+                }
+                json += "]";
+                request->send(200, "application/json", json);
+            });
 
         HttpServer.on(
             "/fsread",
@@ -621,6 +632,12 @@ void WIFI_Init(void)
 
         HttpServer.on("/bootstrap.bundle.min.js", HTTP_GET, [](AsyncWebServerRequest *request) {
             AsyncWebServerResponse *response = request->beginResponse(SPIFFS, "/bootstrap.bundle.min.js.gz", "text/javascript");
+            response->addHeader("Content-Encoding", "gzip");
+            request->send(response);
+        });
+
+        HttpServer.on("/jquery.tabletojson.min.js", HTTP_GET, [](AsyncWebServerRequest *request) {
+            AsyncWebServerResponse *response = request->beginResponse(SPIFFS, "/jquery.tabletojson.min.js.gz", "text/javascript");
             response->addHeader("Content-Encoding", "gzip");
             request->send(response);
         });
