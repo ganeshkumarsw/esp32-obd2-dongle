@@ -286,8 +286,10 @@
       $('#clear').click(function () {
         tableToJSON = [];
         $('#table-output').children('tbody').empty();
-        Set_RxMessageCount(0);
-        Set_TxMessageCount(0);
+        TxMessageCount = 0;
+        RxMessageCount = 0;
+        Set_RxMessageCount(RxMessageCount);
+        Set_TxMessageCount(TxMessageCount);
       });
 
       $('button').click(function () {
