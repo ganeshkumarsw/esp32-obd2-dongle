@@ -466,8 +466,25 @@ void WIFI_Init(void)
                                                 "AUTH_WPA_WPA2_PSK",    /**< authenticate mode : WPA_WPA2_PSK */
                                                 "AUTH_WPA2_ENTERPRISE", /**< authenticate mode : WPA2_ENTERPRISE */
                                                 "AUTH_MAX"};
+
+                const char *scanStatus[] = {
+                    str(WIFI_SCAN_RUNNING),
+                    str(WIFI_SCAN_FAILED),
+                };
+
                 String json = "[";
-                int n = WiFi.scanNetworks();
+                int n = WiFi.scanNetworks(true);
+                String status;
+
+                if((n < 0) && (n >= -2))
+                {
+                    request->send(200, "application/json",  scanStatus[(n * -1) - 1]);
+                }
+                else
+                {
+                    request->send(200, "application/json",  String(n));
+                }
+                
                 if (n > 0)
                 {
                     for (int i = 0; i < n; ++i)
@@ -485,7 +502,7 @@ void WIFI_Init(void)
                     WiFi.scanDelete();
                 }
                 json += "]";
-                request->send(200, "application/json", json);
+                
             });
 
         HttpServer.on(
@@ -662,10 +679,6 @@ void WIFI_Init(void)
 
     ESP_LOGI("WIFI", "AP IP address: %s", WiFi.softAPIP().toString().c_str());
     SocketServer.begin();
-#if WIFI_STA
-    // Add service to MDNS-SD
-    MDNS.addService("_http", "_tcp", 80);
-#endif
     preferences.end();
 }
 
@@ -811,7 +824,7 @@ void WIFI_Soc_Write(uint8_t *payLoad, uint16_t len)
     Serial.println("App processed");
     WiFiClient client = SocketServer.available();
 
-    if (!WIFI_TxLen)
+    if (WIFI_TxLen == 0)
     {
         idx = 0;
         if ((payLoad[0] & 0xF0) == 0x20)
@@ -851,7 +864,7 @@ void WIFI_WebSoc_Write(uint8_t *payLoad, uint16_t len)
     uint32_t tick;
     // Serial.println("App processed");
 
-    if (!WIFI_TxLen)
+    if (WIFI_TxLen == 0)
     {
         idx = 0;
         if ((payLoad[0] & 0xF0) == 0x20)

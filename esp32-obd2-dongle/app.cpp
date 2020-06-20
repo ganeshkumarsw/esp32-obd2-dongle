@@ -49,8 +49,8 @@ uint8_t APP_SPRCOL;
 CAN_speed_t APP_CAN_Baud;
 uint32_t APP_CAN_TxId;
 uint8_t APP_CAN_TxIdType;
-uint32_t APP_CAN_FilterId;
-uint8_t APP_CAN_FilterIdType;
+uint32_t APP_CAN_RxFilterId;
+uint8_t APP_CAN_RxFilterIdType;
 
 uint8_t APP_CAN_TxMinTime;
 uint32_t APP_CAN_TxMinTmr;
@@ -143,37 +143,38 @@ void APP_Task(void *pvParameters)
 
         // CAN_WriteFrame(&tx_frame, pdMS_TO_TICKS(10));
 
-        if (IsTimerElapsed(APP_Frame01_TimeOutTmr) || IsTimerElapsed(APP_RxResp_TimeOutTmr))
+        if (IsTimerElapsed(APP_Frame01_TimeOutTmr))
+        {
+            APP_BuffLockedBy = APP_BUFF_LOCKED_BY_NONE;
+            APP_BuffRxIndex = 0;
+            StopTimer(APP_Frame01_TimeOutTmr);
+        }
+
+        if (IsTimerElapsed(APP_RxResp_TimeOutTmr))
         {
             APP_BuffLockedBy = APP_BUFF_LOCKED_BY_NONE;
             APP_BuffRxIndex = 0;
 
-            if (IsTimerEnabled(APP_Frame01_TimeOutTmr))
-            {
-                StopTimer(APP_Frame01_TimeOutTmr);
-            }
-            else
-            {
-                StopTimer(APP_RxResp_TimeOutTmr);
-                respLen = 0;
-                respBuff[respLen++] = 0x40;
-                respBuff[respLen++] = 2;
+            StopTimer(APP_RxResp_TimeOutTmr);
+            respLen = 0;
+            respBuff[respLen++] = 0x40;
+            respBuff[respLen++] = 2;
 
-                if (((APP_Channel > APP_MSG_CHANNEL_NONE) && (APP_Channel < APP_MSG_CHANNEL_MAX)) &&
-                    (cb_APP_Send[APP_Channel] != NULL))
-                {
-                    crc16 = UTIL_CRC16_CCITT(0xFFFF, respBuff, 0);
-                    respBuff[respLen++] = crc16 >> 8;
-                    respBuff[respLen++] = crc16;
+            if (((APP_Channel > APP_MSG_CHANNEL_NONE) && (APP_Channel < APP_MSG_CHANNEL_MAX)) &&
+                (cb_APP_Send[APP_Channel] != NULL))
+            {
+                crc16 = UTIL_CRC16_CCITT(0xFFFF, respBuff, 0);
+                respBuff[respLen++] = crc16 >> 8;
+                respBuff[respLen++] = crc16;
 
-                    cb_APP_Send[APP_Channel](respBuff, respLen);
-                }
+                cb_APP_Send[APP_Channel](respBuff, respLen);
             }
         }
 
-        if (((APP_Client_CommStatus == true) || (APP_YellowFlashCntr > 0)) && IsTimerElapsed(APP_YellowLedTmr))
+        if (((APP_Client_CommStatus == true) || (APP_YellowFlashCntr > 0)) &&
+            IsTimerElapsed(APP_YellowLedTmr))
         {
-            if (APP_Client_CommStatus)
+            if (APP_Client_CommStatus == true)
             {
                 APP_Client_CommStatus = 0;
                 APP_YellowFlashCntr = 4;
@@ -189,9 +190,10 @@ void APP_Task(void *pvParameters)
             LED_SetLedState(COMM_LED, LED_STATE_LOW, LED_TOGGLE_RATE_NONE);
         }
 
-        if (((APP_CAN_CommStatus == true) || (APP_GreenFlashCntr > 0)) && IsTimerElapsed(APP_GreenLedTmr))
+        if (((APP_CAN_CommStatus == true) || (APP_GreenFlashCntr > 0)) &&
+            IsTimerElapsed(APP_GreenLedTmr))
         {
-            if (APP_CAN_CommStatus)
+            if (APP_CAN_CommStatus == true)
             {
                 APP_CAN_CommStatus = 0;
                 APP_GreenFlashCntr = 4;
@@ -378,7 +380,10 @@ void APP_Task(void *pvParameters)
                     }
 
                     if ((((APP_Channel > APP_MSG_CHANNEL_NONE) && (APP_Channel < APP_MSG_CHANNEL_MAX)) || (APP_State == APP_STATE_CAN_ISO_FC_WAIT_TIME)) &&
-                        ((CAN_ReadFrame(&rx_frame, pdMS_TO_TICKS(0)) == ESP_OK) && (rx_frame.FIR.B.RTR == CAN_no_RTR)))
+                        (CAN_ReadFrame(&rx_frame, pdMS_TO_TICKS(0)) == ESP_OK) && 
+                        (rx_frame.FIR.B.RTR == CAN_no_RTR) && 
+                        (rx_frame.MsgID == APP_CAN_RxFilterId) && 
+                        (rx_frame.FIR.B.FF == APP_CAN_RxFilterIdType))
                     {
                         APP_CAN_CommStatus = true;
                         isoFrameType = rx_frame.data.u8[0] >> 4;
@@ -760,7 +765,7 @@ void APP_Frame2(uint8_t *p_buff, uint16_t len, uint8_t channel)
     {
         switch (p_buff[0])
         {
-        case APP_REQ_CMD_RSTVC:
+        case APP_REQ_CMD_RESET:
             if (len != 1)
             {
                 respType = APP_RESP_NACK;
@@ -774,7 +779,7 @@ void APP_Frame2(uint8_t *p_buff, uint16_t len, uint8_t channel)
             CAN_DeInit();
             break;
 
-        case APP_REQ_CMD_SPRCOL:
+        case APP_REQ_CMD_SET_PROTOCOL:
             if (len != 2)
             {
                 respType = APP_RESP_NACK;
@@ -849,13 +854,11 @@ void APP_Frame2(uint8_t *p_buff, uint16_t len, uint8_t channel)
                 APP_CAN_RxDataLen = 0;
                 APP_BuffLockedBy = APP_BUFF_LOCKED_BY_NONE;
                 CAN_SetBaud(APP_CAN_Baud);
-                CAN_ConfigFilterterMask(0xFFFFFFFF, true);
-                // CAN_SendCmd(3, APP_CAN_Baud);
-                // CAN_SendCmd(2, 0xFFFFFFFF);
+                CAN_ConfigFilterterMask(0x00000000, CAN_frame_ext);
             }
             break;
 
-        case APP_REQ_CMD_GPRCOL:
+        case APP_REQ_CMD_GET_PROTOCOL:
             if (len != 1)
             {
                 respType = APP_RESP_NACK;
@@ -867,7 +870,7 @@ void APP_Frame2(uint8_t *p_buff, uint16_t len, uint8_t channel)
             respLen = 1;
             break;
 
-        case APP_REQ_CMD_STXHDR:
+        case APP_REQ_CMD_SET_TX_CAN_ID:
             if (len == 3)
             {
                 APP_CAN_TxIdType = (uint8_t)CAN_frame_std; // Standard frame
@@ -885,7 +888,7 @@ void APP_Frame2(uint8_t *p_buff, uint16_t len, uint8_t channel)
             }
             break;
 
-        case APP_REQ_CMD_GTXHDR:
+        case APP_REQ_CMD_GET_TX_CAN_ID:
             if (len != 1)
             {
                 respType = APP_RESP_NACK;
@@ -910,16 +913,16 @@ void APP_Frame2(uint8_t *p_buff, uint16_t len, uint8_t channel)
             }
             break;
 
-        case APP_REQ_CMD_SRXHDRMSK:
+        case APP_REQ_CMD_SET_RX_CAN_ID:
             if (len == 3)
             {
-                APP_CAN_FilterIdType = CAN_frame_std; // Standard frame
-                APP_CAN_FilterId = ((uint32_t)p_buff[1] << 8) | (uint32_t)p_buff[2];
+                APP_CAN_RxFilterIdType = CAN_frame_std; // Standard frame
+                APP_CAN_RxFilterId = ((uint32_t)p_buff[1] << 8) | (uint32_t)p_buff[2];
             }
             else if (len == 5)
             {
-                APP_CAN_FilterIdType = CAN_frame_ext;
-                APP_CAN_FilterId = ((uint32_t)p_buff[1] << 24) | ((uint32_t)p_buff[2] << 16) | ((uint32_t)p_buff[3] << 8) | (uint32_t)p_buff[4];
+                APP_CAN_RxFilterIdType = CAN_frame_ext;
+                APP_CAN_RxFilterId = ((uint32_t)p_buff[1] << 24) | ((uint32_t)p_buff[2] << 16) | ((uint32_t)p_buff[3] << 8) | (uint32_t)p_buff[4];
             }
             else
             {
@@ -928,12 +931,10 @@ void APP_Frame2(uint8_t *p_buff, uint16_t len, uint8_t channel)
                 break;
             }
 
-            CAN_ConfigFilterterMask(APP_CAN_FilterId, (bool)APP_CAN_FilterIdType);
-            // APP_CAN_FilterId = APP_CAN_FilterIdType? APP_CAN_FilterId | 0x80000000: APP_CAN_FilterId;
-            // CAN_SendCmd(2, APP_CAN_FilterId);
+            CAN_ConfigFilterterMask(APP_CAN_RxFilterId, (bool)APP_CAN_RxFilterIdType);
             break;
 
-        case APP_REQ_CMD_GRXHDRMSK:
+        case APP_REQ_CMD_GET_RX_CAN_ID:
             if (len != 1)
             {
                 respType = APP_RESP_NACK;
@@ -942,18 +943,18 @@ void APP_Frame2(uint8_t *p_buff, uint16_t len, uint8_t channel)
             }
 
             // Standard frame
-            if (APP_CAN_FilterIdType == CAN_MSG_FLAG_NONE)
+            if (APP_CAN_RxFilterIdType == CAN_MSG_FLAG_NONE)
             {
-                respBuff[0] = (uint8_t)(APP_CAN_FilterId >> 8);
-                respBuff[1] = (uint8_t)APP_CAN_FilterId;
+                respBuff[0] = (uint8_t)(APP_CAN_RxFilterId >> 8);
+                respBuff[1] = (uint8_t)APP_CAN_RxFilterId;
                 respLen = 2;
             }
             else
             {
-                respBuff[0] = (uint8_t)(APP_CAN_FilterId >> 24);
-                respBuff[1] = (uint8_t)(APP_CAN_FilterId >> 16);
-                respBuff[2] = (uint8_t)(APP_CAN_FilterId >> 8);
-                respBuff[3] = (uint8_t)APP_CAN_FilterId;
+                respBuff[0] = (uint8_t)(APP_CAN_RxFilterId >> 24);
+                respBuff[1] = (uint8_t)(APP_CAN_RxFilterId >> 16);
+                respBuff[2] = (uint8_t)(APP_CAN_RxFilterId >> 8);
+                respBuff[3] = (uint8_t)APP_CAN_RxFilterId;
                 respLen = 4;
             }
             break;
@@ -1095,7 +1096,7 @@ void APP_Frame2(uint8_t *p_buff, uint16_t len, uint8_t channel)
             APP_CAN_PaddingByte = 0x0000;
             break;
 
-        case APP_REQ_CMD_GETFWVER:
+        case APP_REQ_CMD_GET_FIRMWARE_VER:
             if (len != 1)
             {
                 respType = APP_RESP_NACK;
@@ -1109,7 +1110,7 @@ void APP_Frame2(uint8_t *p_buff, uint16_t len, uint8_t channel)
             respLen = 3;
             break;
 
-        case APP_REQ_CMD_SETSTASSID:
+        case APP_REQ_CMD_SET_STA_SSID:
             if (len < 5)
             {
                 respType = APP_RESP_NACK;
@@ -1119,10 +1120,9 @@ void APP_Frame2(uint8_t *p_buff, uint16_t len, uint8_t channel)
             p_buff[len - 1] = 0;
 
             WIFI_Set_STA_SSID((char *)&p_buff[1]);
-
             break;
 
-        case APP_REQ_CMD_SETSTAPASS:
+        case APP_REQ_CMD_SET_STA_PASSWORD:
             if (len < 5)
             {
                 respType = APP_RESP_NACK;

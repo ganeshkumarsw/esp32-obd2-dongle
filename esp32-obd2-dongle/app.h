@@ -26,13 +26,13 @@ extern "C"
 
     typedef enum
     {
-        APP_REQ_CMD_RSTVC = 1,
-        APP_REQ_CMD_SPRCOL = 2,
-        APP_REQ_CMD_GPRCOL = 3,
-        APP_REQ_CMD_STXHDR = 4,
-        APP_REQ_CMD_GTXHDR = 5,
-        APP_REQ_CMD_SRXHDRMSK = 6,
-        APP_REQ_CMD_GRXHDRMSK = 7,
+        APP_REQ_CMD_RESET = 1,
+        APP_REQ_CMD_SET_PROTOCOL = 2,
+        APP_REQ_CMD_GET_PROTOCOL = 3,
+        APP_REQ_CMD_SET_TX_CAN_ID = 4,
+        APP_REQ_CMD_GET_TX_CAN_ID = 5,
+        APP_REQ_CMD_SET_RX_CAN_ID = 6,
+        APP_REQ_CMD_GET_RX_CAN_ID = 7,
         APP_REQ_CMD_SFCBLKL = 8,
         APP_REQ_CMD_GFCBLKL = 9,
         APP_REQ_CMD_SFCST = 10,
@@ -45,10 +45,10 @@ extern "C"
         APP_REQ_CMD_STPTXTP = 17,
         APP_REQ_CMD_TXPAD = 18,
         APP_REQ_CMD_STPTXPAD = 19,
-        APP_REQ_CMD_GETFWVER = 20,
+        APP_REQ_CMD_GET_FIRMWARE_VER = 20,
         APP_REQ_CMD_GETSFR = 21,
-        APP_REQ_CMD_SETSTASSID = 22,
-        APP_REQ_CMD_SETSTAPASS = 23,
+        APP_REQ_CMD_SET_STA_SSID = 22,
+        APP_REQ_CMD_SET_STA_PASSWORD = 23,
     } APP_REQ_CMD_t;
 
     typedef enum
