@@ -494,7 +494,7 @@ void APP_Task(void *pvParameters)
                             }
                             else
                             {
-                                APP_ISO_TxSepTime = 1;
+                                APP_ISO_TxSepTime = 0;
                             }
 
                             APP_State = APP_STATE_CAN_ISO_CONSECUTIVE;
