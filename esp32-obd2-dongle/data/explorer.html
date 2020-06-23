@@ -7,8 +7,98 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <!-- <link rel="stylesheet" href="bootstrap.min.css"> -->
   <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
-  <script src="jquery.min.js"></script>
+  <!-- <script src="jquery.min.js"></script> -->
   <!-- <script src="bootstrap.bundle.min.js"></script> -->
+</head>
+
+<body>
+  <nav class=" m-2 navbar navbar-expand-lg navbar-dark" style="background-color:rgb(255, 239, 213);">
+    <a class="navbar-brand" href="#"><img src="autopeepal.png" alt="" width="auto" height="auto"></a>
+    <button class="navbar-toggler bg-dark" type="button" data-toggle="collapse" data-target="#navbarNavAltMarkup"
+      aria-controls="navbarNavAltMarkup" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse justify-content-end" id="navbarNavAltMarkup">
+      <div class="">
+        <button type="button" id="add" class="btn btn-success" data-toggle="modal" data-target="#uploadModal">Add
+          File</button>
+        <button type="button" id="flash" class="btn btn-success" data-toggle="modal"
+          data-target="#uploadModal">Flash</button>
+        <button type="button" id="fileExplorer" class="btn btn-primary">Explorer</button>
+        <button type="button" id="task" class="btn btn-primary">Task</button>
+        <button type="button" id="info" class="btn btn-primary">Info</button>
+        <button type="button" id="scan" class="btn btn-primary">Scan Network</button>
+      </div>
+    </div>
+  </nav>
+  <div class="d-block">
+    <div class="d-flex m-2 card" style="overflow:auto">
+    </div>
+  </div>
+
+  <div class="modal fade" id="uploadModal" tabindex="-1" data-backdrop="static" data-keyboard="false" role="dialog">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="modaltitle">New File</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="input-group mb-3">
+            <label for="fileUpload" class="form-control" id="labelFilename"></label>
+            <div class="input-group-append">
+              <button type="submit" id="btn-send" class="btn btn-warning" onclick="fileUpload.click();">Browse</button>
+            </div>
+          </div>
+          <div class="input-group mb-2">
+            <div class="input-group-prepend">
+              <span class="input-group-text">Username</span>
+            </div>
+            <input type="text" class="form-control txt-username" placeholder="Username" id="username"
+              aria-label="Username" required>
+          </div>
+          <div class="input-group mb-3">
+            <div class="input-group-prepend">
+              <span class="input-group-text">Password</span>
+            </div>
+            <input type="password" class="form-control txt-password" placeholder="Password" id="password"
+              aria-label="Password" required>
+          </div>
+          <input type="file" style="display:none" id="fileUpload">
+
+          <div> Progress </div>
+          <div class="progress" style="height: 20px;">
+
+            <div class="progress-bar" role="progressbar" id="progressUpload"></div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+          <button type="button" id="upload" value="" class="btn btn-primary">Upload</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal fade" id="infoModal" tabindex="-1" data-backdrop="static" data-keyboard="false" role="dialog">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="modaltitle"></h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+        </div>
+        <div class="modal-footer">
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script>
     var DOMReady = function (callback) {
       if (document.readyState === "interactive" || document.readyState === "complete") {
@@ -24,21 +114,55 @@
       }
     };
 
+    var JSTimer;
+
+    function LoadJS(url, callback) {
+      const script = document.createElement('script');
+      script.src = url; // URL for the third-party library being loaded.
+      script.id = url; // e.g., googleMaps or stripe
+      document.body.appendChild(script);
+      JSTimer = setTimeout(function () {
+        LoadJS(url);
+      }, 3000);
+
+      script.onload = () => {
+        clearTimeout(JSTimer);
+        if (callback) callback();
+      }
+    }
+
+    function defer(method) {
+      LoadJS("jquery.min.js", method);
+    }
+
     var LoadScripts = function (done) {
       $.getScript("bootstrap.bundle.min.js", function () {
         done();
       });
     }
 
-    var LoadCSS = function (url) {
-      if (!$('link[href="' + url + '"]').length)
-        $('head').append('<link rel="stylesheet" type="text/css" href="' + url + '">');
-    };
+    var LoadCSS = function (url, done) {
+      $.ajax({
+        url: url,
+        dataType: "script",
+        timeout: 5000,
+        success: function (data) {
+          $('head').append("<style>" + data + "</style>");
+          done();
+        },
+        error: function (e) {
+          LoadCSS(url, done);
+        }
+      });
+    }
 
     DOMReady(function () {
-      LoadScripts(function () {
-        LoadCSS("bootstrap.min.css");
-        ScriptLoaded();
+      defer(function () {
+        LoadScripts(function () {
+          LoadCSS("bootstrap.min.css", function () {
+            ScriptLoaded();
+          });
+        });
       });
     });
 
@@ -66,6 +190,21 @@
 
       eventSource.addEventListener("error", function (event) {
         // console.log("Error: ", event.data);
+      });
+
+      eventSource.addEventListener("scan", function (event) {
+        var result = jQuery.parseJSON(event.data);
+        console.log(jQuery.parseJSON(event.data));
+        $.each(result, function (key, value) {
+          $('table').children('tbody').append('<tr>' +
+            '<th scope="row">' + (val++) + '</th>' +
+            '<td>' + value.ssid + '</td>' +
+            '<td>' + value.bssid + '</td>' +
+            '<td>' + value.rssi + '</td>' +
+            '<td>' + value.channel + '</td>' +
+            '<td>' + value.secure + '</td>' +
+            '</tr>');
+        });
       });
 
       eventSource.onerror = function (event) {
@@ -325,96 +464,5 @@
       }
     };
   </script>
-
-</head>
-
-<body>
-  <nav class=" m-2 navbar navbar-expand-lg navbar-dark" style="background-color:rgb(255, 239, 213);">
-    <a class="navbar-brand" href="#"><img src="autopeepal.png" alt="" width="auto" height="auto"></a>
-    <button class="navbar-toggler bg-dark" type="button" data-toggle="collapse" data-target="#navbarNavAltMarkup"
-      aria-controls="navbarNavAltMarkup" aria-expanded="false" aria-label="Toggle navigation">
-      <span class="navbar-toggler-icon"></span>
-    </button>
-    <div class="collapse navbar-collapse justify-content-end" id="navbarNavAltMarkup">
-      <div class="">
-        <button type="button" id="add" class="btn btn-success" data-toggle="modal" data-target="#uploadModal">Add
-          File</button>
-        <button type="button" id="flash" class="btn btn-success" data-toggle="modal"
-          data-target="#uploadModal">Flash</button>
-        <button type="button" id="fileExplorer" class="btn btn-primary">Explorer</button>
-        <button type="button" id="task" class="btn btn-primary">Task</button>
-        <button type="button" id="info" class="btn btn-primary">Info</button>
-        <button type="button" id="scan" class="btn btn-primary">Scan Network</button>
-      </div>
-    </div>
-  </nav>
-  <div class="d-block">
-    <div class="d-flex m-2 card" style="overflow:auto">
-    </div>
-  </div>
-
-  <div class="modal fade" id="uploadModal" tabindex="-1" data-backdrop="static" data-keyboard="false" role="dialog">
-    <div class="modal-dialog" role="document">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title" id="modaltitle">New File</h5>
-          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-            <span aria-hidden="true">&times;</span>
-          </button>
-        </div>
-        <div class="modal-body">
-          <div class="input-group mb-3">
-            <label for="fileUpload" class="form-control" id="labelFilename"></label>
-            <div class="input-group-append">
-              <button type="submit" id="btn-send" class="btn btn-warning" onclick="fileUpload.click();">Browse</button>
-            </div>
-          </div>
-          <div class="input-group mb-2">
-            <div class="input-group-prepend">
-              <span class="input-group-text">Username</span>
-            </div>
-            <input type="text" class="form-control txt-username" placeholder="Username" id="username"
-              aria-label="Username" required>
-          </div>
-          <div class="input-group mb-3">
-            <div class="input-group-prepend">
-              <span class="input-group-text">Password</span>
-            </div>
-            <input type="password" class="form-control txt-password" placeholder="Password" id="password"
-              aria-label="Password" required>
-          </div>
-          <input type="file" style="display:none" id="fileUpload">
-
-          <div> Progress </div>
-          <div class="progress" style="height: 20px;">
-
-            <div class="progress-bar" role="progressbar" id="progressUpload"></div>
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-          <button type="button" id="upload" value="" class="btn btn-primary">Upload</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="modal fade" id="infoModal" tabindex="-1" data-backdrop="static" data-keyboard="false" role="dialog">
-    <div class="modal-dialog" role="document">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title" id="modaltitle"></h5>
-          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-            <span aria-hidden="true">&times;</span>
-          </button>
-        </div>
-        <div class="modal-body">
-        </div>
-        <div class="modal-footer">
-        </div>
-      </div>
-    </div>
-  </div>
 </body>
-
 </html>

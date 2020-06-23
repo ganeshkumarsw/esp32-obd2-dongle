@@ -5,14 +5,8 @@
   <title>Dongle Terminal</title>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <!-- <link rel="stylesheet" href="bootstrap.min.css"> -->
   <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
   <style>
-    /* textarea {
-      font-family: 'consolas', Segoe UI, Tahoma, Geneva, Verdana, sans-serif;
-      width: 100%;
-    } */
-
     .table-custom {
       position: relative;
       font-family: Segoe UI, Tahoma, Geneva, Verdana, sans-serif;
@@ -23,15 +17,152 @@
     tbody td {
       font-family: 'consolas', Segoe UI, Tahoma, Geneva, Verdana, sans-serif;
     }
-
-    /* input {
-      font-family: 'consolas', Segoe UI, Tahoma, Geneva, Verdana, sans-serif;
-    } */
   </style>
+</head>
 
-  <script src="jquery.min.js"></script>
-  <!-- <script defer src="bootstrap.bundle.min.js"></script>
-  <script defer src="tooltip.min.js"></script> -->
+<body>
+  <div class="container-fluid">
+    <div class="row ml-0 mt-2 mr-3 input-group">
+      <div class="input-group-prepend">
+        <select class="custom-select" id="select-cmd-id">
+          <option value="0">0</option>
+          <option value="1">1</option>
+          <option selected value="2">2</option>
+          <option value="3">3</option>
+          <option value="4">4</option>
+          <option value="5">5</option>
+          <option value="6">6</option>
+          <option value="7">7</option>
+          <option value="8">8</option>
+          <option value="9">9</option>
+          <option value="10">A</option>
+          <option value="11">B</option>
+          <option value="12">C</option>
+          <option value="13">D</option>
+          <option value="14">E</option>
+          <option value="15">F</option>
+        </select>
+      </div>
+      <input type="text" class="form-control" id="input-send" data-toggle="tooltip" data-placement="bottom"
+        title="data only without length (all in HEX), seperate each byte by space">
+      <div class="input-group-append">
+        <button type="submit" id="btn-send" class="btn btn-success">Send</button>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-xl mt-2">
+        <div class="input-group btn-group">
+          <div class="input-group-prepend font-weight-bold">
+            <div class="input-group-text">CAN Protocol</div>
+          </div>
+          <select class="custom-select" id="select-can-protocol">
+            <option selected value="255">Select CAN Protocol</option>
+            <option value="0">ISO15765-250KB-11BIT-CAN</option>
+            <option value="1">ISO15765-250Kb-29BIT-CAN</option>
+            <option value="2">ISO15765-500KB-11BIT-CAN</option>
+            <option value="3">ISO15765-500KB-29BIT-CAN</option>
+            <option value="4">ISO15765-1MB-11BIT-CAN</option>
+            <option value="5">ISO15765-1MB-29BIT-CAN</option>
+            <option value="6">250KB-11BIT-CAN</option>
+            <option value="7">250Kb-29BIT-CAN</option>
+            <option value="8">500KB-11BIT-CAN</option>
+            <option value="9">500KB-29BIT-CAN</option>
+            <option value="10">1MB-11BIT-CAN</option>
+            <option value="11">1MB-29BIT-CAN</option>
+            <option value="12">OE-IVN-250KBPS-11BIT-CAN</option>
+            <option value="13">OE-IVN-250KBPS-29BIT-CAN</option>
+            <option value="14">OE-IVN-500KBPS-11BIT-CAN</option>
+            <option value="15">OE-IVN-500KBPS-29BIT-CAN</option>
+            <option value="16">OE-IVN-1MBPS-11BIT-CAN </option>
+            <option value="17">OE-IVN-1MBPS-29BIT-CAN </option>
+          </select>
+          <span class="btn-group" role="group">
+            <button type="submit" id="btn-can-protocol-s" class="btn btn-success">S</button>
+            <button type="submit" id="btn-can-protocol-r" class="btn btn-warning">R</button>
+          </span>
+        </div>
+      </div>
+      <div class="col-xl mt-2">
+        <div class="input-group btn-group">
+          <div class="input-group-prepend font-weight-bold">
+            <div class="input-group-text">Rx CAN ID</div>
+          </div>
+          <input type="text" class="form-control" id="input-rx-can-id" data-toggle="tooltip" data-placement="bottom"
+            title="in HEX, seperate each byte by space">
+          <span class="btn-group" role="group">
+            <button type="submit" id="btn-rx-can-id-s" class="btn btn-success">S</button>
+            <button type="submit" id="btn-rx-can-id-r" class="btn btn-warning">R</button>
+          </span>
+        </div>
+      </div>
+      <div class="col-xl mt-2">
+        <div class="input-group btn-group">
+          <div class="input-group-prepend font-weight-bold">
+            <div class="input-group-text">Tx CAN ID</div>
+          </div>
+          <input type="text" class="form-control" id="input-tx-can-id" data-toggle="tooltip" data-placement="bottom"
+            title="in HEX, seperate each byte by space">
+          <span class="btn-group" role="group">
+            <button type="submit" id="btn-tx-can-id-s" class="btn btn-success">S</button>
+            <button type="submit" id="btn-tx-can-id-r" class="btn btn-warning">R</button>
+          </span>
+        </div>
+      </div>
+    </div>
+    <div class="row ml-0 mt-2 mr-3 input-group">
+      <input type="text" class="form-control" id="input-send-raw" data-toggle="tooltip" data-placement="bottom"
+        title="Send raw data (all in HEX), seperate each byte by space">
+      <div class="input-group-append">
+        <button type="submit" id="btn-send-raw" class="btn btn-success">Send</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="container-fluid">
+    <div class="mt-2 card table-custom">
+      <!-- <textarea class="form-control mt-2" id="response"></textarea> -->
+      <table id="table-output" class="table table-sm table-striped">
+        <thead class="thead-dark rounded-left  rounded-right">
+          <tr>
+            <th class="sticky-top" scope="col">#</th>
+            <th class="sticky-top " scope="col">Dir</th>
+            <th class="sticky-top" scope="col">
+              Message
+              <div style="display:inline; float:right; ">
+                <span id="connectionStatus" class="badge badge-pill badge-success"></span>
+                <span id="messageTx" class="badge badge-success">0</span>
+                <span id="messageRx" class="badge badge-warning">0</span>
+                <button type="submit" id="save" class="btn badge btn-primary">Save</button>
+                <button type="submit" id="clear" class="btn badge btn-primary">Clear</button>
+              </div>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Modal -->
+  <div class="modal fade" id="ModalDisp" tabindex="-1" role="dialog" aria-labelledby="ModalLabel" aria-hidden="true">
+    <div class="modal-dialog sucess" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="ModalLabel"></h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          ...
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <script>
     var DOMReady = function (callback) {
@@ -48,23 +179,55 @@
       }
     };
 
+    var JSTimer;
+
+    function LoadJS(url, callback) {
+      const script = document.createElement('script');
+      script.src = url; // URL for the third-party library being loaded.
+      script.id = url; // e.g., googleMaps or stripe
+      document.body.appendChild(script);
+      JSTimer = setTimeout(function () {
+        LoadJS(url);
+      }, 3000);
+
+      script.onload = () => {
+        clearTimeout(JSTimer);
+        if (callback) callback();
+      }
+    }
+
+    function defer(method) {
+      LoadJS("jquery.min.js", method);
+    }
+
     var LoadScripts = function (done) {
       $.getScript("bootstrap.bundle.min.js", function () {
-        $.getScript("tooltip.min.js", function () {
-          done();
-        });
+        done();
       });
     }
 
-    var LoadCSS = function (url) {
-      if (!$('link[href="' + url + '"]').length)
-        $('head').append('<link rel="stylesheet" type="text/css" href="' + url + '">');
-    };
+    var LoadCSS = function (url, done) {
+      $.ajax({
+        url: url,
+        dataType: "script",
+        timeout: 5000,
+        success: function (data) {
+          $('head').append("<style>" + data + "</style>");
+          done();
+        },
+        error: function (e) {
+          LoadCSS(url, done);
+        }
+      });
+    }
 
     DOMReady(function () {
-      LoadScripts(function () {
-        LoadCSS("bootstrap.min.css");
-        ScriptLoaded();
+      defer(function () {
+        LoadScripts(function () {
+          LoadCSS("bootstrap.min.css", function () {
+            ScriptLoaded();
+          });
+        });
       });
     });
 
@@ -262,7 +425,7 @@
               temp = temp + (hex.length < 2 ? "0" : "") + hex + " ";
             });
 
-            tableToJSON.push({msg: MesgCnt, dir: 1, data: temp});
+            tableToJSON.push({ msg: MesgCnt, dir: 1, data: temp });
             $('#table-output').children('tbody').append('<tr><th scope="row">' + (MesgCnt++) + '</th><td><span class="badge badge-warning"><-</span></td><td>' + temp + '</td></tr>');
             // $('#response').val($('#response').val() + temp + "\n");
             $('.table-custom').scrollTop($('.table-custom')[0].scrollHeight);
@@ -363,7 +526,7 @@
             var hex = val.toString(16).toUpperCase();
             temp = temp + (hex.length < 2 ? "0" : "") + hex + " ";
           });
-          tableToJSON.push({msg: MesgCnt, dir: 0, data: temp});
+          tableToJSON.push({ msg: MesgCnt, dir: 0, data: temp });
           $('#table-output').children('tbody').append('<tr><th scope="row">' + (MesgCnt++) + '</th><td><span class="badge badge-success">-></span></td><td>' + temp + '</td></tr>');
           $('.table-custom').scrollTop($('.table-custom')[0].scrollHeight);
           Set_TxMessageCount(++TxMessageCount);
@@ -399,151 +562,6 @@
       }
     };
   </script>
-</head>
-
-<body>
-  <div class="container-fluid">
-    <div class="row ml-0 mt-2 mr-3 input-group">
-      <div class="input-group-prepend">
-        <select class="custom-select" id="select-cmd-id">
-          <option value="0">0</option>
-          <option value="1">1</option>
-          <option selected value="2">2</option>
-          <option value="3">3</option>
-          <option value="4">4</option>
-          <option value="5">5</option>
-          <option value="6">6</option>
-          <option value="7">7</option>
-          <option value="8">8</option>
-          <option value="9">9</option>
-          <option value="10">A</option>
-          <option value="11">B</option>
-          <option value="12">C</option>
-          <option value="13">D</option>
-          <option value="14">E</option>
-          <option value="15">F</option>
-        </select>
-      </div>
-      <input type="text" class="form-control" id="input-send" data-toggle="tooltip" data-placement="bottom"
-        title="data only without length (all in HEX), seperate each byte by space">
-      <div class="input-group-append">
-        <button type="submit" id="btn-send" class="btn btn-success">Send</button>
-      </div>
-    </div>
-    <div class="row">
-      <div class="col-xl mt-2">
-        <div class="input-group btn-group">
-          <div class="input-group-prepend font-weight-bold">
-            <div class="input-group-text">CAN Protocol</div>
-          </div>
-          <select class="custom-select" id="select-can-protocol">
-            <option selected value="255">Select CAN Protocol</option>
-            <option value="0">ISO15765-250KB-11BIT-CAN</option>
-            <option value="1">ISO15765-250Kb-29BIT-CAN</option>
-            <option value="2">ISO15765-500KB-11BIT-CAN</option>
-            <option value="3">ISO15765-500KB-29BIT-CAN</option>
-            <option value="4">ISO15765-1MB-11BIT-CAN</option>
-            <option value="5">ISO15765-1MB-29BIT-CAN</option>
-            <option value="6">250KB-11BIT-CAN</option>
-            <option value="7">250Kb-29BIT-CAN</option>
-            <option value="8">500KB-11BIT-CAN</option>
-            <option value="9">500KB-29BIT-CAN</option>
-            <option value="10">1MB-11BIT-CAN</option>
-            <option value="11">1MB-29BIT-CAN</option>
-            <option value="12">OE-IVN-250KBPS-11BIT-CAN</option>
-            <option value="13">OE-IVN-250KBPS-29BIT-CAN</option>
-            <option value="14">OE-IVN-500KBPS-11BIT-CAN</option>
-            <option value="15">OE-IVN-500KBPS-29BIT-CAN</option>
-            <option value="16">OE-IVN-1MBPS-11BIT-CAN </option>
-            <option value="17">OE-IVN-1MBPS-29BIT-CAN </option>
-          </select>
-          <span class="btn-group" role="group">
-            <button type="submit" id="btn-can-protocol-s" class="btn btn-success">S</button>
-            <button type="submit" id="btn-can-protocol-r" class="btn btn-warning">R</button>
-          </span>
-        </div>
-      </div>
-      <div class="col-xl mt-2">
-        <div class="input-group btn-group">
-          <div class="input-group-prepend font-weight-bold">
-            <div class="input-group-text">Rx CAN ID</div>
-          </div>
-          <input type="text" class="form-control" id="input-rx-can-id" data-toggle="tooltip" data-placement="bottom"
-            title="in HEX, seperate each byte by space">
-          <span class="btn-group" role="group">
-            <button type="submit" id="btn-rx-can-id-s" class="btn btn-success">S</button>
-            <button type="submit" id="btn-rx-can-id-r" class="btn btn-warning">R</button>
-          </span>
-        </div>
-      </div>
-      <div class="col-xl mt-2">
-        <div class="input-group btn-group">
-          <div class="input-group-prepend font-weight-bold">
-            <div class="input-group-text">Tx CAN ID</div>
-          </div>
-          <input type="text" class="form-control" id="input-tx-can-id" data-toggle="tooltip" data-placement="bottom"
-            title="in HEX, seperate each byte by space">
-          <span class="btn-group" role="group">
-            <button type="submit" id="btn-tx-can-id-s" class="btn btn-success">S</button>
-            <button type="submit" id="btn-tx-can-id-r" class="btn btn-warning">R</button>
-          </span>
-        </div>
-      </div>
-    </div>
-    <div class="row ml-0 mt-2 mr-3 input-group">
-      <input type="text" class="form-control" id="input-send-raw" data-toggle="tooltip" data-placement="bottom"
-        title="Send raw data (all in HEX), seperate each byte by space">
-      <div class="input-group-append">
-        <button type="submit" id="btn-send-raw" class="btn btn-success">Send</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="container-fluid">
-    <div class="mt-2 card table-custom">
-      <!-- <textarea class="form-control mt-2" id="response"></textarea> -->
-      <table id="table-output" class="table table-sm table-striped">
-        <thead class="thead-dark rounded-left  rounded-right">
-          <tr>
-            <th class="sticky-top" scope="col">#</th>
-            <th class="sticky-top " scope="col">Dir</th>
-            <th class="sticky-top" scope="col">
-              Message
-              <div style="display:inline; float:right; ">
-                <span id="connectionStatus" class="badge badge-pill badge-success"></span>
-                <span id="messageTx" class="badge badge-success">0</span>
-                <span id="messageRx" class="badge badge-warning">0</span>
-                <button type="submit" id="save" class="btn badge btn-primary">Save</button>
-                <button type="submit" id="clear" class="btn badge btn-primary">Clear</button>
-              </div>
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-        </tbody>
-      </table>
-    </div>
-  </div>
-
-  <!-- Modal -->
-  <div class="modal fade" id="ModalDisp" tabindex="-1" role="dialog" aria-labelledby="ModalLabel" aria-hidden="true">
-    <div class="modal-dialog sucess" role="document">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title" id="ModalLabel"></h5>
-          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-            <span aria-hidden="true">&times;</span>
-          </button>
-        </div>
-        <div class="modal-body">
-          ...
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-        </div>
-      </div>
-    </div>
-  </div>
 </body>
 
 </html>

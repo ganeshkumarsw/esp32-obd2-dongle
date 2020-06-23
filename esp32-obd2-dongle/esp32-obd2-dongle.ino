@@ -9,6 +9,8 @@
 #include "a_mqtt.h"
 #include "app.h"
 
+static void CreateTask_Task(void *pvParameters);
+
 void setup()
 {
     Serial.begin(115200);

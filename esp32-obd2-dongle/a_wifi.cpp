@@ -34,7 +34,10 @@ uint8_t WIFI_SeqNo;
 uint8_t WIFI_RxBuff[4130];
 uint8_t WIFI_TxBuff[4130];
 uint16_t WIFI_TxLen;
+bool UDP_Status = false;
 
+static void WIFI_ScanTask(void *pvParameters);
+static void WIFI_SupportTask(void *pvParameters);
 static void WIFI_EventCb(system_event_id_t event);
 
 void WIFI_Init(void)
@@ -351,7 +354,7 @@ void WIFI_Init(void)
 
                     if (n == WIFI_SCAN_FAILED)
                     {
-                        if (xTaskCreate(WIFI_SupportTask, "WIFI_ScanTask", 5000, NULL, tskIDLE_PRIORITY, NULL) != pdTRUE)
+                        if (xTaskCreate(WIFI_ScanTask, "WIFI_ScanTask", 2000, NULL, tskIDLE_PRIORITY, NULL) != pdTRUE)
                         {
                             configASSERT(0);
                         }
@@ -571,12 +574,11 @@ void WIFI_ScanTask(void *pvParameters)
 
             json += "]";
             WiFi.scanDelete();
-            Events.send(json, "scan", millis());
+            Events.send(json.c_str(), "scan", millis());
+            break;
         }
-        else
-        {
-            vTaskDelay(300 / portTICK_PERIOD_MS);
-        }
+
+        vTaskDelay(300 / portTICK_PERIOD_MS);
     }
 
     vTaskDelete(NULL);
@@ -603,10 +605,10 @@ void WIFI_SupportTask(void *pvParameters)
             case WL_CONNECTED:
                 Serial.printf("WiFi connected, IP address: %s\r\n", WiFi.localIP().toString().c_str());
                 LED_SetLedState(WIFI_CONN_LED, LED_STATE_HIGH, LED_TOGGLE_RATE_NONE);
-                if (UDP.listenMulticast(IPAddress(239, 1, 2, 3), 1234))
+
+                if ((UDP_Status == false) && (UDP.listenMulticast(IPAddress(239, 1, 2, 3), 1234) == true))
                 {
-                    Serial.print("UDP Listening on IP: ");
-                    Serial.println(WiFi.localIP());
+                    UDP_Status = true;
                     UDP.onPacket([](AsyncUDPPacket packet) {
                         //reply to the client
                         packet.println(WiFi.localIP());
