@@ -689,7 +689,7 @@ void WIFI_Task(void *pvParameters)
                     }
                     else
                     {
-                        Serial.prinln("INFO: Waiting, NO TCP Socket data");
+                        Serial.println("INFO: Waiting, NO TCP Socket data");
                     }
                     
                     vTaskDelay(5 / portTICK_PERIOD_MS);
