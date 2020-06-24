@@ -672,14 +672,18 @@ void WIFI_Task(void *pvParameters)
 
             while (client.connected())
             {
-                idx = 0;
-                StartTimer(socketTimeoutTmr, 20);
+                if (client.available() > 0)
+                {
+                    idx = 0;
+                    StartTimer(socketTimeoutTmr, 20);
+                }
 
                 while (IsTimerRunning(socketTimeoutTmr))
                 {
                     if (client.available() > 0)
                     {
                         len = client.read(&WIFI_RxBuff[idx], (sizeof(WIFI_RxBuff) - idx));
+                        Serial.printf("INFO: TCP Socket data <%d> read\r\n", len);
 
                         if (len > 0)
                         {
@@ -691,7 +695,7 @@ void WIFI_Task(void *pvParameters)
                     {
                         Serial.println("INFO: Waiting, NO TCP Socket data");
                     }
-                    
+
                     vTaskDelay(5 / portTICK_PERIOD_MS);
                 }
 
