@@ -56,7 +56,7 @@ void WIFI_Init(void)
 
     WiFi.macAddress((uint8_t *)mac);
     sprintf(apSSID, "%s-%02X%02X", AP_WIFI_SSID, mac[4], mac[5]);
-    Serial.printf("SSID: %s\r\n", apSSID);
+    Serial.printf("INFO: SSID: %s\r\n", apSSID);
 
     if (preferences.getString("stSSID") == "")
     {
@@ -76,7 +76,7 @@ void WIFI_Init(void)
     }
     else
     {
-        Serial.println("mDNS responder started");
+        Serial.println("INFO: mDNS responder started");
         // Add service to MDNS-SD
         MDNS.addService("_http", "_tcp", 80);
     }
@@ -85,13 +85,13 @@ void WIFI_Init(void)
     Serial.println("Scan done");
     if (n == 0)
     {
-        Serial.println("No networks found");
+        Serial.println("INFO: No networks found");
     }
     else
     {
         for (int i = 0; i < n; ++i)
         {
-            Serial.println("SSID: " + WiFi.SSID(i));
+            Serial.println("INFO: SSID: " + WiFi.SSID(i));
             // Print SSID and RSSI for each network found
             if (WiFi.SSID(i).equals(preferences.getString("stSSID")) == true)
             {
@@ -99,7 +99,7 @@ void WIFI_Init(void)
                 delay(10);
                 wifiStatus = WiFi.begin((char *)preferences.getString("stSSID").c_str(), (char *)preferences.getString("stPASS").c_str());
                 WiFi.setSleep(false);
-                Serial.println("WIFI STA begin");
+                Serial.println("INFO: WIFI STA begin");
                 // Serial.println(wifiStatus);
 
                 if (WiFi.getAutoConnect() == false)
