@@ -47,7 +47,7 @@ void CAN_Init(void)
 
     if ((CAN_cfg.rx_queue == NULL) || (CAN_cfg.tx_queue == NULL))
     {
-        Serial.println("CAN Failed to create queue message for either Rx / Tx");
+        Serial.println("ERROR: CAN Failed to create queue message for either Rx / Tx");
     }
 
     // Init CAN Module
@@ -122,7 +122,7 @@ esp_err_t CAN_ReadFrame(CAN_frame_t *frame, TickType_t ticks_to_wait)
     if ((CAN_cfg.rx_queue != NULL) && (xQueueReceive(CAN_cfg.rx_queue, frame, ticks_to_wait) == pdTRUE))
     {
         status = ESP_OK;
-        Serial.println("CAN Read Rx queue success");
+        Serial.println("INFO: CAN Read Rx queue success");
     }
     else
     {
@@ -144,7 +144,7 @@ esp_err_t CAN_WriteFrame(CAN_frame_t *frame, TickType_t ticks_to_wait)
     {
         if (xQueueSend(CAN_cfg.tx_queue, (void *)frame, (TickType_t)(5 / portTICK_PERIOD_MS)) != pdPASS)
         {
-            Serial.println("CAN Failed to queue Tx message");
+            Serial.println("ERROR: CAN Failed to queue Tx message");
             status = ESP_FAIL;
         }
     }
@@ -164,14 +164,17 @@ void CAN_Task(void *pvParameters)
 
     CAN_Init();
 
+    if (CAN_cfg.tx_queue != NULL)
+    {
+        Serial.println("ERROR: CAN Failed to create Tx Queue");
+        vTaskDelete(NULL);
+    }
+
     while (1)
     {
-        if (CAN_cfg.tx_queue != NULL)
-        {
-            if (xQueueReceive(CAN_cfg.tx_queue, (void *)&frame, portMAX_DELAY) == pdPASS)
-            {
-                ESP32Can.CANWriteFrame(&frame);
-            }
-        }
+        ESP32Can.CANWriteFrame_Task();
     }
+
+    Serial.println("ERROR: CAN task exit");
+    vTaskDelete(NULL);
 }

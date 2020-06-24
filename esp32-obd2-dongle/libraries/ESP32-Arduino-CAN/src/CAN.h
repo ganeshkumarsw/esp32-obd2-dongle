@@ -102,10 +102,10 @@ int CAN_init(void);
 /**
  * \brief Send a can frame
  *
- * \param	p_frame	Pointer to the frame to be send, see #CAN_frame_t
+ * \param	void
  * \return  0 Frame has been written to the module
  */
-int CAN_write_frame(const CAN_frame_t *p_frame);
+int CAN_write_frame_task(void);
 
 /**
  * \brief Stops the CAN Module

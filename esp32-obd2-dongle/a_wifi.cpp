@@ -57,42 +57,22 @@ void WIFI_Init(void)
     WiFi.macAddress((uint8_t *)mac);
     sprintf(apSSID, "%s-%02X%02X", AP_WIFI_SSID, mac[4], mac[5]);
     Serial.printf("SSID: %s\r\n", apSSID);
-    if (preferences.getString("apSSID").equals(apSSID) == 0)
-    {
-        Serial.println("apSSID is corrupted or diff updated");
-        preferences.putString("apSSID", apSSID);
-    }
-    else
-    {
-        Serial.println("apSSID is same");
-        preferences.putString("apSSID", apSSID);
-    }
-
-    if (preferences.getString("apPASS") == "")
-    {
-        Serial.println("apPASS Key is missing");
-        preferences.putString("apPASS", AP_WIFI_PASSWORD);
-    }
-    else
-    {
-        Serial.println("apPASS Key is available");
-    }
 
     if (preferences.getString("stSSID") == "")
     {
-        Serial.println("stSSID Key is missing, updated SSID through command");
+        Serial.println("INFO: ST mode SSID Key is missing. Update SSID");
     }
 
     if (preferences.getString("stPASS") == "")
     {
-        Serial.println("stPASS Key is missing, updated SSID through command");
+        Serial.println("INFO: ST mode PASSWORD is missing. Update password");
     }
 
     WiFi.begin((char *)preferences.getString("stSSID").c_str(), (char *)preferences.getString("stPASS").c_str());
 
     if (!MDNS.begin("obd2"))
     {
-        Serial.println("Error setting up MDNS responder!");
+        Serial.println("ERROR: Setting up MDNS responder failed!");
     }
     else
     {
@@ -138,10 +118,10 @@ void WIFI_Init(void)
 
     if (staConnected == false)
     {
-        Serial.println("WIFI AP begin");
-        if (!WiFi.softAP(preferences.getString("apSSID").c_str(), preferences.getString("apPASS").c_str()))
+        Serial.println("INFO: WIFI AP begin");
+        if (!WiFi.softAP(apSSID, AP_WIFI_PASSWORD))
         {
-            Serial.println("ESP32 SoftAP failed to start!");
+            Serial.println("INFO: ESP32 SoftAP failed to start!");
         }
     }
 
@@ -163,12 +143,12 @@ void WIFI_Init(void)
             if (type == WS_EVT_CONNECT)
             {
                 p_WebSocketClient = client;
-                Serial.println("Websocket client connection received");
+                Serial.println("INFO: Websocket client connection received");
             }
             else if (type == WS_EVT_DISCONNECT)
             {
                 p_WebSocketClient = NULL;
-                Serial.println("Client disconnected");
+                Serial.println("INFO: Websocket Client disconnected");
             }
             else if (type == WS_EVT_DATA)
             {
@@ -202,7 +182,7 @@ void WIFI_Init(void)
         Events.onConnect([](AsyncEventSourceClient *client) {
             if (client->lastId())
             {
-                Serial.printf("Client reconnected! Last message ID that it got is: %u\r\n", client->lastId());
+                Serial.printf("INFO: Client reconnected! Last message ID that it got is: %u\r\n", client->lastId());
             }
             // send event with message "hello!", id current millis
             // and set reconnect delay to 1 second
@@ -239,7 +219,7 @@ void WIFI_Init(void)
                         response->addHeader("Connection", "close");
 
                         Events.send("Device being restarted", "success", millis());
-                        Serial.println("Device being restarted");
+                        Serial.println("INFO: Device being restarted");
                         request->send(response);
                         delay(100);
                         ESP.restart();
@@ -603,7 +583,7 @@ void WIFI_SupportTask(void *pvParameters)
             switch (wifiStatus)
             {
             case WL_CONNECTED:
-                Serial.printf("WiFi connected, IP address: %s\r\n", WiFi.localIP().toString().c_str());
+                Serial.printf("INFO: WiFi in ST mode connected <%s>\r\n", WiFi.localIP().toString().c_str());
                 LED_SetLedState(WIFI_CONN_LED, LED_STATE_HIGH, LED_TOGGLE_RATE_NONE);
 
                 if ((UDP_Status == false) && (UDP.listenMulticast(IPAddress(239, 1, 2, 3), 1234) == true))
@@ -617,32 +597,32 @@ void WIFI_SupportTask(void *pvParameters)
                 break;
 
             case WL_DISCONNECTED:
-                Serial.println(str(WL_DISCONNECTED));
+                Serial.println("INFO: " str(WL_DISCONNECTED));
                 LED_SetLedState(WIFI_CONN_LED, LED_STATE_TOGGLE, LED_TOGGLE_RATE_1HZ);
                 wifiConnect = true;
                 break;
 
             case WL_IDLE_STATUS:
-                Serial.println(str(WL_IDLE_STATUS));
+                Serial.println("INFO: " str(WL_IDLE_STATUS));
                 wifiConnect = true;
                 break;
 
             case WL_NO_SSID_AVAIL:
-                Serial.println(str(WL_NO_SSID_AVAIL));
+                Serial.println("INFO: " str(WL_NO_SSID_AVAIL));
                 wifiConnect = true;
                 break;
 
             case WL_SCAN_COMPLETED:
-                Serial.println(str(WL_SCAN_COMPLETED));
+                Serial.println("INFO: " str(WL_SCAN_COMPLETED));
                 break;
 
             case WL_CONNECT_FAILED:
-                Serial.println(str(WL_CONNECT_FAILED));
+                Serial.println("INFO: " str(WL_CONNECT_FAILED));
                 wifiConnect = true;
                 break;
 
             case WL_CONNECTION_LOST:
-                Serial.println(str(WL_CONNECTION_LOST));
+                Serial.println("INFO: " str(WL_CONNECTION_LOST));
                 wifiConnect = true;
                 break;
 
@@ -666,6 +646,7 @@ void WIFI_Task(void *pvParameters)
 {
     wl_status_t wifiStatus = WL_IDLE_STATUS;
     UBaseType_t uxHighWaterMark;
+    uint32_t socketTimeoutTmr;
 
     ESP_LOGI("WIFI", "Task Started");
 
@@ -685,27 +666,47 @@ void WIFI_Task(void *pvParameters)
 
         if (client)
         {
-            uint16_t len = 0;
-            Serial.println("Client connected");
+            uint16_t len;
+            uint16_t idx = 0;
+            Serial.println("INFO: TCP Socket Client connected");
 
             while (client.connected())
             {
-                while (client.available())
+                idx = 0;
+                StartTimer(socketTimeoutTmr, 20);
+
+                while (IsTimerRunning(socketTimeoutTmr))
                 {
-                    len = client.read(WIFI_RxBuff, sizeof(WIFI_RxBuff));
+                    if (client.available() > 0)
+                    {
+                        len = client.read(&WIFI_RxBuff[idx], (sizeof(WIFI_RxBuff) - idx));
+
+                        if (len > 0)
+                        {
+                            idx += len;
+                            ResetTimer(socketTimeoutTmr, 20);
+                        }
+                    }
+                    else
+                    {
+                        Serial.prinln("INFO: Waiting, NO TCP Socket data");
+                    }
+                    
+                    vTaskDelay(5 / portTICK_PERIOD_MS);
                 }
 
-                if (len)
+                if (idx)
                 {
                     WIFI_SeqNo = WIFI_RxBuff[0];
                     APP_ProcessData(&WIFI_RxBuff[11], (len - 13), APP_MSG_CHANNEL_TCP_SOC);
-                    // client.write(WIFI_RxBuff, len);
-                    len = 0;
+                    Serial.printf("INFO: TCP Socket data received <%ld>\r\n", idx);
+                    idx = 0;
                 }
 
                 if (WIFI_TxLen)
                 {
                     client.write(WIFI_TxBuff, WIFI_TxLen);
+                    Serial.println("INFO: App processed TCP Socket Data");
                     WIFI_TxLen = 0;
                 }
 
@@ -713,7 +714,7 @@ void WIFI_Task(void *pvParameters)
             }
 
             // client.stop();
-            Serial.println("Client disconnected");
+            Serial.println("INFO: TCP Socket Client disconnected");
         }
 #if WIFI_AP_DNS
         DNS_Server.processNextRequest();
@@ -723,7 +724,7 @@ void WIFI_Task(void *pvParameters)
     }
 }
 
-void WIFI_Soc_Write(uint8_t *payLoad, uint16_t len)
+void WIFI_TCP_Soc_Write(uint8_t *payLoad, uint16_t len)
 {
 #define byte(x, y) ((uint8_t)(x >> (y * 8)))
 
@@ -731,7 +732,6 @@ void WIFI_Soc_Write(uint8_t *payLoad, uint16_t len)
     uint16_t idx;
     uint32_t tick;
 
-    Serial.println("App processed");
     WiFiClient client = SocketServer.available();
 
     if (WIFI_TxLen == 0)
@@ -839,12 +839,12 @@ void WIFI_EventCb(system_event_id_t event)
     switch (event)
     {
     case SYSTEM_EVENT_STA_GOT_IP:
-        Serial.print("IP address: ");
+        Serial.print("INFO: IP address: ");
         Serial.println(WiFi.localIP());
         break;
 
     case SYSTEM_EVENT_STA_CONNECTED:
-        Serial.println("WiFi connected");
+        Serial.println("INFO: WiFi connected");
         break;
 
     case SYSTEM_EVENT_STA_DISCONNECTED:
@@ -853,7 +853,7 @@ void WIFI_EventCb(system_event_id_t event)
         break;
 
     case SYSTEM_EVENT_AP_START:
-        Serial.print("SoftAP Ip: ");
+        Serial.print("INFO: SoftAP Ip: ");
         Serial.println(WiFi.softAPIP().toString());
         break;
 

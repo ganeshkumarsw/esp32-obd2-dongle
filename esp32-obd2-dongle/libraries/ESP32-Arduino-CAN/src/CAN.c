@@ -44,14 +44,15 @@
 #include "CAN_config.h"
 
 // CAN Filter - no acceptance filter
-static CAN_filter_t __filter = { Dual_Mode, 0, 0, 0, 0, 0Xff, 0Xff, 0Xff, 0Xff };
+static CAN_filter_t __filter = {Dual_Mode, 0, 0, 0, 0, 0Xff, 0Xff, 0Xff, 0Xff};
 
 static void CAN_read_frame_phy();
 static void CAN_isr(void *arg_p);
 static int CAN_write_frame_phy(const CAN_frame_t *p_frame);
-static SemaphoreHandle_t sem_tx_complete;
+static SemaphoreHandle_t CAN_SemTxComplete;
 
-static void CAN_isr(void *arg_p) {
+static void CAN_isr(void *arg_p)
+{
 
 	// Interrupt flag buffer
 	__CAN_IRQ_t interrupt;
@@ -67,13 +68,14 @@ static void CAN_isr(void *arg_p) {
 	// Handle TX complete interrupt
 	// Handle error interrupts.
 	if ((interrupt & (__CAN_IRQ_TX | __CAN_IRQ_ERR //0x4
-	                  | __CAN_IRQ_DATA_OVERRUN     // 0x8
-	                  | __CAN_IRQ_WAKEUP           // 0x10
-	                  | __CAN_IRQ_ERR_PASSIVE      // 0x20
-	                  | __CAN_IRQ_ARB_LOST         // 0x40
-	                  | __CAN_IRQ_BUS_ERR          // 0x80
-	                  )) != 0) {
-		xSemaphoreGiveFromISR(sem_tx_complete, &higherPriorityTaskWoken);
+					  | __CAN_IRQ_DATA_OVERRUN	   // 0x8
+					  | __CAN_IRQ_WAKEUP		   // 0x10
+					  | __CAN_IRQ_ERR_PASSIVE	   // 0x20
+					  | __CAN_IRQ_ARB_LOST		   // 0x40
+					  | __CAN_IRQ_BUS_ERR		   // 0x80
+					  )) != 0)
+	{
+		xSemaphoreGiveFromISR(CAN_SemTxComplete, &higherPriorityTaskWoken);
 	}
 
 	// check if any higher priority task has been woken by any handler
@@ -81,7 +83,8 @@ static void CAN_isr(void *arg_p) {
 		portYIELD_FROM_ISR();
 }
 
-static void CAN_read_frame_phy(BaseType_t *higherPriorityTaskWoken) {
+static void CAN_read_frame_phy(BaseType_t *higherPriorityTaskWoken)
+{
 
 	// byte iterator
 	uint8_t __byte_i;
@@ -90,7 +93,8 @@ static void CAN_read_frame_phy(BaseType_t *higherPriorityTaskWoken) {
 	CAN_frame_t __frame;
 
 	// check if we have a queue. If not, operation is aborted.
-	if (CAN_cfg.rx_queue == NULL) {
+	if (CAN_cfg.rx_queue == NULL)
+	{
 		// Let the hardware know the frame has been read.
 		MODULE_CAN->CMR.B.RRB = 1;
 		return;
@@ -101,7 +105,8 @@ static void CAN_read_frame_phy(BaseType_t *higherPriorityTaskWoken) {
 
 	// check if this is a standard or extended CAN frame
 	// standard frame
-	if (__frame.FIR.B.FF == CAN_frame_std) {
+	if (__frame.FIR.B.FF == CAN_frame_std)
+	{
 
 		// Get Message ID
 		__frame.MsgID = _CAN_GET_STD_ID;
@@ -111,7 +116,8 @@ static void CAN_read_frame_phy(BaseType_t *higherPriorityTaskWoken) {
 			__frame.data.u8[__byte_i] = MODULE_CAN->MBX_CTRL.FCTRL.TX_RX.STD.data[__byte_i];
 	}
 	// extended frame
-	else {
+	else
+	{
 
 		// Get Message ID
 		__frame.MsgID = _CAN_GET_EXT_ID;
@@ -128,7 +134,8 @@ static void CAN_read_frame_phy(BaseType_t *higherPriorityTaskWoken) {
 	MODULE_CAN->CMR.B.RRB = 1;
 }
 
-static int CAN_write_frame_phy(const CAN_frame_t *p_frame) {
+static int CAN_write_frame_phy(const CAN_frame_t *p_frame)
+{
 
 	// byte iterator
 	uint8_t __byte_i;
@@ -137,7 +144,8 @@ static int CAN_write_frame_phy(const CAN_frame_t *p_frame) {
 	MODULE_CAN->MBX_CTRL.FCTRL.FIR.U = p_frame->FIR.U;
 
 	// standard frame
-	if (p_frame->FIR.B.FF == CAN_frame_std) {
+	if (p_frame->FIR.B.FF == CAN_frame_std)
+	{
 
 		// Write message ID
 		_CAN_SET_STD_ID(p_frame->MsgID);
@@ -145,10 +153,10 @@ static int CAN_write_frame_phy(const CAN_frame_t *p_frame) {
 		// Copy the frame data to the hardware
 		for (__byte_i = 0; __byte_i < p_frame->FIR.B.DLC; __byte_i++)
 			MODULE_CAN->MBX_CTRL.FCTRL.TX_RX.STD.data[__byte_i] = p_frame->data.u8[__byte_i];
-
 	}
 	// extended frame
-	else {
+	else
+	{
 
 		// Write message ID
 		_CAN_SET_EXT_ID(p_frame->MsgID);
@@ -164,7 +172,8 @@ static int CAN_write_frame_phy(const CAN_frame_t *p_frame) {
 	return 0;
 }
 
-int CAN_init() {
+int CAN_init()
+{
 
 	// Time quantum
 	double __tq;
@@ -194,7 +203,8 @@ int CAN_init() {
 	MODULE_CAN->BTR1.B.TSEG2 = 0x1;
 
 	// select time quantum and set TSEG1
-	switch (CAN_cfg.speed) {
+	switch (CAN_cfg.speed)
+	{
 	case CAN_SPEED_1000KBPS:
 		MODULE_CAN->BTR1.B.TSEG1 = 0x4;
 		__tq = 0.125;
@@ -213,11 +223,11 @@ int CAN_init() {
 
 	default:
 		MODULE_CAN->BTR1.B.TSEG1 = 0xc;
-		__tq = ((float) 1000 / CAN_cfg.speed) / 16;
+		__tq = ((float)1000 / CAN_cfg.speed) / 16;
 	}
 
 	// set baud rate prescaler
-	MODULE_CAN->BTR0.B.BRP = (uint8_t) round((((APB_CLK_FREQ * __tq) / 2) - 1) / 1000000) - 1;
+	MODULE_CAN->BTR0.B.BRP = (uint8_t)round((((APB_CLK_FREQ * __tq) / 2) - 1) / 1000000) - 1;
 
 	/* Set sampling
 	 * 1 -> triple; the bus is sampled three times; recommended for low/medium speed buses     (class A and B) where
@@ -228,16 +238,16 @@ int CAN_init() {
 	// enable all interrupts
 	MODULE_CAN->IER.U = 0xff;
 
-	 // Set acceptance filter	
-	MODULE_CAN->MOD.B.AFM = __filter.FM;	
-    MODULE_CAN->MBX_CTRL.ACC.CODE[0] = __filter.ACR0;
-    MODULE_CAN->MBX_CTRL.ACC.CODE[1] = __filter.ACR1;
-    MODULE_CAN->MBX_CTRL.ACC.CODE[2] = __filter.ACR2;
-    MODULE_CAN->MBX_CTRL.ACC.CODE[3] = __filter.ACR3;
-    MODULE_CAN->MBX_CTRL.ACC.MASK[0] = __filter.AMR0;
-    MODULE_CAN->MBX_CTRL.ACC.MASK[1] = __filter.AMR1;
-    MODULE_CAN->MBX_CTRL.ACC.MASK[2] = __filter.AMR2;
-    MODULE_CAN->MBX_CTRL.ACC.MASK[3] = __filter.AMR3;
+	// Set acceptance filter
+	MODULE_CAN->MOD.B.AFM = __filter.FM;
+	MODULE_CAN->MBX_CTRL.ACC.CODE[0] = __filter.ACR0;
+	MODULE_CAN->MBX_CTRL.ACC.CODE[1] = __filter.ACR1;
+	MODULE_CAN->MBX_CTRL.ACC.CODE[2] = __filter.ACR2;
+	MODULE_CAN->MBX_CTRL.ACC.CODE[3] = __filter.ACR3;
+	MODULE_CAN->MBX_CTRL.ACC.MASK[0] = __filter.AMR0;
+	MODULE_CAN->MBX_CTRL.ACC.MASK[1] = __filter.AMR1;
+	MODULE_CAN->MBX_CTRL.ACC.MASK[2] = __filter.AMR2;
+	MODULE_CAN->MBX_CTRL.ACC.MASK[3] = __filter.AMR3;
 
 	// set to normal mode
 	MODULE_CAN->OCR.B.OCMODE = __CAN_OC_NOM;
@@ -245,16 +255,16 @@ int CAN_init() {
 	// clear error counters
 	MODULE_CAN->TXERR.U = 0;
 	MODULE_CAN->RXERR.U = 0;
-	(void) MODULE_CAN->ECC;
+	(void)MODULE_CAN->ECC;
 
 	// clear interrupt flags
-	(void) MODULE_CAN->IR.U;
+	(void)MODULE_CAN->IR.U;
 
 	// install CAN ISR
 	esp_intr_alloc(ETS_CAN_INTR_SOURCE, 0, CAN_isr, NULL, NULL);
 
 	// allocate the tx complete semaphore
-	sem_tx_complete = xSemaphoreCreateBinary();
+	CAN_SemTxComplete = xSemaphoreCreateBinary();
 
 	// Showtime. Release Reset Mode.
 	MODULE_CAN->MOD.B.RM = 0;
@@ -262,38 +272,47 @@ int CAN_init() {
 	return 0;
 }
 
-int CAN_write_frame(const CAN_frame_t *p_frame) {
-	if (sem_tx_complete == NULL) {
+int CAN_write_frame_task(void)
+{
+	CAN_frame_t frame;
+
+	if (CAN_SemTxComplete == NULL)
+	{
 		return -1;
 	}
 
-	// Write the frame to the controller
-	CAN_write_frame_phy(p_frame);
+	while (xQueueReceive(CAN_cfg.tx_queue, (void *)&frame, portMAX_DELAY) == pdPASS)
+	{
+		// wait for the frame tx to complete
+		xSemaphoreTake(CAN_SemTxComplete, portMAX_DELAY);
 
-	// wait for the frame tx to complete
-	xSemaphoreTake(sem_tx_complete, portMAX_DELAY);
+		// Write the frame to the controller
+		CAN_write_frame_phy(&frame);
+	}
 
 	return 0;
 }
 
-int CAN_stop() {
+int CAN_stop()
+{
 	// enter reset mode
 	MODULE_CAN->MOD.B.RM = 1;
 
 	return 0;
 }
 
-int CAN_config_filter(const CAN_filter_t* p_filter) {
-	
-	__filter.FM = p_filter->FM;	
-    __filter.ACR0 = p_filter->ACR0;
-    __filter.ACR1 = p_filter->ACR1;
-    __filter.ACR2 = p_filter->ACR2;
-    __filter.ACR3 = p_filter->ACR3;
-    __filter.AMR0 = p_filter->AMR0;
-    __filter.AMR1 = p_filter->AMR1;
-    __filter.AMR2 = p_filter->AMR2;
-    __filter.AMR3 = p_filter->AMR3;
-	
+int CAN_config_filter(const CAN_filter_t *p_filter)
+{
+
+	__filter.FM = p_filter->FM;
+	__filter.ACR0 = p_filter->ACR0;
+	__filter.ACR1 = p_filter->ACR1;
+	__filter.ACR2 = p_filter->ACR2;
+	__filter.ACR3 = p_filter->ACR3;
+	__filter.AMR0 = p_filter->AMR0;
+	__filter.AMR1 = p_filter->AMR1;
+	__filter.AMR2 = p_filter->AMR2;
+	__filter.AMR3 = p_filter->AMR3;
+
 	return 0;
 }

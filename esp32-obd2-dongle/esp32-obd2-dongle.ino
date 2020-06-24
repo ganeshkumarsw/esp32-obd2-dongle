@@ -13,7 +13,7 @@ static void CreateTask_Task(void *pvParameters);
 
 void setup()
 {
-    Serial.begin(115200);
+    Serial.begin(230400);
     Serial.setRxBufferSize(4096);
     String ver = "OBDII USB/Wifi/BT Dongle v" + MAJOR_VERSION;
     ver = ver + "." + MINOR_VERSION + "." + SUB_VERSION + "_" + SW_VERSION "_" + ESP.getSdkVersion();
