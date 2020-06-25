@@ -720,8 +720,10 @@ void WIFI_Task(void *pvParameters)
                         }
                         else
                         {
+                            client.flush();
                             Serial.printf("ERROR: TCP Socket data <%ld> is bigger than buffer can hold\r\n", (len + idx));
                             idx = 0;
+                            StopTimer(socketTimeoutTmr);
                             break;
                         }
                     }
