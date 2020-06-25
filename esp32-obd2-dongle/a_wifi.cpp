@@ -707,15 +707,25 @@ void WIFI_Task(void *pvParameters)
 
                 while (IsTimerRunning(socketTimeoutTmr))
                 {
-                    if (client.available() > 0)
+                    len = client.available();
+                    if (len > 0)
                     {
-                        len = client.read(&WIFI_RxBuff[idx], (sizeof(WIFI_RxBuff) - idx));
-                        Serial.printf("INFO: TCP Socket data <%ld> read in this call\r\n", len);
-
-                        if (len > 0)
+                        if ((idx + len) < sizeof(WIFI_RxBuff))
                         {
-                            idx += len;
-                            ResetTimer(socketTimeoutTmr, 20);
+                            len = client.read(&WIFI_RxBuff[idx], len);
+                            Serial.printf("INFO: TCP Socket data <%ld> read in this call\r\n", len);
+
+                            if (len > 0)
+                            {
+                                idx += len;
+                                ResetTimer(socketTimeoutTmr, 20);
+                            }
+                        }
+                        else
+                        {
+                            idx = 0;
+                            Serial.printf("ERROR: TCP Socket data <%ld> is bigger than buffer can hold\r\n", (len + idx));
+                            break;
                         }
                     }
                     else
