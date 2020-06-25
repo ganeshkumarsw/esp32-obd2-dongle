@@ -44,14 +44,14 @@
 #include "CAN_config.h"
 
 // CAN Filter - no acceptance filter
-static CAN_filter_t __filter = {Dual_Mode, 0, 0, 0, 0, 0Xff, 0Xff, 0Xff, 0Xff};
-
-static void CAN_read_frame_phy();
-static void CAN_isr(void *arg_p);
-static int CAN_write_frame_phy(const CAN_frame_t *p_frame);
+static CAN_filter_t CAN_Filter = {Dual_Mode, 0, 0, 0, 0, 0Xff, 0Xff, 0Xff, 0Xff};
+static CAN_device_t CAN_cfg;
+static void CAN_ReadFramePhy();
+static void CAN_ISR(void *arg_p);
+static int CAN_WriteFramePhy(const CAN_frame_t *p_frame);
 static SemaphoreHandle_t CAN_SemTxComplete;
 
-static void CAN_isr(void *arg_p)
+static void CAN_Drv_ISR(void *arg_p)
 {
 
 	// Interrupt flag buffer
@@ -83,9 +83,8 @@ static void CAN_isr(void *arg_p)
 		portYIELD_FROM_ISR();
 }
 
-static void CAN_read_frame_phy(BaseType_t *higherPriorityTaskWoken)
+static void CAN_Drv_ReadFramePhy(BaseType_t *higherPriorityTaskWoken)
 {
-
 	// byte iterator
 	uint8_t __byte_i;
 
@@ -134,7 +133,7 @@ static void CAN_read_frame_phy(BaseType_t *higherPriorityTaskWoken)
 	MODULE_CAN->CMR.B.RRB = 1;
 }
 
-static int CAN_write_frame_phy(const CAN_frame_t *p_frame)
+static int CAN_WriteFramePhy(const CAN_frame_t *p_frame)
 {
 
 	// byte iterator
@@ -172,11 +171,17 @@ static int CAN_write_frame_phy(const CAN_frame_t *p_frame)
 	return 0;
 }
 
-int CAN_init()
+int CAN_Drv_Init(const CAN_device_t *p_devCfg)
 {
-
 	// Time quantum
 	double __tq;
+
+	if (p_devCfg != NULL)
+	{
+		return -1;
+	}
+
+    memcpy((uint8_t *)&CAN_cfg, p_devCfg, sizeof(CAN_device_t));
 
 	// enable module
 	DPORT_SET_PERI_REG_MASK(DPORT_PERIP_CLK_EN_REG, DPORT_CAN_CLK_EN);
@@ -239,15 +244,15 @@ int CAN_init()
 	MODULE_CAN->IER.U = 0xff;
 
 	// Set acceptance filter
-	MODULE_CAN->MOD.B.AFM = __filter.FM;
-	MODULE_CAN->MBX_CTRL.ACC.CODE[0] = __filter.ACR0;
-	MODULE_CAN->MBX_CTRL.ACC.CODE[1] = __filter.ACR1;
-	MODULE_CAN->MBX_CTRL.ACC.CODE[2] = __filter.ACR2;
-	MODULE_CAN->MBX_CTRL.ACC.CODE[3] = __filter.ACR3;
-	MODULE_CAN->MBX_CTRL.ACC.MASK[0] = __filter.AMR0;
-	MODULE_CAN->MBX_CTRL.ACC.MASK[1] = __filter.AMR1;
-	MODULE_CAN->MBX_CTRL.ACC.MASK[2] = __filter.AMR2;
-	MODULE_CAN->MBX_CTRL.ACC.MASK[3] = __filter.AMR3;
+	MODULE_CAN->MOD.B.AFM = CAN_Filter.FM;
+	MODULE_CAN->MBX_CTRL.ACC.CODE[0] = CAN_Filter.ACR0;
+	MODULE_CAN->MBX_CTRL.ACC.CODE[1] = CAN_Filter.ACR1;
+	MODULE_CAN->MBX_CTRL.ACC.CODE[2] = CAN_Filter.ACR2;
+	MODULE_CAN->MBX_CTRL.ACC.CODE[3] = CAN_Filter.ACR3;
+	MODULE_CAN->MBX_CTRL.ACC.MASK[0] = CAN_Filter.AMR0;
+	MODULE_CAN->MBX_CTRL.ACC.MASK[1] = CAN_Filter.AMR1;
+	MODULE_CAN->MBX_CTRL.ACC.MASK[2] = CAN_Filter.AMR2;
+	MODULE_CAN->MBX_CTRL.ACC.MASK[3] = CAN_Filter.AMR3;
 
 	// set to normal mode
 	MODULE_CAN->OCR.B.OCMODE = __CAN_OC_NOM;
@@ -261,7 +266,7 @@ int CAN_init()
 	(void)MODULE_CAN->IR.U;
 
 	// install CAN ISR
-	esp_intr_alloc(ETS_CAN_INTR_SOURCE, 0, CAN_isr, NULL, NULL);
+	esp_intr_alloc(ETS_CAN_INTR_SOURCE, 0, CAN_ISR, NULL, NULL);
 
 	// allocate the tx complete semaphore
 	CAN_SemTxComplete = xSemaphoreCreateBinary();
@@ -273,7 +278,7 @@ int CAN_init()
 	return 0;
 }
 
-int CAN_write_frame(const CAN_frame_t *p_frame)
+int CAN_Drv_WriteFrame(const CAN_frame_t *p_frame)
 {
 	if (CAN_SemTxComplete == NULL)
 	{
@@ -284,12 +289,12 @@ int CAN_write_frame(const CAN_frame_t *p_frame)
 	xSemaphoreTake(CAN_SemTxComplete, portMAX_DELAY);
 
 	// Write the frame to the controller
-	CAN_write_frame_phy(p_frame);
+	CAN_WriteFramePhy(p_frame);
 
 	return 0;
 }
 
-int CAN_stop()
+int CAN_Drv_Stop()
 {
 	// enter reset mode
 	MODULE_CAN->MOD.B.RM = 1;
@@ -297,18 +302,17 @@ int CAN_stop()
 	return 0;
 }
 
-int CAN_config_filter(const CAN_filter_t *p_filter)
+int CAN_Drv_ConfigFilter(const CAN_filter_t *p_filter)
 {
-
-	__filter.FM = p_filter->FM;
-	__filter.ACR0 = p_filter->ACR0;
-	__filter.ACR1 = p_filter->ACR1;
-	__filter.ACR2 = p_filter->ACR2;
-	__filter.ACR3 = p_filter->ACR3;
-	__filter.AMR0 = p_filter->AMR0;
-	__filter.AMR1 = p_filter->AMR1;
-	__filter.AMR2 = p_filter->AMR2;
-	__filter.AMR3 = p_filter->AMR3;
+	CAN_Filter.FM = p_filter->FM;
+	CAN_Filter.ACR0 = p_filter->ACR0;
+	CAN_Filter.ACR1 = p_filter->ACR1;
+	CAN_Filter.ACR2 = p_filter->ACR2;
+	CAN_Filter.ACR3 = p_filter->ACR3;
+	CAN_Filter.AMR0 = p_filter->AMR0;
+	CAN_Filter.AMR1 = p_filter->AMR1;
+	CAN_Filter.AMR2 = p_filter->AMR2;
+	CAN_Filter.AMR3 = p_filter->AMR3;
 
 	return 0;
 }

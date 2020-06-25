@@ -292,6 +292,14 @@ void APP_Task(void *pvParameters)
                                 APP_ISO_TxFrameCounter++;
                                 APP_ISO_TxBlockCounter++;
 
+                                if ((tx_frame.FIR.B.DLC < 8) && (APP_CAN_PaddingByte & 0x0100))
+                                {
+                                    memset(((uint8_t *)&tx_frame.data.u8[0] + tx_frame.FIR.B.DLC),
+                                           (uint8_t)APP_CAN_PaddingByte,
+                                           (8 - tx_frame.FIR.B.DLC));
+                                    tx_frame.FIR.B.DLC = 8;
+                                }
+
                                 APP_CAN_CommStatus = true;
                                 CAN_WriteFrame(&tx_frame, portMAX_DELAY);
 
@@ -311,14 +319,6 @@ void APP_Task(void *pvParameters)
 
                                 if (APP_CAN_TxDataLen == 0)
                                 {
-                                    if ((tx_frame.FIR.B.DLC < 8) && (APP_CAN_PaddingByte & 0x0100))
-                                    {
-                                        memset(((uint8_t *)&tx_frame.data.u8[0] + tx_frame.FIR.B.DLC),
-                                               (uint8_t)APP_CAN_PaddingByte,
-                                               (8 - tx_frame.FIR.B.DLC));
-                                        tx_frame.FIR.B.DLC = 8;
-                                    }
-
                                     APP_BuffTxIndex = 0;
                                     APP_BuffLockedBy = APP_BUFF_LOCKED_BY_NONE;
                                     StopTimer(APP_ISO_FC_WaitTmr);

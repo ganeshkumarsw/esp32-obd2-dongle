@@ -6,8 +6,8 @@ extern "C" {
 #endif
 
 #include "driver/can.h"
-#include <ESP32CAN.h>
 #include <CAN_config.h>
+#include "CAN.h"
 
 /** \brief CAN Node Bus speed */
 // typedef enum {

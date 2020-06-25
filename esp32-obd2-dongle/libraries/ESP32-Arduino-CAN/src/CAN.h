@@ -104,7 +104,7 @@ extern "C"
  *
  * \return 0 CAN Module had been initialized
  */
-	int CAN_init(void);
+	int CAN_Drv_Init(const CAN_device_t *p_devCfg);
 
 	/**
  * \brief Send a can frame
@@ -112,14 +112,14 @@ extern "C"
  * \param	p_frame	Pointer to the frame to be send, see #CAN_frame_t
  * \return  0 Frame has been written to the module
  */
-	int CAN_write_frame(const CAN_frame_t *p_frame);
+	int CAN_Drv_WriteFrame(const CAN_frame_t *p_frame);
 
 	/**
  * \brief Stops the CAN Module
  *
  * \return 0 CAN Module was stopped
  */
-	int CAN_stop(void);
+	int CAN_Drv_Stop(void);
 
 	/**
  * \brief Config CAN Filter, must call before CANInit()
@@ -127,7 +127,7 @@ extern "C"
  * \param	p_filter Pointer to the filter, see #CAN_filter_t
  * \return  0 CAN Filter had been initialized
  */
-	int CAN_config_filter(const CAN_filter_t *p_filter);
+	int CAN_Drv_ConfigFilter(const CAN_filter_t *p_filter);
 
 #ifdef __cplusplus
 }

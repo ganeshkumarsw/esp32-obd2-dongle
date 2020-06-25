@@ -1,7 +1,7 @@
 #include <Arduino.h>
 #include "config.h"
-#include <ESP32CAN.h>
-#include <CAN_config.h>
+#include "CAN_config.h"
+#include "CAN.h"
 #include "a_can.h"
 
 CAN_device_t CAN_cfg = {
@@ -10,7 +10,7 @@ CAN_device_t CAN_cfg = {
     .rx_pin_id = GPIO_NUM_4,
     .rx_queue = NULL,
     .tx_queue = NULL,
-}; // CAN Config
+};
 SemaphoreHandle_t CAN_SemaphoreRxTxQueue;
 
 void CAN_Init(void)
@@ -42,7 +42,7 @@ void CAN_Init(void)
             .AMR3 = 0xFF,
         };
 
-        ESP32Can.CANConfigFilter(&filter);
+        CAN_Drv_ConfigFilter(&filter);
     }
 
     if ((CAN_cfg.rx_queue == NULL) || (CAN_cfg.tx_queue == NULL))
@@ -56,17 +56,17 @@ void CAN_Init(void)
 
 void CAN_DeInit(void)
 {
-    ESP32Can.CANStop();
+    CAN_Drv_Stop();
 }
 
 void CAN_SetBaud(CAN_speed_t speed)
 {
-    ESP32Can.CANStop();
+    CAN_Drv_Stop();
 
     CAN_cfg.speed = speed;
 
     // Init CAN Module
-    ESP32Can.CANInit();
+    CAN_Drv_Init(&CAN_cfg);
 }
 
 void CAN_ConfigFilterterMask(uint32_t acceptance_code, bool extId)
@@ -75,7 +75,7 @@ void CAN_ConfigFilterterMask(uint32_t acceptance_code, bool extId)
     uint32_t acceptance_mask;
     CAN_filter_t filter;
 
-    ESP32Can.CANStop();
+    CAN_Drv_Stop();
 
     if (acceptance_code == 0xFFFFFFFF)
     {
@@ -109,10 +109,10 @@ void CAN_ConfigFilterterMask(uint32_t acceptance_code, bool extId)
         .AMR3 = byte(acceptance_mask, 0),
     };
 
-    ESP32Can.CANConfigFilter(&filter);
+    CAN_Drv_ConfigFilter(&filter);
 
     // Init CAN Module
-    ESP32Can.CANInit();
+    CAN_Drv_Init(&CAN_cfg);
 }
 
 esp_err_t CAN_ReadFrame(CAN_frame_t *frame, TickType_t ticks_to_wait)
@@ -174,7 +174,7 @@ void CAN_Task(void *pvParameters)
     {
         if (xQueueReceive(CAN_cfg.tx_queue, (void *)&frame, portMAX_DELAY) == pdPASS)
         {
-            ESP32Can.CANWriteFrame(&frame);
+            CAN_Drv_WriteFrame(&frame);
         }
     }
 
