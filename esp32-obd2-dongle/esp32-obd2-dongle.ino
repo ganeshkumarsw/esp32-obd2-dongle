@@ -13,13 +13,11 @@ static void CreateTask_Task(void *pvParameters);
 
 void setup()
 {
-    Serial.begin(230400);
+    Serial.begin(460800);
     Serial.setRxBufferSize(4096);
-    String ver = "OBDII USB/Wifi/BT Dongle v" + MAJOR_VERSION;
-    ver = ver + "." + MINOR_VERSION + "." + SUB_VERSION + "_" + SW_VERSION "_" + ESP.getSdkVersion();
+    String ver = "\r\n\r\n\r\nOBDII USB/Wifi/BT Dongle v" xstr(MAJOR_VERSION) "." xstr(MINOR_VERSION) "." xstr(SUB_VERSION) " <" SW_VERSION "> <";
+    ver = ver + ESP.getSdkVersion() + ">";
 
-    // ver = ver + MAJOR_VERSION + MINOR_VERSION + SUB_VERSION + "\r\n";
-    // printf("OBDII USB/Wifi/BT Dongle v%02d.%02d.%02d\r\n", MAJOR_VERSION, MINOR_VERSION, SUB_VERSION);
     Serial.println(ver);
 
     // MQTT_Init();

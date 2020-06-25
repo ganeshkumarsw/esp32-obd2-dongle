@@ -164,7 +164,7 @@ void CAN_Task(void *pvParameters)
 
     CAN_Init();
 
-    if (CAN_cfg.tx_queue != NULL)
+    if (CAN_cfg.tx_queue == NULL)
     {
         Serial.println("ERROR: CAN Failed to create Tx Queue");
         vTaskDelete(NULL);
@@ -172,7 +172,10 @@ void CAN_Task(void *pvParameters)
 
     while (1)
     {
-        ESP32Can.CANWriteFrame_Task();
+        if (xQueueReceive(CAN_cfg.tx_queue, (void *)&frame, portMAX_DELAY) == pdPASS)
+        {
+            ESP32Can.CANWriteFrame(&frame);
+        }
     }
 
     Serial.println("ERROR: CAN task exit");

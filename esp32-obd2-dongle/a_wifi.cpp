@@ -16,10 +16,6 @@
 #include <DNSServer.h>
 #include <Update.h>
 
-#define WIFI_AP 0
-#define WIFI_AP_DNS 0
-#define WIFI_STA 0
-
 AsyncUDP UDP;
 AsyncWebServer HttpServer(80);
 AsyncWebSocket WebSocket("/ws"); // access at ws://[esp ip]/ws
@@ -27,6 +23,8 @@ AsyncEventSource Events("/events");
 AsyncWebSocketClient *p_WebSocketClient;
 File FsUploadFile;
 WiFiServer SocketServer(6888);
+SemaphoreHandle_t WIFI_SemTCP_SocComplete;
+SemaphoreHandle_t WIFI_SemWebSocTxComplete;
 
 char WIFI_STA_SSID[50] = STA_WIFI_SSID;
 char WIFI_STA_Password[50] = STA_WIFI_PASSWORD;
@@ -49,6 +47,19 @@ void WIFI_Init(void)
     char mac[6];
     Preferences preferences;
 
+    WIFI_SemTCP_SocComplete = xSemaphoreCreateBinary();
+    WIFI_SemWebSocTxComplete = xSemaphoreCreateBinary();
+
+    if ((WIFI_SemTCP_SocComplete == NULL) || (WIFI_SemWebSocTxComplete == NULL))
+    {
+        Serial.println("ERROR: Failed to create Soc Tx complete semaphore");
+    }
+    else
+    {
+        xSemaphoreGive(WIFI_SemTCP_SocComplete);
+        xSemaphoreGive(WIFI_SemWebSocTxComplete);
+    }
+
     preferences.begin("config", false);
 
     LED_SetLedState(WIFI_CONN_LED, LED_STATE_TOGGLE, LED_TOGGLE_RATE_1HZ);
@@ -56,7 +67,7 @@ void WIFI_Init(void)
 
     WiFi.macAddress((uint8_t *)mac);
     sprintf(apSSID, "%s-%02X%02X", AP_WIFI_SSID, mac[4], mac[5]);
-    Serial.printf("INFO: SSID: %s\r\n", apSSID);
+    Serial.printf("INFO: SSID <%s>\r\n", apSSID);
 
     if (preferences.getString("stSSID") == "")
     {
@@ -519,14 +530,19 @@ void WIFI_Init(void)
 
 void WIFI_ScanTask(void *pvParameters)
 {
+    Serial.println("INFO: AP Scan Task started");
+
     while (1)
     {
         int n = WiFi.scanComplete();
 
         if (n == WIFI_SCAN_FAILED)
         {
+            Serial.println("INFO: AP Scan failed");
             break;
         }
+
+        Serial.println("INFO: AP Scan running");
 
         if (n > 0)
         {
@@ -539,6 +555,8 @@ void WIFI_ScanTask(void *pvParameters)
                                             "AUTH_MAX"};
 
             String json = "[";
+            Serial.printf("INFO: AP Scan completed <%d>\r\n", n);
+
             for (int i = 0; i < n; ++i)
             {
                 if (i)
@@ -655,6 +673,12 @@ void WIFI_Task(void *pvParameters)
 
     WIFI_Init();
 
+    if ((WIFI_SemTCP_SocComplete == NULL) || (WIFI_SemWebSocTxComplete == NULL))
+    {
+        vTaskDelete(NULL);
+        return;
+    }
+
     if (xTaskCreate(WIFI_SupportTask, "WIFI_SupportTask", 5000, NULL, tskIDLE_PRIORITY, NULL) != pdTRUE)
     {
         configASSERT(0);
@@ -666,12 +690,15 @@ void WIFI_Task(void *pvParameters)
 
         if (client)
         {
-            uint16_t len;
-            uint16_t idx = 0;
+            uint32_t len;
+            uint32_t idx = 0;
+
             Serial.println("INFO: TCP Socket Client connected");
 
             while (client.connected())
             {
+                StopTimer(socketTimeoutTmr);
+
                 if (client.available() > 0)
                 {
                     idx = 0;
@@ -683,7 +710,7 @@ void WIFI_Task(void *pvParameters)
                     if (client.available() > 0)
                     {
                         len = client.read(&WIFI_RxBuff[idx], (sizeof(WIFI_RxBuff) - idx));
-                        Serial.printf("INFO: TCP Socket data <%d> read\r\n", len);
+                        Serial.printf("INFO: TCP Socket data <%ld> read in this call\r\n", len);
 
                         if (len > 0)
                         {
@@ -693,17 +720,19 @@ void WIFI_Task(void *pvParameters)
                     }
                     else
                     {
-                        Serial.println("INFO: Waiting, NO TCP Socket data");
+                        Serial.println("INFO: Waiting, NO TCP Socket data during this call");
                     }
 
                     vTaskDelay(5 / portTICK_PERIOD_MS);
                 }
 
+                StopTimer(socketTimeoutTmr);
+
                 if (idx)
                 {
                     WIFI_SeqNo = WIFI_RxBuff[0];
                     APP_ProcessData(&WIFI_RxBuff[11], (len - 13), APP_MSG_CHANNEL_TCP_SOC);
-                    Serial.printf("INFO: TCP Socket data received <%ld>\r\n", idx);
+                    Serial.printf("INFO: TCP Socket data <%ld> received\r\n", idx);
                     idx = 0;
                 }
 
@@ -712,17 +741,15 @@ void WIFI_Task(void *pvParameters)
                     client.write(WIFI_TxBuff, WIFI_TxLen);
                     Serial.println("INFO: App processed TCP Socket Data");
                     WIFI_TxLen = 0;
+                    xSemaphoreGive(WIFI_SemTCP_SocComplete);
                 }
 
                 vTaskDelay(1 / portTICK_PERIOD_MS);
             }
 
-            // client.stop();
             Serial.println("INFO: TCP Socket Client disconnected");
         }
-#if WIFI_AP_DNS
-        DNS_Server.processNextRequest();
-#endif
+
         vTaskDelay(100 / portTICK_PERIOD_MS);
         WebSocket.cleanupClients();
     }
@@ -733,10 +760,14 @@ void WIFI_TCP_Soc_Write(uint8_t *payLoad, uint16_t len)
 #define byte(x, y) ((uint8_t)(x >> (y * 8)))
 
     uint16_t crc16;
-    uint16_t idx;
+    uint32_t idx;
     uint32_t tick;
 
-    WiFiClient client = SocketServer.available();
+    if (WIFI_SemTCP_SocComplete == NULL)
+    {
+        return;
+    }
+    xSemaphoreTake(WIFI_SemTCP_SocComplete, portMAX_DELAY);
 
     if (WIFI_TxLen == 0)
     {
@@ -774,9 +805,15 @@ void WIFI_WebSoc_Write(uint8_t *payLoad, uint16_t len)
 #define byte(x, y) ((uint8_t)(x >> (y * 8)))
 
     uint16_t crc16;
-    uint16_t idx;
+    uint32_t idx;
     uint32_t tick;
-    // Serial.println("App processed");
+
+    if (WIFI_SemWebSocTxComplete == NULL)
+    {
+        return;
+    }
+
+    xSemaphoreTake(WIFI_SemWebSocTxComplete, portMAX_DELAY);
 
     if (WIFI_TxLen == 0)
     {
@@ -811,6 +848,7 @@ void WIFI_WebSoc_Write(uint8_t *payLoad, uint16_t len)
             p_WebSocketClient->binary(WIFI_TxBuff, WIFI_TxLen);
             WIFI_TxLen = 0;
             WIFI_SeqNo = 0xFE;
+            xSemaphoreGive(WIFI_SemWebSocTxComplete);
         }
     }
 }

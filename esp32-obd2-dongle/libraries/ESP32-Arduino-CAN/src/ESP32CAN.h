@@ -6,11 +6,11 @@
 
 class ESP32CAN
 {
-    public: 
-        int CANInit();
-		int CANConfigFilter(const CAN_filter_t* p_filter);
-        int CANWriteFrame_Task(void);
-        int CANStop();
+public:
+    int CANInit();
+    int CANConfigFilter(const CAN_filter_t *p_filter);
+    int CANWriteFrame(const CAN_frame_t *p_frame);
+    int CANStop();
 };
 
 extern ESP32CAN ESP32Can;

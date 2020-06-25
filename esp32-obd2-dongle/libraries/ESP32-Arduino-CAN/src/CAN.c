@@ -265,6 +265,7 @@ int CAN_init()
 
 	// allocate the tx complete semaphore
 	CAN_SemTxComplete = xSemaphoreCreateBinary();
+	xSemaphoreGive(CAN_SemTxComplete);
 
 	// Showtime. Release Reset Mode.
 	MODULE_CAN->MOD.B.RM = 0;
@@ -272,23 +273,18 @@ int CAN_init()
 	return 0;
 }
 
-int CAN_write_frame_task(void)
+int CAN_write_frame(const CAN_frame_t *p_frame)
 {
-	CAN_frame_t frame;
-
 	if (CAN_SemTxComplete == NULL)
 	{
 		return -1;
 	}
 
-	while (xQueueReceive(CAN_cfg.tx_queue, (void *)&frame, portMAX_DELAY) == pdPASS)
-	{
-		// wait for the frame tx to complete
-		xSemaphoreTake(CAN_SemTxComplete, portMAX_DELAY);
+	// wait for the frame tx to complete
+	xSemaphoreTake(CAN_SemTxComplete, portMAX_DELAY);
 
-		// Write the frame to the controller
-		CAN_write_frame_phy(&frame);
-	}
+	// Write the frame to the controller
+	CAN_write_frame_phy(p_frame);
 
 	return 0;
 }

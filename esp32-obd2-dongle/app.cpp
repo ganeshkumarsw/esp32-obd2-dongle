@@ -90,6 +90,8 @@ uint8_t APP_GreenFlashCntr;
 bool APP_CAN_CommStatus;
 bool APP_Client_CommStatus;
 
+static void APP_SupportTask(void *pvParameters);
+
 void APP_Init(void)
 {
     APP_CAN_Baud = CAN_SPEED_500KBPS;
@@ -103,6 +105,50 @@ void APP_Init(void)
     LED_SetLedState(SECURITY_LED, LED_STATE_TOGGLE, LED_TOGGLE_RATE_1HZ);
 }
 
+void APP_SupportTask(void *pvParameters)
+{
+    while (1)
+    {
+        if (((APP_Client_CommStatus == true) || (APP_YellowFlashCntr > 0)) &&
+            IsTimerElapsed(APP_YellowLedTmr))
+        {
+            if (APP_Client_CommStatus == true)
+            {
+                APP_Client_CommStatus = 0;
+                APP_YellowFlashCntr = 4;
+            }
+
+            APP_YellowFlashCntr--;
+
+            LED_SetLedState(COMM_LED, LED_STATE_TOGGLE, LED_TOGGLE_RATE_1HZ);
+            StartTimer(APP_YellowLedTmr, 100);
+        }
+        else if (APP_YellowFlashCntr == 0)
+        {
+            LED_SetLedState(COMM_LED, LED_STATE_LOW, LED_TOGGLE_RATE_NONE);
+        }
+
+        if (((APP_CAN_CommStatus == true) || (APP_GreenFlashCntr > 0)) &&
+            IsTimerElapsed(APP_GreenLedTmr))
+        {
+            if (APP_CAN_CommStatus == true)
+            {
+                APP_CAN_CommStatus = 0;
+                APP_GreenFlashCntr = 4;
+            }
+
+            APP_GreenFlashCntr--;
+            StartTimer(APP_GreenLedTmr, 100);
+        }
+        else if (APP_GreenFlashCntr == 0)
+        {
+            // CAN_IND_SetLow();
+        }
+
+        vTaskDelay(10 / portTICK_PERIOD_MS);
+    }
+}
+
 void APP_Task(void *pvParameters)
 {
     UBaseType_t uxHighWaterMark;
@@ -114,7 +160,6 @@ void APP_Task(void *pvParameters)
     uint16_t respLen;
     uint8_t respBuff[30];
     uint16_t len;
-    bool canFrameSend;
     uint8_t isoFrameType;
     uint8_t delay;
     uint16_t crc16;
@@ -122,8 +167,6 @@ void APP_Task(void *pvParameters)
     respType = APP_RESP_ACK;
     respNo = APP_RESP_ACK;
     respLen = 0;
-    canFrameSend = false;
-    delay = 0;
 
     ESP_LOGI("APP", "Task Started");
 
@@ -131,7 +174,10 @@ void APP_Task(void *pvParameters)
     ESP_LOGI("APP", "uxHighWaterMark = %d", uxHighWaterMark);
 
     APP_Init();
-    // CAN_ConfigFilterterMask(0x00000000, true);
+    if (xTaskCreate(APP_SupportTask, "APP_SupportTask", 2000, NULL, tskIDLE_PRIORITY, NULL) != pdTRUE)
+    {
+        configASSERT(0);
+    }
 
     while (1)
     {
@@ -171,44 +217,6 @@ void APP_Task(void *pvParameters)
             }
         }
 
-        if (((APP_Client_CommStatus == true) || (APP_YellowFlashCntr > 0)) &&
-            IsTimerElapsed(APP_YellowLedTmr))
-        {
-            if (APP_Client_CommStatus == true)
-            {
-                APP_Client_CommStatus = 0;
-                APP_YellowFlashCntr = 4;
-            }
-
-            APP_YellowFlashCntr--;
-
-            LED_SetLedState(COMM_LED, LED_STATE_TOGGLE, LED_TOGGLE_RATE_1HZ);
-            StartTimer(APP_YellowLedTmr, 100);
-        }
-        else if (APP_YellowFlashCntr == 0)
-        {
-            LED_SetLedState(COMM_LED, LED_STATE_LOW, LED_TOGGLE_RATE_NONE);
-        }
-
-        if (((APP_CAN_CommStatus == true) || (APP_GreenFlashCntr > 0)) &&
-            IsTimerElapsed(APP_GreenLedTmr))
-        {
-            if (APP_CAN_CommStatus == true)
-            {
-                APP_CAN_CommStatus = 0;
-                APP_GreenFlashCntr = 4;
-            }
-
-            APP_GreenFlashCntr--;
-
-            // CAN_IND_Toggle();
-            StartTimer(APP_GreenLedTmr, 100);
-        }
-        else if (APP_GreenFlashCntr == 0)
-        {
-            // CAN_IND_SetLow();
-        }
-
         if (APP_SecurityPassStatus == true)
         {
             tx_frame.MsgID = APP_CAN_TxId;
@@ -238,11 +246,13 @@ void APP_Task(void *pvParameters)
                             tx_frame.FIR.B.DLC = 8;
                         }
 
-                        canFrameSend = true;
                         APP_BuffTxIndex = 0;
                         APP_CAN_TxDataLen = 0;
                         APP_BuffLockedBy = APP_BUFF_LOCKED_BY_NONE;
                         APP_State = APP_STATE_IDLE;
+
+                        APP_CAN_CommStatus = true;
+                        CAN_WriteFrame(&tx_frame, portMAX_DELAY);
                         break;
 
                     case APP_STATE_CAN_ISO_FIRST:
@@ -253,62 +263,70 @@ void APP_Task(void *pvParameters)
                         APP_BuffTxIndex = APP_BuffTxIndex + (tx_frame.FIR.B.DLC - 2);
                         APP_CAN_TxDataLen = APP_CAN_TxDataLen - (tx_frame.FIR.B.DLC - 2);
                         StartTimer(APP_ISO_FC_WaitTmr, APP_ISO_FC_WAIT_TIME);
-                        canFrameSend = true;
                         APP_ISO_TxBlockCounter = 0;
                         APP_ISO_TxFrameCounter = 1;
                         APP_State = APP_STATE_CAN_ISO_FC_WAIT_TIME;
+
+                        APP_CAN_CommStatus = true;
+                        CAN_WriteFrame(&tx_frame, portMAX_DELAY);
                         break;
 
                     case APP_STATE_CAN_ISO_CONSECUTIVE:
                         if (APP_ISO_FC_TxFlag == 0)
                         {
-                            if (APP_CAN_TxDataLen >= 7)
+                            while (1)
                             {
-                                tx_frame.FIR.B.DLC = 8;
-                            }
-                            else
-                            {
-                                tx_frame.FIR.B.DLC = APP_CAN_TxDataLen + 1;
-                            }
-
-                            tx_frame.data.u8[0] = (0x0F & APP_ISO_TxFrameCounter) | 0x20;
-                            memcpy((uint8_t *)&tx_frame.data.u8[1], &APP_RxBuff[APP_BuffTxIndex], (tx_frame.FIR.B.DLC - 1));
-                            APP_BuffTxIndex = APP_BuffTxIndex + (tx_frame.FIR.B.DLC - 1);
-                            APP_CAN_TxDataLen = APP_CAN_TxDataLen - (tx_frame.FIR.B.DLC - 1);
-                            APP_ISO_TxFrameCounter++;
-                            APP_ISO_TxBlockCounter++;
-                            canFrameSend = true;
-
-                            if ((APP_ISO_FC_TxBlockSize > 0) && (APP_ISO_TxBlockCounter == APP_ISO_FC_TxBlockSize))
-                            {
-                                StartTimer(APP_ISO_FC_WaitTmr, APP_ISO_FC_WAIT_TIME);
-                                APP_State = APP_STATE_CAN_ISO_FC_WAIT_TIME;
-                                APP_ISO_TxBlockCounter = 0;
-                            }
-                            else if (APP_ISO_TxSepTime)
-                            {
-                                StartTimer(APP_ISO_TxSepTmr, APP_ISO_TxSepTime);
-                                APP_State = APP_STATE_CAN_ISO_SEP_TIME;
-                            }
-
-                            if (APP_CAN_TxDataLen == 0)
-                            {
-                                if ((tx_frame.FIR.B.DLC < 8) && (APP_CAN_PaddingByte & 0x0100))
+                                if (APP_CAN_TxDataLen >= 7)
                                 {
-                                    memset(((uint8_t *)&tx_frame.data.u8[0] + tx_frame.FIR.B.DLC),
-                                           (uint8_t)APP_CAN_PaddingByte,
-                                           (8 - tx_frame.FIR.B.DLC));
                                     tx_frame.FIR.B.DLC = 8;
                                 }
+                                else
+                                {
+                                    tx_frame.FIR.B.DLC = APP_CAN_TxDataLen + 1;
+                                }
 
-                                APP_BuffTxIndex = 0;
-                                APP_BuffLockedBy = APP_BUFF_LOCKED_BY_NONE;
-                                StopTimer(APP_ISO_FC_WaitTmr);
-                                StopTimer(APP_ISO_TxSepTmr);
-                                APP_State = APP_STATE_IDLE;
+                                tx_frame.data.u8[0] = (0x0F & APP_ISO_TxFrameCounter) | 0x20;
+                                memcpy((uint8_t *)&tx_frame.data.u8[1], &APP_RxBuff[APP_BuffTxIndex], (tx_frame.FIR.B.DLC - 1));
+                                APP_BuffTxIndex = APP_BuffTxIndex + (tx_frame.FIR.B.DLC - 1);
+                                APP_CAN_TxDataLen = APP_CAN_TxDataLen - (tx_frame.FIR.B.DLC - 1);
+                                APP_ISO_TxFrameCounter++;
+                                APP_ISO_TxBlockCounter++;
+
+                                APP_CAN_CommStatus = true;
+                                CAN_WriteFrame(&tx_frame, portMAX_DELAY);
+
+                                if ((APP_ISO_FC_TxBlockSize > 0) && (APP_ISO_TxBlockCounter == APP_ISO_FC_TxBlockSize))
+                                {
+                                    StartTimer(APP_ISO_FC_WaitTmr, APP_ISO_FC_WAIT_TIME);
+                                    APP_State = APP_STATE_CAN_ISO_FC_WAIT_TIME;
+                                    APP_ISO_TxBlockCounter = 0;
+                                    break;
+                                }
+                                else if (APP_ISO_TxSepTime)
+                                {
+                                    StartTimer(APP_ISO_TxSepTmr, APP_ISO_TxSepTime);
+                                    APP_State = APP_STATE_CAN_ISO_SEP_TIME;
+                                    break;
+                                }
+
+                                if (APP_CAN_TxDataLen == 0)
+                                {
+                                    if ((tx_frame.FIR.B.DLC < 8) && (APP_CAN_PaddingByte & 0x0100))
+                                    {
+                                        memset(((uint8_t *)&tx_frame.data.u8[0] + tx_frame.FIR.B.DLC),
+                                               (uint8_t)APP_CAN_PaddingByte,
+                                               (8 - tx_frame.FIR.B.DLC));
+                                        tx_frame.FIR.B.DLC = 8;
+                                    }
+
+                                    APP_BuffTxIndex = 0;
+                                    APP_BuffLockedBy = APP_BUFF_LOCKED_BY_NONE;
+                                    StopTimer(APP_ISO_FC_WaitTmr);
+                                    StopTimer(APP_ISO_TxSepTmr);
+                                    APP_State = APP_STATE_IDLE;
+                                    break;
+                                }
                             }
-
-                            delay = 1;
                         }
                         else if (APP_ISO_FC_TxFlag == 1)
                         {
@@ -380,9 +398,9 @@ void APP_Task(void *pvParameters)
                     }
 
                     if ((((APP_Channel > APP_MSG_CHANNEL_NONE) && (APP_Channel < APP_MSG_CHANNEL_MAX)) || (APP_State == APP_STATE_CAN_ISO_FC_WAIT_TIME)) &&
-                        (CAN_ReadFrame(&rx_frame, pdMS_TO_TICKS(0)) == ESP_OK) && 
-                        (rx_frame.FIR.B.RTR == CAN_no_RTR) && 
-                        (rx_frame.MsgID == APP_CAN_RxFilterId) && 
+                        (CAN_ReadFrame(&rx_frame, pdMS_TO_TICKS(0)) == ESP_OK) &&
+                        (rx_frame.FIR.B.RTR == CAN_no_RTR) &&
+                        (rx_frame.MsgID == APP_CAN_RxFilterId) &&
                         (rx_frame.FIR.B.FF == APP_CAN_RxFilterIdType))
                     {
                         APP_CAN_CommStatus = true;
@@ -440,7 +458,9 @@ void APP_Task(void *pvParameters)
                                        (8 - tx_frame.FIR.B.DLC));
                                 tx_frame.FIR.B.DLC = 8;
                             }
-                            canFrameSend = true;
+
+                            APP_CAN_CommStatus = true;
+                            CAN_WriteFrame(&tx_frame, portMAX_DELAY);
                             break;
 
                         case APP_CAN_ISO_TYPE_CONSECUTIVE:
@@ -472,7 +492,9 @@ void APP_Task(void *pvParameters)
                                     tx_frame.data.u8[0] = 0x30;
                                     tx_frame.data.u8[1] = APP_ISO_FC_RxBlockSize;
                                     tx_frame.data.u8[2] = APP_ISO_FC_RxSepTime;
-                                    canFrameSend = true;
+
+                                    APP_CAN_CommStatus = true;
+                                    CAN_WriteFrame(&tx_frame, portMAX_DELAY);
                                 }
                             }
                             break;
@@ -483,14 +505,7 @@ void APP_Task(void *pvParameters)
 
                             if (rx_frame.data.u8[2] <= 127)
                             {
-                                // if(rx_frame.data.u8[2] == 0)
-                                // {
-                                //     APP_ISO_TxSepTime = 1;
-                                // }
-                                // else
-                                {
-                                    APP_ISO_TxSepTime = rx_frame.data.u8[2];
-                                }
+                                APP_ISO_TxSepTime = rx_frame.data.u8[2];
                             }
                             else
                             {
@@ -504,19 +519,6 @@ void APP_Task(void *pvParameters)
                         default:
                             break;
                         }
-                    }
-
-                    if (canFrameSend == true)
-                    {
-                        APP_CAN_CommStatus = true;
-                        CAN_WriteFrame(&tx_frame, pdMS_TO_TICKS(0));
-
-                        if (delay)
-                        {
-                            // ~300.25us
-                            // _DELAY(22000);
-                        }
-                        canFrameSend = false;
                     }
                 }
                 break;
