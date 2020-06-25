@@ -7,13 +7,10 @@
 #include "AsyncUDP.h"
 #include <ESPmDNS.h>
 #include "SPIFFS.h"
-#include <ArduinoJson.h>
 #include "ESPAsyncWebServer.h"
-#include "AsyncJson.h"
 #include "app.h"
 #include "a_led.h"
 #include "a_wifi.h"
-#include <DNSServer.h>
 #include <Update.h>
 
 AsyncUDP UDP;
@@ -301,23 +298,22 @@ void WIFI_Init(void)
             "/version",
             HTTP_POST,
             [](AsyncWebServerRequest *request) {
-                AsyncJsonResponse *jsonResp = new AsyncJsonResponse();
-                JsonVariant root = jsonResp->getRoot();
-                JsonVariant info = root.createNestedObject("info");
-                JsonVariant firmware = info.createNestedObject("Firmware");
-                firmware["MAJOR VER"] = MAJOR_VERSION;
-                firmware["MINOR VER"] = MINOR_VERSION;
-                firmware["SUB VER"] = SUB_VERSION;
-                info["COMMIT"] = SW_VERSION;
-                info["SDK"] = ESP.getSdkVersion();
-                info["CPU FREQ"] = getCpuFrequencyMhz();
-                info["APB FREQ"] = getApbFrequency();
-                info["FLASH SIZE"] = ESP.getFlashChipSize();
-                info["RAM SIZE"] = ESP.getHeapSize();
-                info["FREE RAM"] = ESP.getFreeHeap();
-                info["MAX RAM ALLOC"] = ESP.getMaxAllocHeap();
-                jsonResp->setLength();
-                request->send(jsonResp);
+                String info = "{\"info\":{";
+                info += "\"Firmware\":{";
+                info += "\"MAJOR VER\":" xstr(MAJOR_VERSION) ",";
+                info += "\"MINOR VER\":" xstr(MINOR_VERSION) ",";
+                info += "\"SUB VER\":" xstr(SUB_VERSION);
+                info += "},";
+                info += "\"COMMIT\":" "\"" SW_VERSION "\",";
+                info += "\"SDK\":\"" + String(ESP.getSdkVersion()) + "\",";
+                info += "\"CPU FREQ\":" + String(getCpuFrequencyMhz()) + ",";
+                info += "\"APB FREQ\":" + String(getApbFrequency()) + ",";
+                info += "\"FLASH SIZE\":" + String(ESP.getFlashChipSize()) + ",";
+                info += "\"RAM SIZE\":" + String(ESP.getHeapSize()) + ",";
+                info += "\"FREE RAM\":" + String(ESP.getFreeHeap()) + ",";
+                info += "\"MAX RAM ALLOC\":" + String(ESP.getMaxAllocHeap());
+                info += "}}";
+                request->send(200, "application/json", info);
             });
 
         HttpServer.on(
@@ -343,7 +339,7 @@ void WIFI_Init(void)
                 {
                     request->send(200, "application/json", scanStatus[(n * -1) - 1]);
 
-                    if (n == WIFI_SCAN_FAILED)
+                    if (n == WIFI_SCAN_RUNNING)
                     {
                         if (xTaskCreate(WIFI_ScanTask, "WIFI_ScanTask", 2000, NULL, tskIDLE_PRIORITY, NULL) != pdTRUE)
                         {
@@ -361,22 +357,23 @@ void WIFI_Init(void)
             "/fsread",
             HTTP_POST,
             [](AsyncWebServerRequest *request) {
-                AsyncJsonResponse *jsonResp = new AsyncJsonResponse();
-                JsonVariant rootJson = jsonResp->getRoot();
-
+                String info = "{";
                 File root = SPIFFS.open("/");
                 File file = root.openNextFile();
 
                 while (file)
                 {
-                    rootJson[String(file.name())] = file.size();
+                    info += "\"" + String(file.name()) + "\":"  + String(file.size());
                     file.close();
                     file = root.openNextFile();
+                    if(file)
+                    {
+                        info += ",";
+                    }
                 }
+                info += "}";
 
-                root.close();
-                jsonResp->setLength();
-                request->send(jsonResp);
+                request->send(200, "application/json", info);
             });
 
         HttpServer.on(
@@ -723,8 +720,8 @@ void WIFI_Task(void *pvParameters)
                         }
                         else
                         {
-                            idx = 0;
                             Serial.printf("ERROR: TCP Socket data <%ld> is bigger than buffer can hold\r\n", (len + idx));
+                            idx = 0;
                             break;
                         }
                     }
