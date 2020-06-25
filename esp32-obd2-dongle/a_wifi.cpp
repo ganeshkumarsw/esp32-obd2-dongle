@@ -147,6 +147,9 @@ void WIFI_Init(void)
             uint16_t crc16Calc;
             uint8_t buff[30];
             uint16_t crc16;
+            uint8_t errorCode = APP_RESP_ACK;
+
+            Serial.printf("INFO: Websocket data <%d> received\r\n", len);
 
             if (type == WS_EVT_CONNECT)
             {
@@ -160,29 +163,39 @@ void WIFI_Init(void)
             }
             else if (type == WS_EVT_DATA)
             {
-                p_WebSocketClient = client;
                 WIFI_SeqNo = data[0];
-                crc16Act = ((uint16_t)data[len - 2] << 8) | (uint16_t)data[len - 1];
-                crc16Calc = UTIL_CRC16_CCITT(0xFFFF, data, (len - 2));
 
-                if (crc16Act == crc16Calc)
+                if (len < sizeof(WIFI_TxBuff))
                 {
-                    APP_ProcessData(&data[11], (len - 13), APP_MSG_CHANNEL_WEB_SOC);
+                    p_WebSocketClient = client;
+                    crc16Act = ((uint16_t)data[len - 2] << 8) | (uint16_t)data[len - 1];
+                    crc16Calc = UTIL_CRC16_CCITT(0xFFFF, data, (len - 2));
+
+                    if (crc16Act == crc16Calc)
+                    {
+                        APP_ProcessData(&data[11], (len - 13), APP_MSG_CHANNEL_WEB_SOC);
+                    }
+                    else
+                    {
+                        errorCode = APP_RESP_NACK_15;
+                    }
                 }
                 else
                 {
+                    errorCode = APP_RESP_NACK_15;
+                }
+
+                if (errorCode != APP_RESP_ACK)
+                {
                     len = 0;
                     buff[len++] = 0x20;
-                    buff[len++] = 2 + 2 + 4;
+                    buff[len++] = 2 + 2;
                     buff[len++] = APP_RESP_NACK;
-                    buff[len++] = APP_RESP_NACK_15;
-                    buff[len++] = crc16Act >> 8;
-                    buff[len++] = crc16Act;
-                    buff[len++] = crc16Calc >> 8;
-                    buff[len++] = crc16Calc;
+                    buff[len++] = errorCode;
                     crc16 = UTIL_CRC16_CCITT(0xFFFF, &buff[2], (len - 2));
                     buff[len++] = crc16 >> 8;
                     buff[len++] = crc16;
+                    WIFI_WebSoc_Write(buff, len);
                 }
             }
         });
@@ -304,7 +317,8 @@ void WIFI_Init(void)
                 info += "\"MINOR VER\":" xstr(MINOR_VERSION) ",";
                 info += "\"SUB VER\":" xstr(SUB_VERSION);
                 info += "},";
-                info += "\"COMMIT\":" "\"" SW_VERSION "\",";
+                info += "\"COMMIT\":"
+                        "\"" SW_VERSION "\",";
                 info += "\"SDK\":\"" + String(ESP.getSdkVersion()) + "\",";
                 info += "\"CPU FREQ\":" + String(getCpuFrequencyMhz()) + ",";
                 info += "\"APB FREQ\":" + String(getApbFrequency()) + ",";
@@ -363,10 +377,10 @@ void WIFI_Init(void)
 
                 while (file)
                 {
-                    info += "\"" + String(file.name()) + "\":"  + String(file.size());
+                    info += "\"" + String(file.name()) + "\":" + String(file.size());
                     file.close();
                     file = root.openNextFile();
-                    if(file)
+                    if (file)
                     {
                         info += ",";
                     }
@@ -737,15 +751,53 @@ void WIFI_Task(void *pvParameters)
 
                 StopTimer(socketTimeoutTmr);
 
-                if (idx)
+                if (idx > 0)
                 {
+                    uint8_t errorCode = APP_RESP_ACK;
+                    uint16_t crc16Act;
+                    uint16_t crc16Calc;
+                    uint8_t buff[30];
+                    uint16_t crc16;
+
                     WIFI_SeqNo = WIFI_RxBuff[0];
-                    APP_ProcessData(&WIFI_RxBuff[11], (len - 13), APP_MSG_CHANNEL_TCP_SOC);
                     Serial.printf("INFO: TCP Socket data <%ld> received\r\n", idx);
+
+                    if (idx < sizeof(WIFI_TxBuff))
+                    {
+                        crc16Act = ((uint16_t)WIFI_RxBuff[len - 2] << 8) | (uint16_t)WIFI_RxBuff[len - 1];
+                        crc16Calc = UTIL_CRC16_CCITT(0xFFFF, WIFI_RxBuff, (len - 2));
+
+                        if (crc16Act == crc16Calc)
+                        {
+                            APP_ProcessData(&WIFI_RxBuff[11], (idx - 13), APP_MSG_CHANNEL_TCP_SOC);
+                        }
+                        else
+                        {
+                            errorCode = APP_RESP_NACK_15;
+                        }
+                    }
+                    else
+                    {
+                        errorCode = APP_RESP_NACK_15;
+                    }
+
+                    if (errorCode != APP_RESP_ACK)
+                    {
+                        len = 0;
+                        buff[len++] = 0x20;
+                        buff[len++] = 2 + 2;
+                        buff[len++] = APP_RESP_NACK;
+                        buff[len++] = errorCode;
+                        crc16 = UTIL_CRC16_CCITT(0xFFFF, &buff[2], (len - 2));
+                        buff[len++] = crc16 >> 8;
+                        buff[len++] = crc16;
+                        WIFI_TCP_Soc_Write(buff, len);
+                    }
+
                     idx = 0;
                 }
 
-                if (WIFI_TxLen)
+                if (WIFI_TxLen > 0)
                 {
                     client.write(WIFI_TxBuff, WIFI_TxLen);
                     Serial.println("INFO: App processed TCP Socket Data");
