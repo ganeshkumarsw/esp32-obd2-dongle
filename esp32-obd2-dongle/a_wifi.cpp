@@ -764,8 +764,8 @@ void WIFI_Task(void *pvParameters)
 
                     if (idx < sizeof(WIFI_TxBuff))
                     {
-                        crc16Act = ((uint16_t)WIFI_RxBuff[len - 2] << 8) | (uint16_t)WIFI_RxBuff[len - 1];
-                        crc16Calc = UTIL_CRC16_CCITT(0xFFFF, WIFI_RxBuff, (len - 2));
+                        crc16Act = ((uint16_t)WIFI_RxBuff[idx - 2] << 8) | (uint16_t)WIFI_RxBuff[idx - 1];
+                        crc16Calc = UTIL_CRC16_CCITT(0xFFFF, WIFI_RxBuff, (idx - 2));
 
                         if (crc16Act == crc16Calc)
                         {
