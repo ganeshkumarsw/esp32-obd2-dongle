@@ -116,13 +116,13 @@
 
     var JSTimer;
 
-    function LoadJS(url, callback) {
+    function LoadJquery(url, callback) {
       const script = document.createElement('script');
       script.src = url; // URL for the third-party library being loaded.
       script.id = url; // e.g., googleMaps or stripe
       document.body.appendChild(script);
       JSTimer = setTimeout(function () {
-        LoadJS(url);
+        LoadJquery(url);
       }, 3000);
 
       script.onload = () => {
@@ -132,7 +132,7 @@
     }
 
     function defer(method) {
-      LoadJS("jquery.min.js", method);
+      LoadJquery("jquery.min.js", method);
     }
 
     var LoadScripts = function (done) {
@@ -142,16 +142,17 @@
     }
 
     var LoadCSS = function (url, done) {
-      $.ajax({
-        url: url,
-        dataType: "script",
-        timeout: 5000,
-        success: function (data) {
-          $('head').append("<style>" + data + "</style>");
+      $.get(url, { cache: true }, function (css) {
+        //Now that the stylesheet is in the browser cache, it will load instantly:  
+        $("head").append($("<link>", {
+          rel: "stylesheet",
+          type: "text/css",
+          href: url
+        }));
+
+      }).then(function () {
+        if (done) {
           done();
-        },
-        error: function (e) {
-          LoadCSS(url, done);
         }
       });
     }
@@ -193,26 +194,35 @@
       });
 
       eventSource.addEventListener("scan", function (event) {
-        var result = jQuery.parseJSON(event.data);
-        console.log(jQuery.parseJSON(event.data));
-        $('.card').empty();
-        $('.card').html('<table class="table table-hover">' +
-          '<thead><tr><th scope="col">#</th><th scope="col">SSID</th><th scope="col">BSSID</th><th scope="col">Signal</th><th scope="col">Channel</th><th scope="col">Security</th></tr></thead>' +
-          '<tbody></tbody></table>');
-        $('table').children('tbody').empty();
-        var val = 0;
-        $.each(result, function (key, value) {
-          var html = "";
-          html += '<tr>';
-          html += '<th scope="row">' + (val++) + '</th>';
-          html += '<td>' + value.ssid + '</td>';
-          html += '<td>' + value.bssid + '</td>';
-          html += '<td>' + value.rssi + '</td>';
-          html += '<td>' + value.channel + '</td>';
-          html += '<td>' + value.secure + '</td>';
-          html += '</tr>';
-          $('table').children('tbody').append(html);
-        });
+        try {
+          var result = jQuery.parseJSON(event.data);
+          console.log(jQuery.parseJSON(event.data));
+          $('.card').empty();
+          $('.card').html('<table class="table table-hover">' +
+            '<thead><tr><th scope="col">#</th><th scope="col">SSID</th><th scope="col">BSSID</th><th scope="col">Signal</th><th scope="col">Channel</th><th scope="col">Security</th></tr></thead>' +
+            '<tbody></tbody></table>');
+          $('table').children('tbody').empty();
+          var val = 0;
+          $.each(result, function (key, value) {
+            var html = "";
+            html += '<tr>';
+            html += '<th scope="row">' + (val++) + '</th>';
+            html += '<td>' + value.ssid + '</td>';
+            html += '<td>' + value.bssid + '</td>';
+            html += '<td>' + value.rssi + '</td>';
+            html += '<td>' + value.channel + '</td>';
+            html += '<td>' + value.secure + '</td>';
+            html += '</tr>';
+            $('table').children('tbody').append(html);
+          });
+        }
+        catch (err) {
+          $('.card').empty();
+          $('.card').html('<div class="mt-3 d-flex justify-content-center">' +
+          '<span>No scan result</span>' +
+          '</div>');
+        }
+
       });
 
       eventSource.onerror = function (event) {
