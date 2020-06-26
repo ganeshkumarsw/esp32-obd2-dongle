@@ -9,12 +9,12 @@ extern "C"
 #define IsTimerElapsed(x) ((x > 0) && (x <= (xTaskGetTickCount() / portTICK_PERIOD_MS)))
 #define IsTimerRunning(x) ((x > 0) && (x > (xTaskGetTickCount() / portTICK_PERIOD_MS)))
 #define IsTimerEnabled(x) ((x) > 0)
-#define StartTimer(x, y)   \
-    {                      \
+#define StartTimer(x, y)                                    \
+    {                                                       \
         x = (xTaskGetTickCount() / portTICK_PERIOD_MS) + y; \
     }
-#define ResetTimer(x, y)   \
-    {                      \
+#define ResetTimer(x, y)                                    \
+    {                                                       \
         x = (xTaskGetTickCount() / portTICK_PERIOD_MS) + y; \
     }
 #define StopTimer(x) \
@@ -99,6 +99,14 @@ extern "C"
         APP_CAN_ISO_TYPE_CONSECUTIVE,
         APP_CAN_ISO_TYPE_FLOWCONTROL,
     } APP_CAN_ISO_TYPE_t;
+
+    // Flow control frame transfer allowed
+    typedef enum
+    {
+        APP_CAN_ISO_FC_TM_CONT = 0,
+        APP_CAN_ISO_FC_TM_WAIT,
+        APP_CAN_ISO_FC_TM_ABORT,
+    } APP_CAN_ISO_FC_TM_t;
 
     typedef enum
     {

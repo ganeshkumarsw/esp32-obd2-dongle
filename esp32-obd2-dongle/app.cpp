@@ -9,6 +9,8 @@
 #include "a_wifi.h"
 #include "app.h"
 
+#define SIMULATE 1
+
 static void APP_Frame0(uint8_t *p_buff, uint16_t len, uint8_t channel);
 static void APP_Frame1(uint8_t *p_buff, uint16_t len, uint8_t channel);
 static void APP_Frame2(uint8_t *p_buff, uint16_t len, uint8_t channel);
@@ -265,15 +267,22 @@ void APP_Task(void *pvParameters)
                         StartTimer(APP_ISO_FC_WaitTmr, APP_ISO_FC_WAIT_TIME);
                         APP_ISO_TxBlockCounter = 0;
                         APP_ISO_TxFrameCounter = 1;
+                        APP_ISO_FC_TxFlag = APP_CAN_ISO_FC_TM_CONT;
                         APP_State = APP_STATE_CAN_ISO_FC_WAIT_TIME;
+
+#if SIMULATE
+                        APP_ISO_FC_TxBlockSize = 0;
+                        APP_State = APP_STATE_CAN_ISO_CONSECUTIVE;
+#endif
 
                         APP_CAN_CommStatus = true;
                         CAN_WriteFrame(&tx_frame, portMAX_DELAY);
                         break;
 
                     case APP_STATE_CAN_ISO_CONSECUTIVE:
-                        if (APP_ISO_FC_TxFlag == 0)
+                        switch (APP_ISO_FC_TxFlag)
                         {
+                        case APP_CAN_ISO_FC_TM_CONT:
                             while (1)
                             {
                                 if (APP_CAN_TxDataLen >= 7)
@@ -327,20 +336,25 @@ void APP_Task(void *pvParameters)
                                     break;
                                 }
                             }
-                        }
-                        else if (APP_ISO_FC_TxFlag == 1)
-                        {
+                            break;
+
+                        case APP_CAN_ISO_FC_TM_WAIT:
                             StartTimer(APP_ISO_FC_WaitTmr, 100);
                             APP_State = APP_STATE_CAN_ISO_FC_WAIT_TIME;
-                        }
-                        else if (APP_ISO_FC_TxFlag == 2)
-                        {
+                            break;
+
+                        case APP_CAN_ISO_FC_TM_ABORT:
+
                             APP_BuffTxIndex = 0;
                             APP_CAN_TxDataLen = 0;
                             APP_BuffLockedBy = APP_BUFF_LOCKED_BY_NONE;
                             StopTimer(APP_ISO_FC_WaitTmr);
                             StopTimer(APP_ISO_TxSepTmr);
                             APP_State = APP_STATE_IDLE;
+                            break;
+
+                        default:
+                            break;
                         }
                         break;
 
