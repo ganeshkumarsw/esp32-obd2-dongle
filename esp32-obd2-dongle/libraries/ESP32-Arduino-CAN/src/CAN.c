@@ -47,11 +47,14 @@
 static CAN_filter_t CAN_Filter = {Dual_Mode, 0, 0, 0, 0, 0Xff, 0Xff, 0Xff, 0Xff};
 static CAN_device_t CAN_cfg;
 static void CAN_ReadFramePhy();
-static void CAN_ISR(void *arg_p);
+static void CAN_Drv_ISR(void *arg_p);
 static int CAN_WriteFramePhy(const CAN_frame_t *p_frame);
 static SemaphoreHandle_t CAN_SemTxComplete;
+static CAN_frame_t CAN_TxFrame;
 
-static void CAN_Drv_ISR(void *arg_p)
+static void CAN_Drv_ReadFramePhy(BaseType_t *higherPriorityTaskWoken);
+
+static void IRAM_ATTR CAN_Drv_ISR(void *arg_p)
 {
 
 	// Interrupt flag buffer
@@ -63,7 +66,7 @@ static void CAN_Drv_ISR(void *arg_p)
 
 	// Handle RX frame available interrupt
 	if ((interrupt & __CAN_IRQ_RX) != 0)
-		CAN_read_frame_phy(&higherPriorityTaskWoken);
+		CAN_Drv_ReadFramePhy(&higherPriorityTaskWoken);
 
 	// Handle TX complete interrupt
 	// Handle error interrupts.
@@ -75,7 +78,15 @@ static void CAN_Drv_ISR(void *arg_p)
 					  | __CAN_IRQ_BUS_ERR		   // 0x80
 					  )) != 0)
 	{
-		xSemaphoreGiveFromISR(CAN_SemTxComplete, &higherPriorityTaskWoken);
+
+		if (xQueueReceiveFromISR(CAN_cfg.tx_queue, (void *)&CAN_TxFrame, (TickType_t)0) == pdPASS)
+		{
+			CAN_Drv_WriteFrame(&CAN_TxFrame);
+		}
+		else
+		{
+			xSemaphoreGiveFromISR(CAN_SemTxComplete, &higherPriorityTaskWoken);
+		}
 	}
 
 	// check if any higher priority task has been woken by any handler
@@ -176,12 +187,12 @@ int CAN_Drv_Init(const CAN_device_t *p_devCfg)
 	// Time quantum
 	double __tq;
 
-	if (p_devCfg != NULL)
+	if ((p_devCfg == NULL) || (p_devCfg->tx_queue == NULL) || (p_devCfg->rx_queue == NULL))
 	{
 		return -1;
 	}
 
-    memcpy((uint8_t *)&CAN_cfg, p_devCfg, sizeof(CAN_device_t));
+	memcpy((uint8_t *)&CAN_cfg, p_devCfg, sizeof(CAN_device_t));
 
 	// enable module
 	DPORT_SET_PERI_REG_MASK(DPORT_PERIP_CLK_EN_REG, DPORT_CAN_CLK_EN);
@@ -265,8 +276,13 @@ int CAN_Drv_Init(const CAN_device_t *p_devCfg)
 	// clear interrupt flags
 	(void)MODULE_CAN->IR.U;
 
+	int esp_err;
 	// install CAN ISR
-	esp_intr_alloc(ETS_CAN_INTR_SOURCE, 0, CAN_ISR, NULL, NULL);
+	esp_err = esp_intr_alloc(ETS_CAN_INTR_SOURCE, ESP_INTR_FLAG_IRAM, CAN_Drv_ISR, NULL, NULL);
+	if (esp_err != ESP_OK)
+	{
+		printf("INFO; CAN ISR failed to alloc <%d>", esp_err);
+	}
 
 	// allocate the tx complete semaphore
 	CAN_SemTxComplete = xSemaphoreCreateBinary();
