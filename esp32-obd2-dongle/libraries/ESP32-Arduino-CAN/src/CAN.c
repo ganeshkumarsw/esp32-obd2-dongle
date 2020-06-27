@@ -54,7 +54,7 @@ static CAN_frame_t CAN_TxFrame;
 
 static void CAN_Drv_ReadFramePhy(BaseType_t *higherPriorityTaskWoken);
 
-static void IRAM_ATTR CAN_Drv_ISR(void *arg_p)
+static IRAM_ATTR void CAN_Drv_ISR(void *arg_p)
 {
 
 	// Interrupt flag buffer
@@ -66,11 +66,27 @@ static void IRAM_ATTR CAN_Drv_ISR(void *arg_p)
 
 	// Handle RX frame available interrupt
 	if ((interrupt & __CAN_IRQ_RX) != 0)
+	{
 		CAN_Drv_ReadFramePhy(&higherPriorityTaskWoken);
+	}
 
 	// Handle TX complete interrupt
 	// Handle error interrupts.
-	if ((interrupt & (__CAN_IRQ_TX | __CAN_IRQ_ERR //0x4
+	if ((interrupt & __CAN_IRQ_TX) != 0)
+	{
+		xSemaphoreGiveFromISR(CAN_SemTxComplete, &higherPriorityTaskWoken);
+		if (xQueueReceiveFromISR(CAN_cfg.tx_queue, (void *)&CAN_TxFrame, (TickType_t)0) == pdPASS)
+		{
+			CAN_Drv_WriteFrame(&CAN_TxFrame);
+		}
+		else
+		{
+		}
+	}
+
+	// Handle TX complete interrupt
+	// Handle error interrupts.
+	if ((interrupt & (__CAN_IRQ_ERR // 0x4
 					  | __CAN_IRQ_DATA_OVERRUN	   // 0x8
 					  | __CAN_IRQ_WAKEUP		   // 0x10
 					  | __CAN_IRQ_ERR_PASSIVE	   // 0x20
@@ -78,20 +94,14 @@ static void IRAM_ATTR CAN_Drv_ISR(void *arg_p)
 					  | __CAN_IRQ_BUS_ERR		   // 0x80
 					  )) != 0)
 	{
-
-		if (xQueueReceiveFromISR(CAN_cfg.tx_queue, (void *)&CAN_TxFrame, (TickType_t)0) == pdPASS)
-		{
-			CAN_Drv_WriteFrame(&CAN_TxFrame);
-		}
-		else
-		{
-			xSemaphoreGiveFromISR(CAN_SemTxComplete, &higherPriorityTaskWoken);
-		}
+		
 	}
 
 	// check if any higher priority task has been woken by any handler
 	if (higherPriorityTaskWoken)
+	{
 		portYIELD_FROM_ISR();
+	}
 }
 
 static void CAN_Drv_ReadFramePhy(BaseType_t *higherPriorityTaskWoken)
@@ -281,7 +291,7 @@ int CAN_Drv_Init(const CAN_device_t *p_devCfg)
 	esp_err = esp_intr_alloc(ETS_CAN_INTR_SOURCE, ESP_INTR_FLAG_IRAM, CAN_Drv_ISR, NULL, NULL);
 	if (esp_err != ESP_OK)
 	{
-		printf("INFO; CAN ISR failed to alloc <%d>", esp_err);
+		printf("INFO: CAN ISR failed to alloc <%d>", esp_err);
 	}
 
 	// allocate the tx complete semaphore

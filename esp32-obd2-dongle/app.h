@@ -88,8 +88,8 @@ extern "C"
         APP_STATE_CAN_ISO_CONSECUTIVE,
         APP_STATE_CAN_ISO_SEP_TIME,
         APP_STATE_CAN_ISO_FC_WAIT_TIME,
-        APP_STATE_SEND_TO_APP,
-        APP_STATE_IDLE,
+        APP_STATE_CAN_ISO_SEND_TO_APP,
+        APP_STATE_CAN_ISO_IDLE,
     } APP_STATE_t;
 
     typedef enum
