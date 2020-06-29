@@ -13,6 +13,8 @@
 #include "a_wifi.h"
 #include <Update.h>
 
+#define STA_STATIC_IP 0
+
 AsyncUDP UDP;
 AsyncWebServer HttpServer(80);
 AsyncWebSocket WebSocket("/ws"); // access at ws://[esp ip]/ws
@@ -25,6 +27,8 @@ SemaphoreHandle_t WIFI_SemWebSocTxComplete;
 
 char WIFI_STA_SSID[50] = STA_WIFI_SSID;
 char WIFI_STA_Password[50] = STA_WIFI_PASSWORD;
+char WIFI_AP_SSID[50] = "";
+char WIFI_AP_Password[50] = STA_WIFI_PASSWORD;
 uint8_t WIFI_SeqNo;
 uint8_t WIFI_RxBuff[4130];
 uint8_t WIFI_TxBuff[4130];
@@ -39,8 +43,6 @@ void WIFI_Init(void)
 {
     wl_status_t wifiStatus;
     bool staConnected = false;
-    char apSSID[32];
-    char apPass[63];
     char mac[6];
     Preferences preferences;
 
@@ -63,20 +65,27 @@ void WIFI_Init(void)
     ESP_LOGI("WIFI", "MAC: %s", WiFi.macAddress().c_str());
 
     WiFi.macAddress((uint8_t *)mac);
-    sprintf(apSSID, "%s-%02X%02X", AP_WIFI_SSID, mac[4], mac[5]);
-    Serial.printf("INFO: SSID <%s>\r\n", apSSID);
+    sprintf(WIFI_AP_SSID, "%s-%02X%02X", AP_WIFI_SSID, mac[4], mac[5]);
+    Serial.printf("INFO: SSID <%s>\r\n", WIFI_AP_SSID);
 
-    if (preferences.getString("stSSID") == "")
+    if ((preferences.getString("stSSID") != "") && (strnlen(preferences.getString("stSSID").c_str(), 50) < 50))
+    {
+        if ((preferences.getString("stPASS") != "") && (strnlen(preferences.getString("stPASS").c_str(), 50) < 50))
+        {
+            WiFi.begin((char *)preferences.getString("stSSID").c_str(), (char *)preferences.getString("stPASS").c_str());
+#if STA_STATIC_IP
+            WiFi.config(IPAddress(192, 168, 43, 77), IPAddress(192, 168, 43, 1), IPAddress(255, 255, 255, 0), IPAddress(8, 8, 8, 8));
+#endif
+        }
+        else
+        {
+            Serial.println("INFO: ST mode PASSWORD is missing. Update password");
+        }
+    }
+    else
     {
         Serial.println("INFO: ST mode SSID Key is missing. Update SSID");
     }
-
-    if (preferences.getString("stPASS") == "")
-    {
-        Serial.println("INFO: ST mode PASSWORD is missing. Update password");
-    }
-
-    WiFi.begin((char *)preferences.getString("stSSID").c_str(), (char *)preferences.getString("stPASS").c_str());
 
     if (!MDNS.begin("obd2"))
     {
@@ -89,8 +98,8 @@ void WIFI_Init(void)
         MDNS.addService("_http", "_tcp", 80);
     }
 
-    int n = 0; //WiFi.scanNetworks();
-    Serial.println("Scan done");
+    int n = WiFi.scanNetworks();
+    Serial.println("INFO: AP Scan completed");
     if (n == 0)
     {
         Serial.println("INFO: No networks found");
@@ -99,26 +108,10 @@ void WIFI_Init(void)
     {
         for (int i = 0; i < n; ++i)
         {
-            Serial.println("INFO: SSID: " + WiFi.SSID(i));
-            // Print SSID and RSSI for each network found
             if (WiFi.SSID(i).equals(preferences.getString("stSSID")) == true)
             {
                 staConnected = true;
-                delay(10);
-                wifiStatus = WiFi.begin((char *)preferences.getString("stSSID").c_str(), (char *)preferences.getString("stPASS").c_str());
-                WiFi.setSleep(false);
-                Serial.println("INFO: WIFI STA begin");
-                // Serial.println(wifiStatus);
-
-                if (WiFi.getAutoConnect() == false)
-                {
-                    WiFi.setAutoConnect(true);
-                }
-
-                if (WiFi.getAutoReconnect() == false)
-                {
-                    WiFi.setAutoReconnect(true);
-                }
+                Serial.println("INFO: AP found and joined");
                 break;
             }
         }
@@ -127,9 +120,9 @@ void WIFI_Init(void)
     if (staConnected == false)
     {
         Serial.println("INFO: WIFI AP begin");
-        if (!WiFi.softAP(apSSID, AP_WIFI_PASSWORD))
+        if (!WiFi.softAP(WIFI_AP_SSID, WIFI_AP_Password))
         {
-            Serial.println("INFO: ESP32 SoftAP failed to start!");
+            Serial.println("INFO: SoftAP failed to start!");
         }
     }
 
@@ -623,6 +616,11 @@ void WIFI_SupportTask(void *pvParameters)
                         packet.println(WiFi.localIP());
                     });
                 }
+
+                // if (WiFi.softAPdisconnect(true) == ESP_OK)
+                // {
+                //     Serial.println("INFO: SoftAP turned OFF");
+                // }
                 break;
 
             case WL_DISCONNECTED:
@@ -663,6 +661,12 @@ void WIFI_SupportTask(void *pvParameters)
             {
                 wifiConnect = false;
                 WiFi.begin((char *)preferences.getString("stSSID").c_str(), (char *)preferences.getString("stPASS").c_str());
+
+                // Serial.println("INFO: WIFI AP begin");
+                // if (WiFi.softAP(WIFI_AP_SSID, WIFI_AP_Password) == false)
+                // {
+                //     Serial.println("INFO: SoftAP failed to start!");
+                // }
             }
         }
 

@@ -60,9 +60,18 @@ extern "C"
 		gpio_num_t rx_pin_id;	/**< \brief RX pin. */
 		QueueHandle_t rx_queue; /**< \brief Handler to FreeRTOS RX queue. */
 		QueueHandle_t tx_queue; /**< \brief Handler to FreeRTOS TX queue. */
+		QueueHandle_t err_queue; /**< \brief Handler to FreeRTOS TX queue. */
 		TaskHandle_t tx_handle; /**< \brief Handler to FreeRTOS TX task. */
 		TaskHandle_t rx_handle; /**< \brief Handler to FreeRTOS RX task. */
 	} CAN_device_t;
+	
+	typedef struct 
+	{
+		uint32_t RXERR;
+		uint32_t TXERR;
+		uint32_t IR;
+	}CAN_error_t;
+	
 
 #ifdef __cplusplus
 }
