@@ -61,7 +61,7 @@ void WIFI_Init(void)
 
     preferences.begin("config", false);
 
-    LED_SetLedState(WIFI_CONN_LED, LED_STATE_TOGGLE, LED_TOGGLE_RATE_1HZ);
+    LED_SetLedState(WIFI_CONN_LED, LED_STATE_HIGH, LED_TOGGLE_RATE_1HZ);
     ESP_LOGI("WIFI", "MAC: %s", WiFi.macAddress().c_str());
 
     WiFi.macAddress((uint8_t *)mac);
@@ -625,7 +625,7 @@ void WIFI_SupportTask(void *pvParameters)
 
             case WL_DISCONNECTED:
                 Serial.println("INFO: " str(WL_DISCONNECTED));
-                LED_SetLedState(WIFI_CONN_LED, LED_STATE_TOGGLE, LED_TOGGLE_RATE_1HZ);
+                LED_SetLedState(WIFI_CONN_LED, LED_STATE_HIGH, LED_TOGGLE_RATE_1HZ);
                 wifiConnect = true;
                 break;
 

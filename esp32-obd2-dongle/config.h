@@ -35,12 +35,20 @@ typedef enum
     LED_OUT_MAX,
 }led_num_t;
 
-#define BLE_CONN_LED    LED_OUT_4     // Blue LED
-#define HEART_BEAT_LED  BLE_CONN_LED
-#define COMM_LED        LED_OUT_6     // Yellow LED
-#define WIFI_CONN_LED   LED_OUT_7     // Green LED
-#define SECURITY_LED    LED_OUT_5     // Amber LED
-#define ERROR_LED       LED_OUT_3     // Red LED
+#define LED_RED         LED_OUT_1
+#define LED_BLUE        LED_OUT_2
+#define LED_COLOR_0     LED_OUT_3
+#define LED_COLOR_1     LED_OUT_4
+#define LED_YELLOW      LED_OUT_5
+#define LED_GREEN       LED_OUT_6
+#define LED_AMBER       LED_OUT_7
+
+
+#define HEART_BEAT_LED  LED_BLUE
+#define COMM_LED        LED_YELLOW
+#define WIFI_CONN_LED   LED_GREEN
+#define SECURITY_LED    LED_AMBER
+#define ERROR_LED       LED_RED
 
 
 #ifdef __cplusplus
