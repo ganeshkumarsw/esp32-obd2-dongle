@@ -157,11 +157,20 @@ static int CAN_WriteFramePhy(const CAN_frame_t *p_frame)
 {
     // byte iterator
     uint8_t __byte_i;
+    {
+        // wait until previous transmission is completed
+        while ((MODULE_CAN->SR.B.TBS == 0) || (MODULE_CAN->SR.B.TCS == 0))
+            ;
+        MODULE_CAN->MBX_CTRL.FCTRL.FIR.U = 0;
+        _CAN_SET_EXT_ID(0);
+        // Copy the frame data to the hardware
+        for (__byte_i = 0; __byte_i < p_frame->FIR.B.DLC; __byte_i++)
+            MODULE_CAN->MBX_CTRL.FCTRL.TX_RX.EXT.data[__byte_i] = 0;
 
-    // wait until previous transmission is completed
-    while ((MODULE_CAN->SR.B.TBS == 0) || (MODULE_CAN->SR.B.TCS == 0))
-        ;
-
+        // wait until previous transmission is completed
+        while ((MODULE_CAN->SR.B.TBS == 0) || (MODULE_CAN->SR.B.TCS == 0))
+            ;
+    }
     // copy frame information record
     MODULE_CAN->MBX_CTRL.FCTRL.FIR.U = p_frame->FIR.U;
 
@@ -305,7 +314,6 @@ int CAN_Drv_Init(const CAN_device_t *p_devCfg)
     }
     // allocate the tx complete semaphore
     CAN_SemTxComplete = xSemaphoreCreateBinary();
-    xSemaphoreGive(CAN_SemTxComplete);
 
     // Showtime. Release Reset Mode.
     MODULE_CAN->MOD.B.RM = 0;
@@ -320,11 +328,11 @@ int CAN_Drv_WriteFrame(const CAN_frame_t *p_frame)
         return -1;
     }
 
-    // wait for the frame tx to complete
-    xSemaphoreTake(CAN_SemTxComplete, portMAX_DELAY);
-
     // Write the frame to the controller
     CAN_WriteFramePhy(p_frame);
+
+    // wait for the frame tx to complete
+    xSemaphoreTake(CAN_SemTxComplete, portMAX_DELAY);
 
     return 0;
 }

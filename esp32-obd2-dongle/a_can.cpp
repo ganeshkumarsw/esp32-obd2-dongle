@@ -191,17 +191,17 @@ void CAN_Task(void *pvParameters)
     {
         if (xQueueReceive(CAN_cfg.tx_queue, (void *)&frame, portMAX_DELAY) == pdPASS)
         {
-            // Serial.printf("DEBUG CAN MSG Pushed, MSGID <0x%X>, DLC <0x%X>, D <0x%X>,<0x%X>,<0x%X>,<0x%X>,<0x%X>,<0x%X>,<0x%X>,<0x%X>\r\n",
-            //               frame.MsgID,
-            //               frame.FIR.B.DLC,
-            //               frame.data.u8[0],
-            //               frame.data.u8[1],
-            //               frame.data.u8[2],
-            //               frame.data.u8[3],
-            //               frame.data.u8[4],
-            //               frame.data.u8[5],
-            //               frame.data.u8[6],
-            //               frame.data.u8[7]);
+            Serial.printf("DEBUG: CAN Task, MSGID <0x%X>, DLC <0x%02X>, D <0x%02X>,<0x%02X>,<0x%02X>,<0x%02X>,<0x%02X>,<0x%02X>,<0x%02X>,<0x%02X>\r\n",
+                          frame.MsgID,
+                          frame.FIR.B.DLC,
+                          frame.data.u8[0],
+                          frame.data.u8[1],
+                          frame.data.u8[2],
+                          frame.data.u8[3],
+                          frame.data.u8[4],
+                          frame.data.u8[5],
+                          frame.data.u8[6],
+                          frame.data.u8[7]);
             CAN_Drv_WriteFrame(&frame);
         }
 
