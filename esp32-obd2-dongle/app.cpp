@@ -37,7 +37,6 @@ void (*cb_APP_Send[])(uint8_t *, uint16_t) =
         WIFI_WebSoc_Write};
 
 uint8_t APP_CAN_RxBuff[4130] = {0};
-uint8_t APP_RxPackBuff[4130] = {0};
 uint8_t APP_CAN_TxBuff[4130] = {0};
 uint16_t APP_BuffRxIndex;
 uint16_t APP_CAN_TxIndex;
@@ -259,6 +258,7 @@ void APP_Task(void *pvParameters)
                     case APP_STATE_CAN_ISO_FIRST:
                         if (APP_BuffLockedBy == APP_BUFF_LOCKED_BY_ISO_TP_TX_FF)
                         {
+                            Serial.println("INFO: " str(APP_STATE_CAN_ISO_FIRST));
                             tx_frame.FIR.B.DLC = 8;
                             tx_frame.data.u8[0] = (0x0F & (uint8_t)(APP_CAN_TxDataLen >> 8)) | 0x10;
                             tx_frame.data.u8[1] = (uint8_t)APP_CAN_TxDataLen;
@@ -278,7 +278,6 @@ void APP_Task(void *pvParameters)
 #endif
                             APP_CAN_CommStatus = true;
                             CAN_WriteFrame(&tx_frame, portMAX_DELAY);
-                            Serial.println("INFO: " str(APP_STATE_CAN_ISO_FIRST));
                         }
                         break;
 
@@ -316,6 +315,17 @@ void APP_Task(void *pvParameters)
                                 }
 
                                 APP_CAN_CommStatus = true;
+                                // Serial.printf("DEBUG MSGID <0x%X>, DLC <0x%X>, D <0x%X>,<0x%X>,<0x%X>,<0x%X>,<0x%X>,<0x%X>,<0x%X>,<0x%X>\r\n",
+                                //               tx_frame.MsgID,
+                                //               tx_frame.FIR.B.DLC,
+                                //               tx_frame.data.u8[0],
+                                //               tx_frame.data.u8[1],
+                                //               tx_frame.data.u8[2],
+                                //               tx_frame.data.u8[3],
+                                //               tx_frame.data.u8[4],
+                                //               tx_frame.data.u8[5],
+                                //               tx_frame.data.u8[6],
+                                //               tx_frame.data.u8[7]);
                                 CAN_WriteFrame(&tx_frame, portMAX_DELAY);
 
                                 if ((APP_ISO_FC_TxBlockSize > 0) && (APP_ISO_TxBlockCounter == APP_ISO_FC_TxBlockSize))
@@ -414,16 +424,17 @@ void APP_Task(void *pvParameters)
                         if (((APP_Channel > APP_MSG_CHANNEL_NONE) && (APP_Channel < APP_MSG_CHANNEL_MAX)) && (cb_APP_Send[APP_Channel] != NULL))
                         {
                             crc16 = UTIL_CRC16_CCITT(0xFFFF, APP_CAN_RxBuff, APP_CAN_RxDataLen);
-                            APP_RxPackBuff[respLen++] = 0x40 | (((APP_CAN_RxDataLen + 2) >> 8) & 0x0F);
-                            APP_RxPackBuff[respLen++] = (APP_CAN_RxDataLen + 2);
-
-                            memcpy(&APP_RxPackBuff[respLen], APP_CAN_RxBuff, APP_CAN_RxDataLen);
-
+                            for (uint32_t i = (APP_CAN_RxDataLen - 1); i <= 0; i--)
+                            {
+                                APP_CAN_RxBuff[i + 2] = APP_CAN_RxBuff[i];
+                            }
+                            APP_CAN_RxBuff[respLen++] = 0x40 | (((APP_CAN_RxDataLen + 2) >> 8) & 0x0F);
+                            APP_CAN_RxBuff[respLen++] = (APP_CAN_RxDataLen + 2);
                             respLen = respLen + APP_CAN_RxDataLen;
-                            APP_RxPackBuff[respLen++] = crc16 >> 8;
-                            APP_RxPackBuff[respLen++] = crc16;
+                            APP_CAN_RxBuff[respLen++] = crc16 >> 8;
+                            APP_CAN_RxBuff[respLen++] = crc16;
 
-                            cb_APP_Send[APP_Channel](APP_RxPackBuff, respLen);
+                            cb_APP_Send[APP_Channel](APP_CAN_RxBuff, respLen);
                         }
 
                         APP_CAN_RxDataLen = 0;

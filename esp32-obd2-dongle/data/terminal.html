@@ -206,18 +206,15 @@
       });
     }
 
-    var LoadCSS = function (url, done) {
-      $.get(url, { cache: true }, function (css) {
-        //Now that the stylesheet is in the browser cache, it will load instantly:  
-        $("head").append($("<link>", {
-          rel: "stylesheet",
-          type: "text/css",
-          href: url
-        }));
-
-      }).then(function () {
-        if (done) {
+    var LoadCSS = function (href, done) {
+      $.ajax({
+        url: href,
+        dataType: 'text',
+        success: function (data) {
+          $('<style type="text/css">\n' + data + '</style>').appendTo("head");
+          if (done) {
           done();
+        }
         }
       });
     }
@@ -386,52 +383,56 @@
         cmdRequested = -1;
       }
 
+      function WebsocketStart() {
+        // Create WebSocket connection.
+        // socket = new WebSocket("ws://" + "192.168.178.33" + "/ws");
+        socket = new WebSocket("ws://" + location.host + "/ws");
+        socket.binaryType = 'arraybuffer';
+
+        // Connection opened
+        socket.addEventListener('open', function (event) {
+          Set_ConnectionStatus('Connected');
+        });
+
+        socket.addEventListener('error', function (event) {
+          Set_ConnectionStatus('Error');
+        });
+
+        socket.addEventListener('close', function (event) {
+          Set_ConnectionStatus('Closed');
+        });
+
+        // Listen for messages
+        socket.addEventListener('message', function (event) {
+          var data = new Uint8Array(event.data);
+          var crcAct = data[data.length - 2] << 8 | data[data.length - 1];
+          var crcCalc = crc16(data.slice(0, data.length - 2));
+
+          if (crcAct != crcCalc) {
+            ModalDisp("error", "CRC Mismatch", -1);
+            return;
+          }
+
+          ParseRxMessage(data.slice(11));
+
+          var temp = "";
+          data.forEach(function (val, idx, arr) {
+            var hex = val.toString(16).toUpperCase();
+            temp = temp + (hex.length < 2 ? "0" : "") + hex + " ";
+          });
+
+          tableToJSON.push({ msg: MesgCnt, dir: 1, data: temp });
+          $('#table-output').children('tbody').append('<tr><th scope="row">' + (MesgCnt++) + '</th><td><span class="badge badge-warning"><-</span></td><td>' + temp + '</td></tr>');
+          // $('#response').val($('#response').val() + temp + "\n");
+          $('.table-custom').scrollTop($('.table-custom')[0].scrollHeight);
+          Set_RxMessageCount(++RxMessageCount);
+        });
+      }
+
       function WebSocketCheck() {
         if ("WebSocket" in window) {
           ModalDisp("info", "WebSocket is supported by your Browser!");
-          // Create WebSocket connection.
-          // socket = new WebSocket("ws://" + "192.168.178.33" + "/ws");
-          socket = new WebSocket("ws://" + location.host + "/ws");
-          socket.binaryType = 'arraybuffer';
-
-          // Connection opened
-          socket.addEventListener('open', function (event) {
-            Set_ConnectionStatus('Connected');
-          });
-
-          socket.addEventListener('error', function (event) {
-            Set_ConnectionStatus('Error');
-          });
-
-          socket.addEventListener('close', function (event) {
-            Set_ConnectionStatus('Closed');
-          });
-
-          // Listen for messages
-          socket.addEventListener('message', function (event) {
-            var data = new Uint8Array(event.data);
-            var crcAct = data[data.length - 2] << 8 | data[data.length - 1];
-            var crcCalc = crc16(data.slice(0, data.length - 2));
-
-            if (crcAct != crcCalc) {
-              ModalDisp("error", "CRC Mismatch", -1);
-              return;
-            }
-
-            ParseRxMessage(data.slice(11));
-
-            var temp = "";
-            data.forEach(function (val, idx, arr) {
-              var hex = val.toString(16).toUpperCase();
-              temp = temp + (hex.length < 2 ? "0" : "") + hex + " ";
-            });
-
-            tableToJSON.push({ msg: MesgCnt, dir: 1, data: temp });
-            $('#table-output').children('tbody').append('<tr><th scope="row">' + (MesgCnt++) + '</th><td><span class="badge badge-warning"><-</span></td><td>' + temp + '</td></tr>');
-            // $('#response').val($('#response').val() + temp + "\n");
-            $('.table-custom').scrollTop($('.table-custom')[0].scrollHeight);
-            Set_RxMessageCount(++RxMessageCount);
-          });
+          WebsocketStart();
         }
         else {
           // The browser doesn't support WebSocket
@@ -521,7 +522,13 @@
         }
 
         if (send) {
-          socket.send(message);
+          try {
+            socket.send(message);
+          }
+          catch (error) {
+            WebsocketStart();
+            socket.send(message);
+          }
           var temp = "";
           message.map(function (val) {
             var hex = val.toString(16).toUpperCase();

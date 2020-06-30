@@ -56,7 +56,8 @@ extern "C"
 	} CAN_RTR_t;
 
 	/** \brief Frame information record type */
-	typedef union {
+	typedef union
+	{
 		uint32_t U; /**< \brief Unsigned access */
 		struct
 		{
@@ -73,7 +74,8 @@ extern "C"
 	{
 		CAN_FIR_t FIR;	/**< \brief Frame information record*/
 		uint32_t MsgID; /**< \brief Message ID */
-		union {
+		union
+		{
 			uint8_t u8[8];	 /**< \brief Payload byte access*/
 			uint32_t u32[2]; /**< \brief Payload u32 access*/
 		} data;

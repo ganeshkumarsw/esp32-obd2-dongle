@@ -87,7 +87,7 @@ void WIFI_Init(void)
         Serial.println("INFO: ST mode SSID Key is missing. Update SSID");
     }
 
-    if (!MDNS.begin("obd2"))
+    if (MDNS.begin("obd2") == false)
     {
         Serial.println("ERROR: Setting up MDNS responder failed!");
     }
@@ -98,29 +98,29 @@ void WIFI_Init(void)
         MDNS.addService("_http", "_tcp", 80);
     }
 
-    int n = WiFi.scanNetworks();
-    Serial.println("INFO: AP Scan completed");
-    if (n == 0)
-    {
-        Serial.println("INFO: No networks found");
-    }
-    else
-    {
-        for (int i = 0; i < n; ++i)
-        {
-            if (WiFi.SSID(i).equals(preferences.getString("stSSID")) == true)
-            {
-                staConnected = true;
-                Serial.println("INFO: AP found and joined");
-                break;
-            }
-        }
-    }
+    // int n = WiFi.scanNetworks();
+    // Serial.println("INFO: AP Scan completed");
+    // if (n == 0)
+    // {
+    //     Serial.println("INFO: No networks found");
+    // }
+    // else
+    // {
+    //     for (int i = 0; i < n; ++i)
+    //     {
+    //         if (WiFi.SSID(i).equals(preferences.getString("stSSID")) == true)
+    //         {
+    //             staConnected = true;
+    //             Serial.println("INFO: AP found and joined");
+    //             break;
+    //         }
+    //     }
+    // }
 
     if (staConnected == false)
     {
         Serial.println("INFO: WIFI AP begin");
-        if (!WiFi.softAP(WIFI_AP_SSID, WIFI_AP_Password))
+        if (WiFi.softAP(WIFI_AP_SSID, WIFI_AP_Password) == false)
         {
             Serial.println("INFO: SoftAP failed to start!");
         }

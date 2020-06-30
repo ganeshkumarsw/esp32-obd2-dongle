@@ -46,14 +46,15 @@
 // CAN Filter - no acceptance filter
 static CAN_filter_t CAN_Filter = {Dual_Mode, 0, 0, 0, 0, 0Xff, 0Xff, 0Xff, 0Xff};
 static CAN_device_t CAN_cfg;
+static bool CAN_IsrAlloc = false;
+static SemaphoreHandle_t CAN_SemTxComplete;
+
 static void CAN_ReadFramePhy();
 static void CAN_Drv_ISR(void *arg_p);
 static int CAN_WriteFramePhy(const CAN_frame_t *p_frame);
-static SemaphoreHandle_t CAN_SemTxComplete;
-
 static void CAN_Drv_ReadFramePhy(BaseType_t *higherPriorityTaskWoken);
 
-static IRAM_ATTR void CAN_Drv_ISR(void *arg_p)
+static void CAN_Drv_ISR(void *arg_p)
 {
 
     // Interrupt flag buffer
@@ -92,17 +93,17 @@ static IRAM_ATTR void CAN_Drv_ISR(void *arg_p)
             .TXERR = MODULE_CAN->TXERR.B.TXERR,
             .IR = interrupt};
 
-        xQueueSendFromISR(CAN_cfg.err_queue, (void *)&error, (TickType_t)0);
+        xQueueSendFromISR(CAN_cfg.err_queue, (void *)&error, &higherPriorityTaskWoken);
     }
 
     // check if any higher priority task has been woken by any handler
-    if (higherPriorityTaskWoken)
+    if (higherPriorityTaskWoken == true)
     {
         portYIELD_FROM_ISR();
     }
 }
 
-static IRAM_ATTR void CAN_Drv_ReadFramePhy(BaseType_t *higherPriorityTaskWoken)
+static void CAN_Drv_ReadFramePhy(BaseType_t *higherPriorityTaskWoken)
 {
     // byte iterator
     uint8_t __byte_i;
@@ -152,11 +153,14 @@ static IRAM_ATTR void CAN_Drv_ReadFramePhy(BaseType_t *higherPriorityTaskWoken)
     MODULE_CAN->CMR.B.RRB = 1;
 }
 
-static IRAM_ATTR int CAN_WriteFramePhy(const CAN_frame_t *p_frame)
+static int CAN_WriteFramePhy(const CAN_frame_t *p_frame)
 {
-
     // byte iterator
     uint8_t __byte_i;
+
+    // wait until previous transmission is completed
+    while ((MODULE_CAN->SR.B.TBS == 0) || (MODULE_CAN->SR.B.TCS == 0))
+        ;
 
     // copy frame information record
     MODULE_CAN->MBX_CTRL.FCTRL.FIR.U = p_frame->FIR.U;
@@ -190,7 +194,7 @@ static IRAM_ATTR int CAN_WriteFramePhy(const CAN_frame_t *p_frame)
     return 0;
 }
 
-IRAM_ATTR int CAN_Drv_Init(const CAN_device_t *p_devCfg)
+int CAN_Drv_Init(const CAN_device_t *p_devCfg)
 {
     // Time quantum
     double __tq;
@@ -284,14 +288,21 @@ IRAM_ATTR int CAN_Drv_Init(const CAN_device_t *p_devCfg)
     // clear interrupt flags
     (void)MODULE_CAN->IR.U;
 
-    int esp_err;
-    // install CAN ISR
-    esp_err = esp_intr_alloc(ETS_CAN_INTR_SOURCE, ESP_INTR_FLAG_IRAM, CAN_Drv_ISR, NULL, NULL);
-    if (esp_err != ESP_OK)
+    if (CAN_IsrAlloc == false)
     {
-        printf("INFO: CAN ISR failed to alloc <%d>", esp_err);
+        int esp_err;
+        // install CAN ISR
+        // esp_err = esp_intr_alloc(ETS_CAN_INTR_SOURCE, ESP_INTR_FLAG_IRAM, CAN_Drv_ISR, NULL, NULL);
+        esp_err = esp_intr_alloc(ETS_CAN_INTR_SOURCE, 0, CAN_Drv_ISR, NULL, NULL);
+        if (esp_err != ESP_OK)
+        {
+            printf("INFO: CAN ISR failed to alloc <%d>", esp_err);
+        }
+        else
+        {
+            CAN_IsrAlloc = true;
+        }
     }
-
     // allocate the tx complete semaphore
     CAN_SemTxComplete = xSemaphoreCreateBinary();
     xSemaphoreGive(CAN_SemTxComplete);
@@ -302,7 +313,7 @@ IRAM_ATTR int CAN_Drv_Init(const CAN_device_t *p_devCfg)
     return 0;
 }
 
-IRAM_ATTR int IRAM_ATTR CAN_Drv_WriteFrame(const CAN_frame_t *p_frame)
+int CAN_Drv_WriteFrame(const CAN_frame_t *p_frame)
 {
     if (CAN_SemTxComplete == NULL)
     {
@@ -318,7 +329,7 @@ IRAM_ATTR int IRAM_ATTR CAN_Drv_WriteFrame(const CAN_frame_t *p_frame)
     return 0;
 }
 
-IRAM_ATTR int CAN_Drv_Stop()
+int CAN_Drv_Stop(void)
 {
     // enter reset mode
     MODULE_CAN->MOD.B.RM = 1;
@@ -326,7 +337,7 @@ IRAM_ATTR int CAN_Drv_Stop()
     return 0;
 }
 
-IRAM_ATTR int CAN_Drv_ConfigFilter(const CAN_filter_t *p_filter)
+int CAN_Drv_ConfigFilter(const CAN_filter_t *p_filter)
 {
     CAN_Filter.FM = p_filter->FM;
     CAN_Filter.ACR0 = p_filter->ACR0;

@@ -141,18 +141,15 @@
       });
     }
 
-    var LoadCSS = function (url, done) {
-      $.get(url, { cache: true }, function (css) {
-        //Now that the stylesheet is in the browser cache, it will load instantly:  
-        $("head").append($("<link>", {
-          rel: "stylesheet",
-          type: "text/css",
-          href: url
-        }));
-
-      }).then(function () {
-        if (done) {
+    var LoadCSS = function (href, done) {
+      $.ajax({
+        url: href,
+        dataType: 'text',
+        success: function (data) {
+          $('<style type="text/css">\n' + data + '</style>').appendTo("head");
+          if (done) {
           done();
+        }
         }
       });
     }

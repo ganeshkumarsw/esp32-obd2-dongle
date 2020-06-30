@@ -13,7 +13,7 @@ CAN_device_t CAN_cfg = {
 };
 SemaphoreHandle_t CAN_SemaphoreRxTxQueue;
 
-IRAM_ATTR void CAN_Init(void)
+void CAN_Init(void)
 {
     CAN_filter_t filter;
 
@@ -59,12 +59,12 @@ IRAM_ATTR void CAN_Init(void)
     // ESP32Can.CANInit();
 }
 
-IRAM_ATTR void CAN_DeInit(void)
+void CAN_DeInit(void)
 {
     CAN_Drv_Stop();
 }
 
-IRAM_ATTR void CAN_SetBaud(CAN_speed_t speed)
+void CAN_SetBaud(CAN_speed_t speed)
 {
     CAN_Drv_Stop();
 
@@ -74,7 +74,7 @@ IRAM_ATTR void CAN_SetBaud(CAN_speed_t speed)
     CAN_Drv_Init(&CAN_cfg);
 }
 
-IRAM_ATTR void CAN_ConfigFilterterMask(uint32_t acceptance_code, bool extId)
+void CAN_ConfigFilterterMask(uint32_t acceptance_code, bool extId)
 {
 #define byte(x, y) ((uint8_t)(x >> (y * 8)))
     uint32_t acceptance_mask;
@@ -120,7 +120,7 @@ IRAM_ATTR void CAN_ConfigFilterterMask(uint32_t acceptance_code, bool extId)
     CAN_Drv_Init(&CAN_cfg);
 }
 
-IRAM_ATTR esp_err_t CAN_ReadFrame(CAN_frame_t *pframe, TickType_t ticks_to_wait)
+esp_err_t CAN_ReadFrame(CAN_frame_t *pframe, TickType_t ticks_to_wait)
 {
     esp_err_t status;
 
@@ -137,7 +137,7 @@ IRAM_ATTR esp_err_t CAN_ReadFrame(CAN_frame_t *pframe, TickType_t ticks_to_wait)
     return status;
 }
 
-IRAM_ATTR esp_err_t CAN_WriteFrame(const CAN_frame_t *pframe, TickType_t ticks_to_wait)
+esp_err_t CAN_WriteFrame(const CAN_frame_t *pframe, TickType_t ticks_to_wait)
 {
     esp_err_t status = ESP_OK;
 
@@ -147,7 +147,18 @@ IRAM_ATTR esp_err_t CAN_WriteFrame(const CAN_frame_t *pframe, TickType_t ticks_t
     }
     else
     {
-        if (xQueueSend(CAN_cfg.tx_queue, (void *)pframe, ticks_to_wait) != pdPASS)
+        // Serial.printf("DEBUG MSGID <0x%X>, DLC <0x%X>, D <0x%X>,<0x%X>,<0x%X>,<0x%X>,<0x%X>,<0x%X>,<0x%X>,<0x%X>\r\n",
+        //               pframe->MsgID,
+        //               pframe->FIR.B.DLC,
+        //               pframe->data.u8[0],
+        //               pframe->data.u8[1],
+        //               pframe->data.u8[2],
+        //               pframe->data.u8[3],
+        //               pframe->data.u8[4],
+        //               pframe->data.u8[5],
+        //               pframe->data.u8[6],
+        //               pframe->data.u8[7]);
+        if (xQueueSendToBack(CAN_cfg.tx_queue, (void *)pframe, ticks_to_wait) != pdPASS)
         {
             Serial.println("ERROR: CAN Failed to queue Tx message");
             status = ESP_FAIL;
@@ -157,7 +168,7 @@ IRAM_ATTR esp_err_t CAN_WriteFrame(const CAN_frame_t *pframe, TickType_t ticks_t
     return status;
 }
 
-IRAM_ATTR void CAN_Task(void *pvParameters)
+void CAN_Task(void *pvParameters)
 {
     UBaseType_t uxHighWaterMark;
     CAN_frame_t frame;
@@ -178,12 +189,23 @@ IRAM_ATTR void CAN_Task(void *pvParameters)
 
     while (1)
     {
-        if (xQueueReceive(CAN_cfg.tx_queue, (void *)&frame, 20) == pdPASS)
+        if (xQueueReceive(CAN_cfg.tx_queue, (void *)&frame, portMAX_DELAY) == pdPASS)
         {
+            // Serial.printf("DEBUG CAN MSG Pushed, MSGID <0x%X>, DLC <0x%X>, D <0x%X>,<0x%X>,<0x%X>,<0x%X>,<0x%X>,<0x%X>,<0x%X>,<0x%X>\r\n",
+            //               frame.MsgID,
+            //               frame.FIR.B.DLC,
+            //               frame.data.u8[0],
+            //               frame.data.u8[1],
+            //               frame.data.u8[2],
+            //               frame.data.u8[3],
+            //               frame.data.u8[4],
+            //               frame.data.u8[5],
+            //               frame.data.u8[6],
+            //               frame.data.u8[7]);
             CAN_Drv_WriteFrame(&frame);
         }
 
-        if(xQueueReceive(CAN_cfg.err_queue, (void *)&error, (TickType_t)0) == pdPASS)
+        if (xQueueReceive(CAN_cfg.err_queue, (void *)&error, (TickType_t)0) == pdPASS)
         {
             Serial.printf("ERROR: CAN RXERR <%d>, TXERR <%d>, IR <%X>\r\n", error.RXERR, error.TXERR, error.IR);
         }
