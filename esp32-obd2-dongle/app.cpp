@@ -315,7 +315,7 @@ void APP_Task(void *pvParameters)
                                 }
 
                                 APP_CAN_CommStatus = true;
-                                // Serial.printf("DEBUG MSGID <0x%X>, DLC <0x%X>, D <0x%X>,<0x%X>,<0x%X>,<0x%X>,<0x%X>,<0x%X>,<0x%X>,<0x%X>\r\n",
+                                // Serial.printf("DEBUG: MSGID <0x%X>, DLC <0x%02X>, D <0x%02X>,<0x%02X>,<0x%02X>,<0x%02X>,<0x%02X>,<0x%02X>,<0x%02X>,<0x%02X>\r\n",
                                 //               tx_frame.MsgID,
                                 //               tx_frame.FIR.B.DLC,
                                 //               tx_frame.data.u8[0],
@@ -424,9 +424,9 @@ void APP_Task(void *pvParameters)
                         if (((APP_Channel > APP_MSG_CHANNEL_NONE) && (APP_Channel < APP_MSG_CHANNEL_MAX)) && (cb_APP_Send[APP_Channel] != NULL))
                         {
                             crc16 = UTIL_CRC16_CCITT(0xFFFF, APP_CAN_RxBuff, APP_CAN_RxDataLen);
-                            for (uint32_t i = (APP_CAN_RxDataLen - 1); i <= 0; i--)
+                            for (uint32_t i = APP_CAN_RxDataLen; i > 0; i--)
                             {
-                                APP_CAN_RxBuff[i + 2] = APP_CAN_RxBuff[i];
+                                APP_CAN_RxBuff[i + 1] = APP_CAN_RxBuff[i - 1];
                             }
                             APP_CAN_RxBuff[respLen++] = 0x40 | (((APP_CAN_RxDataLen + 2) >> 8) & 0x0F);
                             APP_CAN_RxBuff[respLen++] = (APP_CAN_RxDataLen + 2);

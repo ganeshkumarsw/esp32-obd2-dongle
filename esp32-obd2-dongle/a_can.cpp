@@ -147,7 +147,7 @@ esp_err_t CAN_WriteFrame(const CAN_frame_t *pframe, TickType_t ticks_to_wait)
     }
     else
     {
-        // Serial.printf("DEBUG MSGID <0x%X>, DLC <0x%X>, D <0x%X>,<0x%X>,<0x%X>,<0x%X>,<0x%X>,<0x%X>,<0x%X>,<0x%X>\r\n",
+        // Serial.printf("DEBUG: MSGID <0x%02X>, DLC <0x%X>, D <0x%02X>,<0x%02X>,<0x%02X>,<0x%02X>,<0x%02X>,<0x%02X>,<0x%02X>,<0x%02X>\r\n",
         //               pframe->MsgID,
         //               pframe->FIR.B.DLC,
         //               pframe->data.u8[0],
@@ -207,7 +207,7 @@ void CAN_Task(void *pvParameters)
 
         if (xQueueReceive(CAN_cfg.err_queue, (void *)&error, (TickType_t)0) == pdPASS)
         {
-            Serial.printf("ERROR: CAN RXERR <%d>, TXERR <%d>, IR <%X>\r\n", error.RXERR, error.TXERR, error.IR);
+            Serial.printf("ERROR: CAN RXERR <%d>, TXERR <%d>, IR <%02X>\r\n", error.RXERR, error.TXERR, error.IR);
         }
     }
 
