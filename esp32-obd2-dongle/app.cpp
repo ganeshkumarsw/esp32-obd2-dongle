@@ -358,18 +358,18 @@ void APP_Task(void *pvParameters)
 
                         case APP_CAN_ISO_FC_TM_WAIT:
                             Serial.println("INFO: CAN FC WAIT");
-                            StartTimer(APP_ISO_TxSepTmr, 5);
-                            APP_CAN_TxIndex = APP_CAN_TxIndex - lastSent_CAN_TxBytes;
-                            APP_CAN_TxDataLen = APP_CAN_TxDataLen + lastSent_CAN_TxBytes;
-                            if (APP_ISO_TxBlockCounter > 0)
-                            {
-                                APP_ISO_TxBlockCounter--;
-                            }
+                            StartTimer(APP_ISO_TxSepTmr, 100);
+                            // APP_CAN_TxIndex = APP_CAN_TxIndex - lastSent_CAN_TxBytes;
+                            // APP_CAN_TxDataLen = APP_CAN_TxDataLen + lastSent_CAN_TxBytes;
+                            // if (APP_ISO_TxBlockCounter > 0)
+                            // {
+                            //     APP_ISO_TxBlockCounter--;
+                            // }
 
-                            if (APP_ISO_TxFrameCounter > 1)
-                            {
-                                APP_ISO_TxFrameCounter--;
-                            }
+                            // if (APP_ISO_TxFrameCounter > 1)
+                            // {
+                            //     APP_ISO_TxFrameCounter--;
+                            // }
                             APP_CAN_ISO_State = APP_STATE_CAN_ISO_SEP_TIME;
                             break;
 
