@@ -20,6 +20,7 @@ AsyncWebServer HttpServer(80);
 AsyncWebSocket WebSocket("/ws"); // access at ws://[esp ip]/ws
 AsyncEventSource Events("/events");
 AsyncWebSocketClient *p_WebSocketClient;
+WiFiClient WIFI_Client;
 File FsUploadFile;
 WiFiServer SocketServer(6888);
 SemaphoreHandle_t WIFI_SemTCP_SocComplete;
@@ -61,7 +62,7 @@ void WIFI_Init(void)
 
     preferences.begin("config", false);
 
-    LED_SetLedState(WIFI_CONN_LED, LED_STATE_HIGH, LED_TOGGLE_RATE_1HZ);
+    LED_SetLedState(WIFI_CONN_LED, LED_STATE_ON, LED_TOGGLE_RATE_1HZ);
     ESP_LOGI("WIFI", "MAC: %s", WiFi.macAddress().c_str());
 
     WiFi.macAddress((uint8_t *)mac);
@@ -606,7 +607,7 @@ void WIFI_SupportTask(void *pvParameters)
             {
             case WL_CONNECTED:
                 Serial.printf("INFO: WiFi in ST mode connected <%s>\r\n", WiFi.localIP().toString().c_str());
-                LED_SetLedState(WIFI_CONN_LED, LED_STATE_HIGH, LED_TOGGLE_RATE_NONE);
+                LED_SetLedState(WIFI_CONN_LED, LED_STATE_ON, LED_TOGGLE_RATE_NONE);
 
                 if ((UDP_Status == false) && (UDP.listenMulticast(IPAddress(239, 1, 2, 3), 1234) == true))
                 {
@@ -625,7 +626,7 @@ void WIFI_SupportTask(void *pvParameters)
 
             case WL_DISCONNECTED:
                 Serial.println("INFO: " str(WL_DISCONNECTED));
-                LED_SetLedState(WIFI_CONN_LED, LED_STATE_HIGH, LED_TOGGLE_RATE_1HZ);
+                LED_SetLedState(WIFI_CONN_LED, LED_STATE_ON, LED_TOGGLE_RATE_1HZ);
                 wifiConnect = true;
                 break;
 
@@ -701,44 +702,44 @@ void WIFI_Task(void *pvParameters)
 
     while (1)
     {
-        WiFiClient client = SocketServer.available();
+        WIFI_Client = SocketServer.available();
 
-        if (client)
+        if (WIFI_Client)
         {
             uint32_t len;
             uint32_t idx = 0;
 
             Serial.println("INFO: TCP Socket Client connected");
 
-            while (client.connected())
+            while (WIFI_Client.connected())
             {
                 StopTimer(socketTimeoutTmr);
 
-                if (client.available() > 0)
+                if (WIFI_Client.available() > 0)
                 {
                     idx = 0;
-                    StartTimer(socketTimeoutTmr, 20);
+                    StartTimer(socketTimeoutTmr, 2);
                 }
 
                 while (IsTimerRunning(socketTimeoutTmr))
                 {
-                    len = client.available();
+                    len = WIFI_Client.available();
                     if (len > 0)
                     {
                         if ((idx + len) < sizeof(WIFI_RxBuff))
                         {
-                            len = client.read(&WIFI_RxBuff[idx], len);
+                            len = WIFI_Client.read(&WIFI_RxBuff[idx], len);
                             Serial.printf("INFO: TCP Socket data <%ld> read in this call\r\n", len);
 
                             if (len > 0)
                             {
                                 idx += len;
-                                ResetTimer(socketTimeoutTmr, 20);
+                                ResetTimer(socketTimeoutTmr, 2);
                             }
                         }
                         else
                         {
-                            client.flush();
+                            WIFI_Client.flush();
                             Serial.printf("ERROR: TCP Socket data <%ld> is bigger than buffer can hold\r\n", (len + idx));
                             idx = 0;
                             StopTimer(socketTimeoutTmr);
@@ -801,14 +802,6 @@ void WIFI_Task(void *pvParameters)
                     idx = 0;
                 }
 
-                if (WIFI_TxLen > 0)
-                {
-                    client.write(WIFI_TxBuff, WIFI_TxLen);
-                    Serial.println("INFO: App processed TCP Socket Data");
-                    WIFI_TxLen = 0;
-                    xSemaphoreGive(WIFI_SemTCP_SocComplete);
-                }
-
                 vTaskDelay(1 / portTICK_PERIOD_MS);
             }
 
@@ -861,7 +854,14 @@ void WIFI_TCP_Soc_Write(uint8_t *payLoad, uint16_t len)
         WIFI_TxBuff[idx++] = byte(crc16, 1);
         WIFI_TxBuff[idx++] = byte(crc16, 0);
         WIFI_TxLen = idx;
-        WIFI_SeqNo = 0xFE;
+
+        if (WIFI_Client.connected() == true)
+        {
+            WIFI_Client.write(WIFI_TxBuff, WIFI_TxLen);
+            Serial.println("INFO: App processed TCP Socket Data");
+            WIFI_TxLen = 0;
+            xSemaphoreGive(WIFI_SemTCP_SocComplete);
+        }
     }
 }
 
@@ -912,7 +912,6 @@ void WIFI_WebSoc_Write(uint8_t *payLoad, uint16_t len)
         {
             p_WebSocketClient->binary(WIFI_TxBuff, WIFI_TxLen);
             WIFI_TxLen = 0;
-            WIFI_SeqNo = 0xFE;
             xSemaphoreGive(WIFI_SemWebSocTxComplete);
         }
     }

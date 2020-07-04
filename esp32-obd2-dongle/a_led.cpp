@@ -6,37 +6,37 @@
 // v1 Hardware
 const LED_Config_t LED_OutConfig[LED_OUT_MAX] = {
     // [LED_OUT_1]
-    {GPIO_NUM_12, LED_STATE_LOW},
+    {GPIO_NUM_12, LED_STATE_OFF},
     // [LED_OUT_2]
-    {GPIO_NUM_14, LED_STATE_LOW},
+    {GPIO_NUM_14, LED_STATE_OFF},
     // [LED_OUT_3]
-    {GPIO_NUM_32, LED_STATE_LOW},
+    {GPIO_NUM_32, LED_STATE_OFF},
     // [LED_OUT_4]
-    {GPIO_NUM_33, LED_STATE_LOW},
+    {GPIO_NUM_33, LED_STATE_OFF},
     // [LED_OUT_5]
-    {GPIO_NUM_26, LED_STATE_LOW},
+    {GPIO_NUM_26, LED_STATE_OFF},
     // [LED_OUT_6]
-    {GPIO_NUM_25, LED_STATE_LOW},
+    {GPIO_NUM_25, LED_STATE_OFF},
     // [LED_OUT_7]
-    {GPIO_NUM_27, LED_STATE_LOW},
+    {GPIO_NUM_27, LED_STATE_OFF},
 };
 #else
 // v2 Hardware
 const LED_Config_t LED_OutConfig[LED_OUT_MAX] = {
     // [LED_OUT_1]
-    {GPIO_NUM_18, LED_STATE_LOW},
+    {GPIO_NUM_18, LED_STATE_OFF},
     // [LED_OUT_2]
-    {GPIO_NUM_19, LED_STATE_LOW},
+    {GPIO_NUM_19, LED_STATE_OFF},
     // [LED_OUT_3]
-    {GPIO_NUM_32, LED_STATE_LOW}, // NO LED Connected
+    {GPIO_NUM_32, LED_STATE_OFF}, // NO LED Connected
     // [LED_OUT_4]
-    {GPIO_NUM_33, LED_STATE_LOW}, // NO LED Connected
+    {GPIO_NUM_33, LED_STATE_OFF}, // NO LED Connected
     // [LED_OUT_5]
-    {GPIO_NUM_26, LED_STATE_LOW},
+    {GPIO_NUM_26, LED_STATE_OFF},
     // [LED_OUT_6]
-    {GPIO_NUM_25, LED_STATE_LOW},
+    {GPIO_NUM_25, LED_STATE_OFF},
     // [LED_OUT_7]
-    {GPIO_NUM_27, LED_STATE_LOW},
+    {GPIO_NUM_27, LED_STATE_OFF},
 };
 #endif
 struct
@@ -44,20 +44,20 @@ struct
     LED_Toggle_Rate_t ToggleRate;
     LED_State_t IO_State;
 } LED_OutParams[LED_OUT_MAX] = {
-    // [LED_OUT_1]
-    {LED_TOGGLE_RATE_5HZ, LED_STATE_LOW},
-    // [LED_OUT_2]
-    {LED_TOGGLE_RATE_1HZ, LED_STATE_LOW},
-    // [LED_OUT_3]
-    {LED_TOGGLE_RATE_5HZ, LED_STATE_LOW},
-    // [LED_OUT_4]
-    {LED_TOGGLE_RATE_5HZ, LED_STATE_LOW},
-    // [LED_OUT_5]
-    {LED_TOGGLE_RATE_5HZ, LED_STATE_LOW},
-    // [LED_OUT_6]
-    {LED_TOGGLE_RATE_5HZ, LED_STATE_LOW},
-    // [LED_OUT_7]
-    {LED_TOGGLE_RATE_5HZ, LED_STATE_LOW},
+    // [LED_OUT_1] [LED_RED]
+    {LED_TOGGLE_RATE_NONE, LED_STATE_ON},
+    // [LED_OUT_2] [LED_BLUE]
+    {LED_TOGGLE_RATE_1HZ, LED_STATE_OFF},
+    // [LED_OUT_3] [LED_COLOR_0]
+    {LED_TOGGLE_RATE_1HZ, LED_STATE_OFF},
+    // [LED_OUT_4] [LED_COLOR_1]
+    {LED_TOGGLE_RATE_1HZ, LED_STATE_OFF},
+    // [LED_OUT_5] [LED_YELLOW]
+    {LED_TOGGLE_RATE_1HZ, LED_STATE_OFF},
+    // [LED_OUT_6] [LED_GREEN]
+    {LED_TOGGLE_RATE_1HZ, LED_STATE_OFF},
+    // [LED_OUT_7] [LED_AMBER]
+    {LED_TOGGLE_RATE_1HZ, LED_STATE_OFF},
 };
 
 void LED_Init(void)
@@ -98,13 +98,13 @@ void LED_Task(void *pvParameters)
             if ((LED_OutParams[idx].ToggleRate != LED_TOGGLE_RATE_NONE) && ((togglefreqCntr % LED_OutParams[idx].ToggleRate) == 0))
             {
                 // if the LED is off turn it on and vice-versa:
-                if (LED_OutParams[idx].IO_State == LED_STATE_LOW)
+                if (LED_OutParams[idx].IO_State == LED_STATE_OFF)
                 {
-                    LED_OutParams[idx].IO_State = LED_STATE_HIGH;
+                    LED_OutParams[idx].IO_State = LED_STATE_ON;
                 }
                 else
                 {
-                    LED_OutParams[idx].IO_State = LED_STATE_LOW;
+                    LED_OutParams[idx].IO_State = LED_STATE_OFF;
                 }
             }
 

@@ -28,8 +28,8 @@ extern "C"
 
     typedef enum
     {
-        LED_STATE_HIGH = 0,
-        LED_STATE_LOW,
+        LED_STATE_ON = 0,
+        LED_STATE_OFF,
         LED_STATE_TOGGLE,
     } LED_State_t;
 

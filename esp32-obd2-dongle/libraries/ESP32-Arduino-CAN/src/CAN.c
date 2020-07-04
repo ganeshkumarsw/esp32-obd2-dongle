@@ -197,6 +197,8 @@ static int CAN_WriteFramePhy(const CAN_frame_t *p_frame)
             MODULE_CAN->MBX_CTRL.FCTRL.TX_RX.EXT.data[__byte_i] = p_frame->data.u8[__byte_i];
     }
 
+    ets_delay_us(500);
+
     // Transmit frame
     MODULE_CAN->CMR.B.TR = 1;
 

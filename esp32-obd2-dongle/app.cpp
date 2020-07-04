@@ -127,7 +127,7 @@ void APP_SupportTask(void *pvParameters)
         }
         else if (APP_YellowFlashCntr == 0)
         {
-            LED_SetLedState(COMM_LED, LED_STATE_LOW, LED_TOGGLE_RATE_NONE);
+            LED_SetLedState(COMM_LED, LED_STATE_OFF, LED_TOGGLE_RATE_NONE);
         }
 
         if (((APP_CAN_CommStatus == true) || (APP_GreenFlashCntr > 0)) &&
@@ -153,7 +153,7 @@ void APP_SupportTask(void *pvParameters)
 
 void APP_Task(void *pvParameters)
 {
-    UBaseType_t uxHighWaterMark;
+    // UBaseType_t uxHighWaterMark;
     CAN_frame_t rx_frame;
     CAN_frame_t tx_frame;
     uint16_t frameCount = 0;
@@ -171,10 +171,10 @@ void APP_Task(void *pvParameters)
     respNo = APP_RESP_ACK;
     respLen = 0;
 
-    ESP_LOGI("APP", "Task Started");
+    // ESP_LOGI("APP", "Task Started");
 
-    uxHighWaterMark = uxTaskGetStackHighWaterMark(NULL);
-    ESP_LOGI("APP", "uxHighWaterMark = %d", uxHighWaterMark);
+    // uxHighWaterMark = uxTaskGetStackHighWaterMark(NULL);
+    // ESP_LOGI("APP", "uxHighWaterMark = %d", uxHighWaterMark);
 
     APP_Init();
     if (xTaskCreate(APP_SupportTask, "APP_SupportTask", 2000, NULL, tskIDLE_PRIORITY, NULL) != pdTRUE)
@@ -1294,7 +1294,7 @@ void APP_Frame5(uint8_t *p_buff, uint16_t len, uint8_t channel)
         if (memcmp(p_buff, APP_SecuityCode, sizeof(APP_SecuityCode)) == 0)
         {
             APP_SecurityPassStatus = true;
-            LED_SetLedState(SECURITY_LED, LED_STATE_HIGH, LED_TOGGLE_RATE_NONE);
+            LED_SetLedState(SECURITY_LED, LED_STATE_ON, LED_TOGGLE_RATE_NONE);
         }
         else
         {
