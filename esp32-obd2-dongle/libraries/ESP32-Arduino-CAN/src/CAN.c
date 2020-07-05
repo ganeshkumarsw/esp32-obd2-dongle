@@ -48,7 +48,7 @@ static CAN_filter_t CAN_Filter = {Dual_Mode, 0, 0, 0, 0, 0Xff, 0Xff, 0Xff, 0Xff}
 static CAN_device_t CAN_cfg;
 static bool CAN_IsrAlloc = false;
 static uint32_t CAN_FrameDelay;
-static SemaphoreHandle_t CAN_SemTxComplete;
+static SemaphoreHandle_t CAN_SemTxComplete = NULL;
 
 static void CAN_ReadFramePhy();
 static void CAN_Drv_ISR(void *arg_p);
@@ -321,8 +321,12 @@ int CAN_Drv_Init(const CAN_device_t *p_devCfg)
             CAN_IsrAlloc = true;
         }
     }
-    // allocate the tx complete semaphore
-    CAN_SemTxComplete = xSemaphoreCreateBinary();
+
+    if (CAN_SemTxComplete == NULL)
+    {
+        // allocate the tx complete semaphore
+        CAN_SemTxComplete = xSemaphoreCreateBinary();
+    }
 
     // Showtime. Release Reset Mode.
     MODULE_CAN->MOD.B.RM = 0;

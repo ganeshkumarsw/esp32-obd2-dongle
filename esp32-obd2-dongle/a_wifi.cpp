@@ -707,8 +707,8 @@ void WIFI_Task(void *pvParameters)
 
         if (WIFI_Client.connected() == true)
         {
-            uint32_t len;
-            uint32_t idx = 0;
+            int32_t len;
+            int32_t idx = 0;
             WIFI_Client.setTimeout(86400);
 
             Serial.println("INFO: TCP Socket Client connected");
@@ -716,10 +716,10 @@ void WIFI_Task(void *pvParameters)
             while (WIFI_Client.connected())
             {
                 StopTimer(socketTimeoutTmr);
+                idx = 0;
 
                 if (WIFI_Client.available() > 0)
                 {
-                    idx = 0;
                     StartTimer(socketTimeoutTmr, 4);
                 }
 
@@ -808,6 +808,7 @@ void WIFI_Task(void *pvParameters)
             }
 
             Serial.println("INFO: TCP Socket Client disconnected");
+            WIFI_Client.stop();
         }
         else
         {
@@ -928,7 +929,7 @@ void WIFI_WebSoc_Write(uint8_t *payLoad, uint16_t len)
         {
             Serial.println("INFO: TCP Socket Client disconnected during send");
         }
-        
+
         WIFI_TxLen = 0;
     }
 
