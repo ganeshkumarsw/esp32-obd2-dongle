@@ -47,6 +47,7 @@
 static CAN_filter_t CAN_Filter = {Dual_Mode, 0, 0, 0, 0, 0Xff, 0Xff, 0Xff, 0Xff};
 static CAN_device_t CAN_cfg;
 static bool CAN_IsrAlloc = false;
+static uint32_t CAN_FrameDelay;
 static SemaphoreHandle_t CAN_SemTxComplete;
 
 static void CAN_ReadFramePhy();
@@ -197,7 +198,7 @@ static int CAN_WriteFramePhy(const CAN_frame_t *p_frame)
             MODULE_CAN->MBX_CTRL.FCTRL.TX_RX.EXT.data[__byte_i] = p_frame->data.u8[__byte_i];
     }
 
-    ets_delay_us(500);
+    ets_delay_us(CAN_FrameDelay);
 
     // Transmit frame
     MODULE_CAN->CMR.B.TR = 1;
@@ -205,10 +206,16 @@ static int CAN_WriteFramePhy(const CAN_frame_t *p_frame)
     return 0;
 }
 
+void CAN_Drv_EnableInterframeDelay(uint32_t delay)
+{
+    CAN_FrameDelay = delay;
+}
+
 int CAN_Drv_Init(const CAN_device_t *p_devCfg)
 {
     // Time quantum
     double __tq;
+    CAN_FrameDelay = 0;
 
     if ((p_devCfg == NULL) || (p_devCfg->err_queue == NULL) || (p_devCfg->tx_queue == NULL) || (p_devCfg->rx_queue == NULL))
     {

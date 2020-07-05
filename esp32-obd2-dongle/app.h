@@ -49,6 +49,7 @@ extern "C"
         APP_REQ_CMD_GETSFR = 21,
         APP_REQ_CMD_SET_STA_SSID = 22,
         APP_REQ_CMD_SET_STA_PASSWORD = 23,
+        APP_REQ_CMD_ENABLE_CAN_TX_DELAY = 24,
     } APP_REQ_CMD_t;
 
     typedef enum

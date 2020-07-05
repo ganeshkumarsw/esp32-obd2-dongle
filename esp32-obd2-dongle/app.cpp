@@ -1177,6 +1177,28 @@ void APP_Frame2(uint8_t *p_buff, uint16_t len, uint8_t channel)
             WIFI_Set_STA_Pass((char *)&p_buff[1]);
             break;
 
+        case APP_REQ_CMD_ENABLE_CAN_TX_DELAY:
+            if (len < 2)
+            {
+                respType = APP_RESP_NACK;
+                respNo = APP_RESP_NACK_13;
+                break;
+            }
+
+            if (p_buff[1] == 0)
+            {
+                CAN_EnableInterframeDelay(0);
+            }
+            else if (p_buff[1] == 1)
+            {
+                CAN_EnableInterframeDelay(800);
+            }
+            else
+            {
+                CAN_EnableInterframeDelay(((uint32_t)p_buff[1] * 100));
+            }
+            break;
+
         default:
             respType = APP_RESP_NACK;
             respNo = APP_RESP_NACK_10;

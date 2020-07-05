@@ -28,6 +28,7 @@ esp_err_t CAN_ReadFrame(CAN_frame_t *pframe, TickType_t ticks_to_wait);
 esp_err_t CAN_WriteFrame(const CAN_frame_t *pframe, TickType_t ticks_to_wait);
 void CAN_Task(void *pvParameters);
 void CAN_SendCmd(uint8_t cmd, uint32_t data);
+void CAN_EnableInterframeDelay(uint32_t delay);
 
 #ifdef __cplusplus
 }

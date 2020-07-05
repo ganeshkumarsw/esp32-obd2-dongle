@@ -120,6 +120,11 @@ void CAN_ConfigFilterterMask(uint32_t acceptance_code, bool extId)
     CAN_Drv_Init(&CAN_cfg);
 }
 
+void CAN_EnableInterframeDelay(uint32_t delay)
+{
+    CAN_Drv_EnableInterframeDelay(delay);
+}
+
 esp_err_t CAN_ReadFrame(CAN_frame_t *pframe, TickType_t ticks_to_wait)
 {
     esp_err_t status;

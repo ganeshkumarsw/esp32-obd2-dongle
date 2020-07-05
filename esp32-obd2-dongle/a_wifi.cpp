@@ -660,6 +660,7 @@ void WIFI_SupportTask(void *pvParameters)
 
             if (wifiConnect == true)
             {
+                WIFI_Client.stop();
                 wifiConnect = false;
                 WiFi.begin((char *)preferences.getString("stSSID").c_str(), (char *)preferences.getString("stPASS").c_str());
 
@@ -679,13 +680,13 @@ void WIFI_SupportTask(void *pvParameters)
 void WIFI_Task(void *pvParameters)
 {
     wl_status_t wifiStatus = WL_IDLE_STATUS;
-    UBaseType_t uxHighWaterMark;
+    // UBaseType_t uxHighWaterMark;
     uint32_t socketTimeoutTmr;
 
-    ESP_LOGI("WIFI", "Task Started");
+    // ESP_LOGI("WIFI", "Task Started");
 
-    uxHighWaterMark = uxTaskGetStackHighWaterMark(NULL);
-    ESP_LOGI("WIFI", "uxHighWaterMark = %d", uxHighWaterMark);
+    // uxHighWaterMark = uxTaskGetStackHighWaterMark(NULL);
+    // ESP_LOGI("WIFI", "uxHighWaterMark = %d", uxHighWaterMark);
 
     WIFI_Init();
 
@@ -704,10 +705,11 @@ void WIFI_Task(void *pvParameters)
     {
         WIFI_Client = SocketServer.available();
 
-        if (WIFI_Client)
+        if (WIFI_Client.connected() == true)
         {
             uint32_t len;
             uint32_t idx = 0;
+            WIFI_Client.setTimeout(86400);
 
             Serial.println("INFO: TCP Socket Client connected");
 
@@ -718,7 +720,7 @@ void WIFI_Task(void *pvParameters)
                 if (WIFI_Client.available() > 0)
                 {
                     idx = 0;
-                    StartTimer(socketTimeoutTmr, 2);
+                    StartTimer(socketTimeoutTmr, 4);
                 }
 
                 while (IsTimerRunning(socketTimeoutTmr))
@@ -734,7 +736,7 @@ void WIFI_Task(void *pvParameters)
                             if (len > 0)
                             {
                                 idx += len;
-                                ResetTimer(socketTimeoutTmr, 2);
+                                ResetTimer(socketTimeoutTmr, 4);
                             }
                         }
                         else
@@ -751,7 +753,7 @@ void WIFI_Task(void *pvParameters)
                         Serial.println("INFO: Waiting, NO TCP Socket data during this call");
                     }
 
-                    vTaskDelay(5 / portTICK_PERIOD_MS);
+                    vTaskDelay(pdMS_TO_TICKS(2));
                 }
 
                 StopTimer(socketTimeoutTmr);
@@ -802,13 +804,16 @@ void WIFI_Task(void *pvParameters)
                     idx = 0;
                 }
 
-                vTaskDelay(1 / portTICK_PERIOD_MS);
+                vTaskDelay(pdMS_TO_TICKS(1));
             }
 
             Serial.println("INFO: TCP Socket Client disconnected");
         }
+        else
+        {
+        }
 
-        vTaskDelay(100 / portTICK_PERIOD_MS);
+        vTaskDelay(pdMS_TO_TICKS(10));
         WebSocket.cleanupClients();
     }
 }
@@ -825,9 +830,10 @@ void WIFI_TCP_Soc_Write(uint8_t *payLoad, uint16_t len)
     {
         return;
     }
+
     xSemaphoreTake(WIFI_SemTCP_SocComplete, portMAX_DELAY);
 
-    if (WIFI_TxLen == 0)
+    // if (WIFI_TxLen == 0)
     {
         idx = 0;
         if ((payLoad[0] & 0xF0) == 0x20)
@@ -859,10 +865,16 @@ void WIFI_TCP_Soc_Write(uint8_t *payLoad, uint16_t len)
         {
             WIFI_Client.write(WIFI_TxBuff, WIFI_TxLen);
             Serial.println("INFO: App processed TCP Socket Data");
-            WIFI_TxLen = 0;
-            xSemaphoreGive(WIFI_SemTCP_SocComplete);
         }
+        else
+        {
+            Serial.println("INFO: TCP Socket Client disconnected during send");
+        }
+
+        WIFI_TxLen = 0;
     }
+
+    xSemaphoreGive(WIFI_SemTCP_SocComplete);
 }
 
 void WIFI_WebSoc_Write(uint8_t *payLoad, uint16_t len)
@@ -880,7 +892,7 @@ void WIFI_WebSoc_Write(uint8_t *payLoad, uint16_t len)
 
     xSemaphoreTake(WIFI_SemWebSocTxComplete, portMAX_DELAY);
 
-    if (WIFI_TxLen == 0)
+    // if (WIFI_TxLen == 0)
     {
         idx = 0;
         if ((payLoad[0] & 0xF0) == 0x20)
@@ -911,10 +923,16 @@ void WIFI_WebSoc_Write(uint8_t *payLoad, uint16_t len)
         if (p_WebSocketClient != NULL)
         {
             p_WebSocketClient->binary(WIFI_TxBuff, WIFI_TxLen);
-            WIFI_TxLen = 0;
-            xSemaphoreGive(WIFI_SemWebSocTxComplete);
         }
+        else
+        {
+            Serial.println("INFO: TCP Socket Client disconnected during send");
+        }
+        
+        WIFI_TxLen = 0;
     }
+
+    xSemaphoreGive(WIFI_SemWebSocTxComplete);
 }
 
 void WIFI_Set_STA_SSID(char *p_str)

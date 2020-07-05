@@ -131,6 +131,8 @@ extern "C"
  */
 	int CAN_Drv_ConfigFilter(const CAN_filter_t *p_filter);
 
+	void CAN_Drv_EnableInterframeDelay(uint32_t delay);
+
 #ifdef __cplusplus
 }
 #endif
