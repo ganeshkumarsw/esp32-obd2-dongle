@@ -29,13 +29,14 @@ SemaphoreHandle_t WIFI_SemWebSocTxComplete;
 char WIFI_STA_SSID[50] = STA_WIFI_SSID;
 char WIFI_STA_Password[50] = STA_WIFI_PASSWORD;
 char WIFI_AP_SSID[50] = "";
-char WIFI_AP_Password[50] = STA_WIFI_PASSWORD;
+char WIFI_AP_Password[50] = AP_WIFI_PASSWORD;
 uint8_t WIFI_SeqNo;
 uint8_t WIFI_RxBuff[4130];
 uint8_t WIFI_TxBuff[4130];
 uint16_t WIFI_TxLen;
 bool UDP_Status = false;
 
+static void WIFI_RestartTask(void *pvParameters);
 static void WIFI_ScanTask(void *pvParameters);
 static void WIFI_SupportTask(void *pvParameters);
 static void WIFI_EventCb(system_event_id_t event);
@@ -341,7 +342,6 @@ void WIFI_Init(void)
                 };
 
                 int n = WiFi.scanNetworks(true);
-                String status;
 
                 if ((n == WIFI_SCAN_RUNNING) || (n == WIFI_SCAN_FAILED))
                 {
@@ -388,7 +388,7 @@ void WIFI_Init(void)
             "/fsdelete",
             HTTP_POST,
             [](AsyncWebServerRequest *request) {
-                if (request->args() > 0)
+                if (request->args() > 2)
                 {
                     if ((request->arg("username").equals("admin") == true) && (request->arg("password").equals("ADmiNPaSSworD") == true))
                     {
@@ -405,6 +405,48 @@ void WIFI_Init(void)
             });
 
         HttpServer.on(
+            "/apconnect",
+            HTTP_POST,
+            [](AsyncWebServerRequest *request) {
+                if (request->args() > 1)
+                {
+                    if ((request->arg("ssid").equals("") == false) && (request->arg("password").equals("") == false))
+                    {
+                        Preferences preferences;
+
+                        preferences.begin("config", false);
+                        preferences.putString("stSSID", request->arg("ssid").c_str());
+                        preferences.putString("stPASS", request->arg("password").c_str());
+                        Serial.println("INFO: AP credentials saved");
+                        request->send(200, "text/plain", "Restart to join into the configured AP");
+                    }
+                    else
+                    {
+                        request->send(401, "text/plain", "Wrong input Parameter values");
+                    }
+                }
+                else
+                {
+                    request->send(401, "text/plain", "Wrong no.of input Parameters");
+                }
+            });
+
+        HttpServer.on(
+            "/restart",
+            HTTP_POST,
+            [](AsyncWebServerRequest *request) {
+                if (xTaskCreate(WIFI_RestartTask, "WIFI_RestartTask", 1000, NULL, tskIDLE_PRIORITY, NULL) != pdTRUE)
+                {
+                    configASSERT(0);
+                    request->send(401, "text/plain", "Restart failed, manually restart the device");
+                }
+                else
+                {
+                    request->send(200, "text/plain", "Will be restarted in 2secs");
+                }
+            });
+
+        HttpServer.on(
             "/fsupload",
             HTTP_POST,
             [](AsyncWebServerRequest *request) {
@@ -416,8 +458,7 @@ void WIFI_Init(void)
                     }
                     else
                     {
-                        AsyncWebServerResponse *response = request->beginResponse(401, "text/plain", "Authentication Failed");
-                        request->send(response);
+                        request->send(401, "text/plain", "Authentication Failed");
                     }
                 }
             },
@@ -455,14 +496,14 @@ void WIFI_Init(void)
             "/test",
             HTTP_POST,
             [](AsyncWebServerRequest *request) {
-                Serial.printf("get Success");
+                Serial.println("INFO: /test Form Success");
                 request->send(200, "text/plain", "Hello");
             },
             [](AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final) {
-                Serial.printf("file Success: %uB\n", index + len);
+                Serial.printf("INFO: /test File Success: <%u>B\r\n", index + len);
             },
             [](AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total) {
-                Serial.printf("body Success: %uB\n", index + len);
+                Serial.printf("INFO: /test Body Success: <%u>B\r\n", index + len);
             });
 
         HttpServer.on(
@@ -584,6 +625,13 @@ void WIFI_ScanTask(void *pvParameters)
         vTaskDelay(300 / portTICK_PERIOD_MS);
     }
 
+    vTaskDelete(NULL);
+}
+
+void WIFI_RestartTask(void *pvParameters)
+{
+    vTaskDelay(pdMS_TO_TICKS(2000));
+    ESP.restart();
     vTaskDelete(NULL);
 }
 

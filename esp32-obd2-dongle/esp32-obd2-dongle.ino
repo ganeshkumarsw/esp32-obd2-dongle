@@ -9,7 +9,7 @@
 #include "a_mqtt.h"
 #include "app.h"
 
-static void CreateTask_Task(void *pvParameters);
+static void CreateTasks_Task(void *pvParameters);
 
 void setup()
 {
@@ -24,7 +24,7 @@ void setup()
     // disableCore0WDT();
     // disableCore1WDT();
 
-    if (xTaskCreate(CreateTask_Task, "CreateTask_Task", 2000, NULL, tskIDLE_PRIORITY + 10, NULL) != pdTRUE)
+    if (xTaskCreate(CreateTasks_Task, "CreateTasks_Task", 2000, NULL, tskIDLE_PRIORITY + 10, NULL) != pdTRUE)
     {
         configASSERT(0);
     }
@@ -36,7 +36,7 @@ void loop()
     vTaskDelete(NULL);
 }
 
-void CreateTask_Task(void *pvParameters)
+void CreateTasks_Task(void *pvParameters)
 {
     // UBaseType_t uxHighWaterMark;
 
