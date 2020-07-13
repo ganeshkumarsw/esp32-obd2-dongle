@@ -7,7 +7,7 @@ extern "C" {
 
 void BLE_Init(void);
 void BLE_Task(void *pvParameters);
-
+void BLE_Write(uint8_t *payLoad, uint16_t len);
 
 #ifdef __cplusplus
 }

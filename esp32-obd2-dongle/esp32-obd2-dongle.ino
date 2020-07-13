@@ -52,9 +52,14 @@ void CreateTasks_Task(void *pvParameters)
         configASSERT(0);
     }
 
-    if (xTaskCreate(WIFI_Task, "WIFI_Task", 10000, NULL, tskIDLE_PRIORITY + 4, NULL) != pdTRUE)
+    // if (xTaskCreate(WIFI_Task, "WIFI_Task", 10000, NULL, tskIDLE_PRIORITY + 4, NULL) != pdTRUE)
+    // {
+    //     configASSERT(0);
+    // }
+
+    if (xTaskCreate(BLE_Task, "BLE_Task", 10000, NULL, tskIDLE_PRIORITY + 4, NULL) != pdTRUE)
     {
-        configASSERT(0);
+      configASSERT(0);
     }
 
     if (xTaskCreate(APP_Task, "APP_Task", 10000, NULL, tskIDLE_PRIORITY + 3, NULL) != pdTRUE)
@@ -67,10 +72,7 @@ void CreateTasks_Task(void *pvParameters)
         configASSERT(0);
     }
 
-    // if (xTaskCreate(BLE_Task, "BLE_Task", 30000, NULL, 5, NULL) != pdTRUE)
-    // {
-    //   configASSERT(0);
-    // }
+
 
     // if (xTaskCreate(MQTT_Task, "MQTT_Task", 20000, NULL, 8, NULL) != pdTRUE)
     // {

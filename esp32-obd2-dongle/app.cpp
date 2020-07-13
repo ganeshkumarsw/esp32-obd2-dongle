@@ -32,7 +32,7 @@ void (*cb_APP_Send[])(uint8_t *, uint16_t) =
     {
         UART_Write,
         MQTT_Write,
-        NULL,
+        BLE_Write,
         WIFI_TCP_Soc_Write,
         WIFI_WebSoc_Write};
 

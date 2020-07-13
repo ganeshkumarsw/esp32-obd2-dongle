@@ -1,26 +1,37 @@
 #include <Arduino.h>
+#include "app.h"
 #include "BluetoothSerial.h"
 #include "a_ble.h"
 
-#if 0
 BluetoothSerial SerialBT;
 uint8_t BLE_Buff[4096];
+SemaphoreHandle_t BLE_SemTxComplete;
 
 void BLE_Init(void)
 {
-    ESP_LOGI("BLE", "OBDII USB/Wifi/BT Dongle"); //Bluetooth device name
+    SerialBT.begin("OBDII BT Dongle"); //Bluetooth device name
+    BLE_SemTxComplete = xSemaphoreCreateBinary();
+
+    if (BLE_SemTxComplete == NULL)
+    {
+        Serial.println("ERROR: Failed to create BLE Tx complete semaphore");
+    }
+    else
+    {
+        xSemaphoreGive(BLE_SemTxComplete);
+    }
 }
 
 void BLE_Task(void *pvParameters)
 {
     uint16_t idx;
     uint16_t len;
-    UBaseType_t uxHighWaterMark;
+    // UBaseType_t uxHighWaterMark;
 
-    ESP_LOGI("BLE", "Task Started");
+    // ESP_LOGI("BLE", "Task Started");
 
-    uxHighWaterMark = uxTaskGetStackHighWaterMark(NULL);
-    ESP_LOGI("BLE", "uxHighWaterMark = %d", uxHighWaterMark);
+    // uxHighWaterMark = uxTaskGetStackHighWaterMark(NULL);
+    // ESP_LOGI("BLE", "uxHighWaterMark = %d", uxHighWaterMark);
 
     BLE_Init();
 
@@ -47,9 +58,26 @@ void BLE_Task(void *pvParameters)
 
         if (len != 0)
         {
+             APP_ProcessData(BLE_Buff, idx, APP_MSG_CHANNEL_BLE);
         }
 
         vTaskDelay(5 / portTICK_PERIOD_MS);
     }
 }
-#endif
+
+void BLE_Write(uint8_t *payLoad, uint16_t len)
+{
+    if (BLE_SemTxComplete == NULL)
+    {
+        return;
+    }
+
+    xSemaphoreTake(BLE_SemTxComplete, portMAX_DELAY);
+
+    if(SerialBT.hasClient() == true)
+    {
+        SerialBT.write(payLoad, len);
+    }
+
+    xSemaphoreGive(BLE_SemTxComplete);
+}
