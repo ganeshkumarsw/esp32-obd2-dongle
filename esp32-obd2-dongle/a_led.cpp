@@ -117,7 +117,7 @@ void LED_SetLedState(led_num_t gpio, LED_State_t state, LED_Toggle_Rate_t toggle
 {
     if (gpio < LED_OUT_MAX)
     {
-        // Serial.printf("INFO: LED <%d>, State <%d>, Freq <%d>\r\n", gpio, state, toggleRate);
+        // Serial_printf("INFO: LED <%d>, State <%d>, Freq <%d>\r\n", gpio, state, toggleRate);
         LED_OutParams[gpio].IO_State = state;
         LED_OutParams[gpio].ToggleRate = toggleRate;
     }

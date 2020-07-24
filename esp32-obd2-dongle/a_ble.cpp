@@ -1,4 +1,5 @@
 #include <Arduino.h>
+#include "config.h"
 #include "app.h"
 #include "BluetoothSerial.h"
 #include "a_ble.h"
@@ -7,6 +8,8 @@ BluetoothSerial SerialBT;
 uint8_t BLE_Buff[4096];
 SemaphoreHandle_t BLE_SemTxComplete;
 
+
+
 void BLE_Init(void)
 {
     SerialBT.begin("OBDII BT Dongle"); //Bluetooth device name
@@ -14,7 +17,7 @@ void BLE_Init(void)
 
     if (BLE_SemTxComplete == NULL)
     {
-        Serial.println("ERROR: Failed to create BLE Tx complete semaphore");
+        Serial_println("ERROR: Failed to create BLE Tx complete semaphore");
     }
     else
     {

@@ -20,9 +20,9 @@ void MQTT_ReceivedCallback(char *topic, byte *payload, unsigned int length)
     // ESP_LOGI("MQTT", "payload: ");
     // for (int i = 0; i < length; i++)
     // {
-    //     Serial.print((char)payload[i]);
+    //     Serial_print((char)payload[i]);
     // }
-    // Serial.println();
+    // Serial_println();
 
     APP_ProcessData(payload, length, APP_MSG_CHANNEL_MQTT);
 }

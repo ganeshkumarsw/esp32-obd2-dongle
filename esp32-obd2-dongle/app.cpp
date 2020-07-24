@@ -258,7 +258,7 @@ void APP_Task(void *pvParameters)
                     case APP_STATE_CAN_ISO_FIRST:
                         if (APP_BuffLockedBy == APP_BUFF_LOCKED_BY_ISO_TP_TX_FF)
                         {
-                            Serial.println("INFO: " str(APP_STATE_CAN_ISO_FIRST));
+                            Serial_println("INFO: " str(APP_STATE_CAN_ISO_FIRST));
                             tx_frame.FIR.B.DLC = 8;
                             tx_frame.data.u8[0] = (0x0F & (uint8_t)(APP_CAN_TxDataLen >> 8)) | 0x10;
                             tx_frame.data.u8[1] = (uint8_t)APP_CAN_TxDataLen;
@@ -287,7 +287,7 @@ void APP_Task(void *pvParameters)
                         case APP_CAN_ISO_FC_TM_CONT:
                             while (APP_BuffLockedBy == APP_BUFF_LOCKED_BY_ISO_TP_TX_CF)
                             {
-                                Serial.println("INFO: " str(APP_STATE_CAN_ISO_CONSECUTIVE));
+                                Serial_println("INFO: " str(APP_STATE_CAN_ISO_CONSECUTIVE));
 
                                 if (APP_CAN_TxDataLen >= 7)
                                 {
@@ -315,7 +315,7 @@ void APP_Task(void *pvParameters)
                                 }
 
                                 APP_CAN_CommStatus = true;
-                                // Serial.printf("DEBUG: MSGID <0x%X>, DLC <0x%02X>, D <0x%02X>,<0x%02X>,<0x%02X>,<0x%02X>,<0x%02X>,<0x%02X>,<0x%02X>,<0x%02X>\r\n",
+                                // Serial_printf("DEBUG: MSGID <0x%X>, DLC <0x%02X>, D <0x%02X>,<0x%02X>,<0x%02X>,<0x%02X>,<0x%02X>,<0x%02X>,<0x%02X>,<0x%02X>\r\n",
                                 //               tx_frame.MsgID,
                                 //               tx_frame.FIR.B.DLC,
                                 //               tx_frame.data.u8[0],
@@ -357,7 +357,7 @@ void APP_Task(void *pvParameters)
                             break;
 
                         case APP_CAN_ISO_FC_TM_WAIT:
-                            Serial.println("INFO: CAN FC WAIT");
+                            Serial_println("INFO: CAN FC WAIT");
                             StartTimer(APP_ISO_TxSepTmr, 100);
                             // APP_CAN_TxIndex = APP_CAN_TxIndex - lastSent_CAN_TxBytes;
                             // APP_CAN_TxDataLen = APP_CAN_TxDataLen + lastSent_CAN_TxBytes;
@@ -374,7 +374,7 @@ void APP_Task(void *pvParameters)
                             break;
 
                         case APP_CAN_ISO_FC_TM_ABORT:
-                            Serial.println("ERROR: CAN FC ABORT");
+                            Serial_println("ERROR: CAN FC ABORT");
                             APP_CAN_TxIndex = 0;
                             APP_CAN_TxDataLen = 0;
                             APP_BuffLockedBy = APP_BUFF_LOCKED_BY_NONE;
@@ -384,7 +384,7 @@ void APP_Task(void *pvParameters)
                             break;
 
                         default:
-                            Serial.printf("ERROR: CAN FC <%d> not supported\r\n", APP_ISO_FC_TxFlag);
+                            Serial_printf("ERROR: CAN FC <%d> not supported\r\n", APP_ISO_FC_TxFlag);
                             APP_CAN_TxIndex = 0;
                             APP_CAN_TxDataLen = 0;
                             APP_BuffLockedBy = APP_BUFF_LOCKED_BY_NONE;
@@ -449,7 +449,7 @@ void APP_Task(void *pvParameters)
                         break;
 
                     default:
-                        Serial.println("ERROR Invalid APP ISO state");
+                        Serial_println("ERROR Invalid APP ISO state");
                         break;
                     }
 
@@ -584,7 +584,7 @@ void APP_ProcessData(uint8_t *p_buff, uint16_t len, APP_CHANNEL_t channel)
     respType = APP_RESP_ACK;
     respNo = APP_RESP_ACK;
 
-    // Serial.println(String("Data Received from channel ") + channel);
+    // Serial_println(String("Data Received from channel ") + channel);
 
     if (APP_ProcDataBusyFlag == false)
     {

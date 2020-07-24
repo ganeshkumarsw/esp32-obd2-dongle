@@ -53,7 +53,7 @@ void WIFI_Init(void)
 
     if ((WIFI_SemTCP_SocComplete == NULL) || (WIFI_SemWebSocTxComplete == NULL))
     {
-        Serial.println("ERROR: Failed to create Soc Tx complete semaphore");
+        Serial_println("ERROR: Failed to create Soc Tx complete semaphore");
     }
     else
     {
@@ -68,7 +68,7 @@ void WIFI_Init(void)
 
     WiFi.macAddress((uint8_t *)mac);
     sprintf(WIFI_AP_SSID, "%s-%02X%02X", AP_WIFI_SSID, mac[4], mac[5]);
-    Serial.printf("INFO: SSID <%s>\r\n", WIFI_AP_SSID);
+    Serial_printf("INFO: SSID <%s>\r\n", WIFI_AP_SSID);
 
     if ((preferences.getString("stSSID") != "") && (strnlen(preferences.getString("stSSID").c_str(), 50) < 50))
     {
@@ -81,30 +81,30 @@ void WIFI_Init(void)
         }
         else
         {
-            Serial.println("INFO: ST mode PASSWORD is missing. Update password");
+            Serial_println("INFO: ST mode PASSWORD is missing. Update password");
         }
     }
     else
     {
-        Serial.println("INFO: ST mode SSID Key is missing. Update SSID");
+        Serial_println("INFO: ST mode SSID Key is missing. Update SSID");
     }
 
     if (MDNS.begin("obd2") == false)
     {
-        Serial.println("ERROR: Setting up MDNS responder failed!");
+        Serial_println("ERROR: Setting up MDNS responder failed!");
     }
     else
     {
-        Serial.println("INFO: mDNS responder started");
+        Serial_println("INFO: mDNS responder started");
         // Add service to MDNS-SD
         MDNS.addService("_http", "_tcp", 80);
     }
 
     // int n = WiFi.scanNetworks();
-    // Serial.println("INFO: AP Scan completed");
+    // Serial_println("INFO: AP Scan completed");
     // if (n == 0)
     // {
-    //     Serial.println("INFO: No networks found");
+    //     Serial_println("INFO: No networks found");
     // }
     // else
     // {
@@ -113,7 +113,7 @@ void WIFI_Init(void)
     //         if (WiFi.SSID(i).equals(preferences.getString("stSSID")) == true)
     //         {
     //             staConnected = true;
-    //             Serial.println("INFO: AP found and joined");
+    //             Serial_println("INFO: AP found and joined");
     //             break;
     //         }
     //     }
@@ -121,10 +121,10 @@ void WIFI_Init(void)
 
     if (staConnected == false)
     {
-        Serial.println("INFO: WIFI AP begin");
+        Serial_println("INFO: WIFI AP begin");
         if (WiFi.softAP(WIFI_AP_SSID, WIFI_AP_Password) == false)
         {
-            Serial.println("INFO: SoftAP failed to start!");
+            Serial_println("INFO: SoftAP failed to start!");
         }
     }
 
@@ -975,7 +975,7 @@ void WIFI_WebSoc_Write(uint8_t *payLoad, uint16_t len)
         }
         else
         {
-            Serial.println("INFO: TCP Socket Client disconnected during send");
+            Serial_println("INFO: TCP Socket Client disconnected during send");
         }
 
         WIFI_TxLen = 0;
@@ -1006,18 +1006,18 @@ void WIFI_Set_STA_Pass(char *p_str)
 
 void WIFI_EventCb(system_event_id_t event)
 {
-    Serial.print("system_event_id_t: ");
-    Serial.println(event);
+    Serial_print("system_event_id_t: ");
+    Serial_println(event);
 
     switch (event)
     {
     case SYSTEM_EVENT_STA_GOT_IP:
-        Serial.print("INFO: IP address: ");
-        Serial.println(WiFi.localIP());
+        Serial_print("INFO: IP address: ");
+        Serial_println(WiFi.localIP());
         break;
 
     case SYSTEM_EVENT_STA_CONNECTED:
-        Serial.println("INFO: WiFi connected");
+        Serial_println("INFO: WiFi connected");
         break;
 
     case SYSTEM_EVENT_STA_DISCONNECTED:
@@ -1026,8 +1026,8 @@ void WIFI_EventCb(system_event_id_t event)
         break;
 
     case SYSTEM_EVENT_AP_START:
-        Serial.print("INFO: SoftAP Ip: ");
-        Serial.println(WiFi.softAPIP().toString());
+        Serial_print("INFO: SoftAP Ip: ");
+        Serial_println(WiFi.softAPIP().toString());
         break;
 
     case SYSTEM_EVENT_AP_STAIPASSIGNED:

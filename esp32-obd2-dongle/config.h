@@ -4,6 +4,17 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+#define DEBUG_PRINT 0
+
+#if DEBUG_PRINT
+#define Serial_println(...)     Serial.println(__VA_ARGS__)   
+#define Serial_print(...)       Serial.print(__VA_ARGS__)   
+#define Serial_printf(...)      Serial.printf(__VA_ARGS__) 
+#else
+#define Serial_println(...)      
+#define Serial_print(...)         
+#define Serial_printf(...)      
+#endif
 
 #define xstr(s) str(s)
 #define str(s) #s

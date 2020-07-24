@@ -52,7 +52,7 @@ void CAN_Init(void)
 
     if ((CAN_cfg.rx_queue == NULL) || (CAN_cfg.tx_queue == NULL) || (CAN_cfg.err_queue == NULL))
     {
-        Serial.println("ERROR: CAN Failed to create queue message for either Rx / Tx / err");
+        Serial_println("ERROR: CAN Failed to create queue message for either Rx / Tx / err");
     }
 
     // Init CAN Module
@@ -132,7 +132,7 @@ esp_err_t CAN_ReadFrame(CAN_frame_t *pframe, TickType_t ticks_to_wait)
     if ((CAN_cfg.rx_queue != NULL) && (xQueueReceive(CAN_cfg.rx_queue, pframe, ticks_to_wait) == pdTRUE))
     {
         status = ESP_OK;
-        Serial.println("INFO: CAN Read Rx queue success");
+        Serial_println("INFO: CAN Read Rx queue success");
     }
     else
     {
@@ -152,7 +152,7 @@ esp_err_t CAN_WriteFrame(const CAN_frame_t *pframe, TickType_t ticks_to_wait)
     }
     else
     {
-        // Serial.printf("DEBUG: MSGID <0x%02X>, DLC <0x%X>, D <0x%02X>,<0x%02X>,<0x%02X>,<0x%02X>,<0x%02X>,<0x%02X>,<0x%02X>,<0x%02X>\r\n",
+        // Serial_printf("DEBUG: MSGID <0x%02X>, DLC <0x%X>, D <0x%02X>,<0x%02X>,<0x%02X>,<0x%02X>,<0x%02X>,<0x%02X>,<0x%02X>,<0x%02X>\r\n",
         //               pframe->MsgID,
         //               pframe->FIR.B.DLC,
         //               pframe->data.u8[0],
@@ -165,7 +165,7 @@ esp_err_t CAN_WriteFrame(const CAN_frame_t *pframe, TickType_t ticks_to_wait)
         //               pframe->data.u8[7]);
         if (xQueueSendToBack(CAN_cfg.tx_queue, (void *)pframe, ticks_to_wait) != pdPASS)
         {
-            Serial.println("ERROR: CAN Failed to queue Tx message");
+            Serial_println("ERROR: CAN Failed to queue Tx message");
             status = ESP_FAIL;
         }
     }
@@ -188,7 +188,7 @@ void CAN_Task(void *pvParameters)
 
     if (CAN_cfg.tx_queue == NULL)
     {
-        Serial.println("ERROR: CAN Failed to create Tx Queue");
+        Serial_println("ERROR: CAN Failed to create Tx Queue");
         vTaskDelete(NULL);
     }
 
@@ -196,7 +196,7 @@ void CAN_Task(void *pvParameters)
     {
         if (xQueueReceive(CAN_cfg.tx_queue, (void *)&frame, portMAX_DELAY) == pdPASS)
         {
-            // Serial.printf("DEBUG: CAN Task, MSGID <0x%X>, DLC <0x%02X>, D <0x%02X>,<0x%02X>,<0x%02X>,<0x%02X>,<0x%02X>,<0x%02X>,<0x%02X>,<0x%02X>\r\n",
+            // Serial_printf("DEBUG: CAN Task, MSGID <0x%X>, DLC <0x%02X>, D <0x%02X>,<0x%02X>,<0x%02X>,<0x%02X>,<0x%02X>,<0x%02X>,<0x%02X>,<0x%02X>\r\n",
             //               frame.MsgID,
             //               frame.FIR.B.DLC,
             //               frame.data.u8[0],
@@ -212,10 +212,10 @@ void CAN_Task(void *pvParameters)
 
         if (xQueueReceive(CAN_cfg.err_queue, (void *)&error, (TickType_t)0) == pdPASS)
         {
-            Serial.printf("ERROR: CAN RXERR <%d>, TXERR <%d>, IR <%02X>\r\n", error.RXERR, error.TXERR, error.IR);
+            Serial_printf("ERROR: CAN RXERR <%d>, TXERR <%d>, IR <%02X>\r\n", error.RXERR, error.TXERR, error.IR);
         }
     }
 
-    Serial.println("ERROR: CAN task exit");
+    Serial_println("ERROR: CAN task exit");
     vTaskDelete(NULL);
 }
