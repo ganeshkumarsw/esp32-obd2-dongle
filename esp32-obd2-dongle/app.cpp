@@ -104,7 +104,7 @@ void APP_Init(void)
     APP_CAN_RqRspMaxTime = 500;
     APP_Channel = APP_MSG_CHANNEL_NONE;
 
-    LED_SetLedState(SECURITY_LED, LED_STATE_TOGGLE, LED_TOGGLE_RATE_1HZ);
+    LED_SetLedState(SECURITY_LED, LED_STATE_TOGGLE, LED_TOGGLE_RATE_5HZ);
 }
 
 void APP_SupportTask(void *pvParameters)
@@ -122,7 +122,7 @@ void APP_SupportTask(void *pvParameters)
 
             APP_YellowFlashCntr--;
 
-            LED_SetLedState(COMM_LED, LED_STATE_TOGGLE, LED_TOGGLE_RATE_1HZ);
+            LED_SetLedState(COMM_LED, LED_STATE_TOGGLE, LED_TOGGLE_RATE_5HZ);
             StartTimer(APP_YellowLedTmr, 100);
         }
         else if (APP_YellowFlashCntr == 0)
@@ -140,11 +140,13 @@ void APP_SupportTask(void *pvParameters)
             }
 
             APP_GreenFlashCntr--;
+
+            LED_SetLedState(CAN_LED, LED_STATE_TOGGLE, LED_TOGGLE_RATE_5HZ);
             StartTimer(APP_GreenLedTmr, 100);
         }
         else if (APP_GreenFlashCntr == 0)
         {
-            // CAN_IND_SetLow();
+            LED_SetLedState(CAN_LED, LED_STATE_OFF, LED_TOGGLE_RATE_NONE);
         }
 
         vTaskDelay(10 / portTICK_PERIOD_MS);

@@ -124,6 +124,7 @@ void WIFI_Init(void)
         Serial_println("INFO: WIFI AP begin");
         if (WiFi.softAP(WIFI_AP_SSID, WIFI_AP_Password) == false)
         {
+            LED_SetLedState(WIFI_CONN_LED, LED_STATE_ON, LED_TOGGLE_RATE_5HZ);
             Serial_println("INFO: SoftAP failed to start!");
         }
     }
@@ -144,17 +145,17 @@ void WIFI_Init(void)
             uint16_t crc16;
             uint8_t errorCode = APP_RESP_ACK;
 
-            Serial.printf("INFO: Websocket data <%d> received\r\n", len);
+            Serial_printf("INFO: Websocket data <%d> received\r\n", len);
 
             if (type == WS_EVT_CONNECT)
             {
                 p_WebSocketClient = client;
-                Serial.println("INFO: Websocket client connection received");
+                Serial_println("INFO: Websocket client connection received");
             }
             else if (type == WS_EVT_DISCONNECT)
             {
                 p_WebSocketClient = NULL;
-                Serial.println("INFO: Websocket Client disconnected");
+                Serial_println("INFO: Websocket Client disconnected");
             }
             else if (type == WS_EVT_DATA)
             {
@@ -198,7 +199,7 @@ void WIFI_Init(void)
         Events.onConnect([](AsyncEventSourceClient *client) {
             if (client->lastId())
             {
-                Serial.printf("INFO: Client reconnected! Last message ID that it got is: %u\r\n", client->lastId());
+                Serial_printf("INFO: Client reconnected! Last message ID that it got is: %u\r\n", client->lastId());
             }
             // send event with message "hello!", id current millis
             // and set reconnect delay to 1 second
@@ -235,7 +236,7 @@ void WIFI_Init(void)
                         response->addHeader("Connection", "close");
 
                         Events.send("Device being restarted", "success", millis());
-                        Serial.println("INFO: Device being restarted");
+                        Serial_println("INFO: Device being restarted");
                         request->send(response);
                         delay(100);
                         ESP.restart();
@@ -417,7 +418,7 @@ void WIFI_Init(void)
                         preferences.begin("config", false);
                         preferences.putString("stSSID", request->arg("ssid").c_str());
                         preferences.putString("stPASS", request->arg("password").c_str());
-                        Serial.println("INFO: AP credentials saved");
+                        Serial_println("INFO: AP credentials saved");
                         request->send(200, "text/plain", "Restart to join into the configured AP");
                     }
                     else
@@ -496,14 +497,14 @@ void WIFI_Init(void)
             "/test",
             HTTP_POST,
             [](AsyncWebServerRequest *request) {
-                Serial.println("INFO: /test Form Success");
+                Serial_println("INFO: /test Form Success");
                 request->send(200, "text/plain", "Hello");
             },
             [](AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final) {
-                Serial.printf("INFO: /test File Success: <%u>B\r\n", index + len);
+                Serial_printf("INFO: /test File Success: <%u>B\r\n", index + len);
             },
             [](AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total) {
-                Serial.printf("INFO: /test Body Success: <%u>B\r\n", index + len);
+                Serial_printf("INFO: /test Body Success: <%u>B\r\n", index + len);
             });
 
         HttpServer.on(
@@ -576,7 +577,7 @@ void WIFI_Init(void)
 
 void WIFI_ScanTask(void *pvParameters)
 {
-    Serial.println("INFO: AP Scan Task started");
+    Serial_println("INFO: AP Scan Task started");
 
     while (1)
     {
@@ -584,11 +585,11 @@ void WIFI_ScanTask(void *pvParameters)
 
         if (n == WIFI_SCAN_FAILED)
         {
-            Serial.println("INFO: AP Scan failed");
+            Serial_println("INFO: AP Scan failed");
             break;
         }
 
-        Serial.println("INFO: AP Scan running");
+        Serial_println("INFO: AP Scan running");
 
         if (n > 0)
         {
@@ -601,7 +602,7 @@ void WIFI_ScanTask(void *pvParameters)
                                             "AUTH_MAX"};
 
             String json = "[";
-            Serial.printf("INFO: AP Scan completed <%d>\r\n", n);
+            Serial_printf("INFO: AP Scan completed <%d>\r\n", n);
 
             for (int i = 0; i < n; ++i)
             {
@@ -654,7 +655,7 @@ void WIFI_SupportTask(void *pvParameters)
             switch (wifiStatus)
             {
             case WL_CONNECTED:
-                Serial.printf("INFO: WiFi in ST mode connected <%s>\r\n", WiFi.localIP().toString().c_str());
+                Serial_printf("INFO: WiFi in ST mode connected <%s>\r\n", WiFi.localIP().toString().c_str());
                 LED_SetLedState(WIFI_CONN_LED, LED_STATE_ON, LED_TOGGLE_RATE_NONE);
 
                 if ((UDP_Status == false) && (UDP.listenMulticast(IPAddress(239, 1, 2, 3), 1234) == true))
@@ -668,37 +669,37 @@ void WIFI_SupportTask(void *pvParameters)
 
                 // if (WiFi.softAPdisconnect(true) == ESP_OK)
                 // {
-                //     Serial.println("INFO: SoftAP turned OFF");
+                //     Serial_println("INFO: SoftAP turned OFF");
                 // }
                 break;
 
             case WL_DISCONNECTED:
-                Serial.println("INFO: " str(WL_DISCONNECTED));
+                Serial_println("INFO: " str(WL_DISCONNECTED));
                 LED_SetLedState(WIFI_CONN_LED, LED_STATE_ON, LED_TOGGLE_RATE_1HZ);
                 wifiConnect = true;
                 break;
 
             case WL_IDLE_STATUS:
-                Serial.println("INFO: " str(WL_IDLE_STATUS));
+                Serial_println("INFO: " str(WL_IDLE_STATUS));
                 wifiConnect = true;
                 break;
 
             case WL_NO_SSID_AVAIL:
-                Serial.println("INFO: " str(WL_NO_SSID_AVAIL));
+                Serial_println("INFO: " str(WL_NO_SSID_AVAIL));
                 wifiConnect = true;
                 break;
 
             case WL_SCAN_COMPLETED:
-                Serial.println("INFO: " str(WL_SCAN_COMPLETED));
+                Serial_println("INFO: " str(WL_SCAN_COMPLETED));
                 break;
 
             case WL_CONNECT_FAILED:
-                Serial.println("INFO: " str(WL_CONNECT_FAILED));
+                Serial_println("INFO: " str(WL_CONNECT_FAILED));
                 wifiConnect = true;
                 break;
 
             case WL_CONNECTION_LOST:
-                Serial.println("INFO: " str(WL_CONNECTION_LOST));
+                Serial_println("INFO: " str(WL_CONNECTION_LOST));
                 wifiConnect = true;
                 break;
 
@@ -712,10 +713,10 @@ void WIFI_SupportTask(void *pvParameters)
                 wifiConnect = false;
                 WiFi.begin((char *)preferences.getString("stSSID").c_str(), (char *)preferences.getString("stPASS").c_str());
 
-                // Serial.println("INFO: WIFI AP begin");
+                // Serial_println("INFO: WIFI AP begin");
                 // if (WiFi.softAP(WIFI_AP_SSID, WIFI_AP_Password) == false)
                 // {
-                //     Serial.println("INFO: SoftAP failed to start!");
+                //     Serial_println("INFO: SoftAP failed to start!");
                 // }
             }
         }
@@ -727,6 +728,7 @@ void WIFI_SupportTask(void *pvParameters)
 
 void WIFI_Task(void *pvParameters)
 {
+    key_event_t keyEvt;
     wl_status_t wifiStatus = WL_IDLE_STATUS;
     // UBaseType_t uxHighWaterMark;
     uint32_t socketTimeoutTmr;
@@ -759,10 +761,10 @@ void WIFI_Task(void *pvParameters)
             int32_t idx = 0;
             WIFI_Client.setTimeout(86400);
 
-            Serial.println("INFO: TCP Socket Client connected");
+            Serial_println("INFO: TCP Socket Client connected");
 
             while (WIFI_Client.connected())
-            {
+            {Serial_
                 StopTimer(socketTimeoutTmr);
                 idx = 0;
 
@@ -779,7 +781,7 @@ void WIFI_Task(void *pvParameters)
                         if ((idx + len) < sizeof(WIFI_RxBuff))
                         {
                             len = WIFI_Client.read(&WIFI_RxBuff[idx], len);
-                            Serial.printf("INFO: TCP Socket data <%ld> read in this call\r\n", len);
+                            Serial_printf("INFO: TCP Socket data <%ld> read in this call\r\n", len);
 
                             if (len > 0)
                             {
@@ -790,7 +792,7 @@ void WIFI_Task(void *pvParameters)
                         else
                         {
                             WIFI_Client.flush();
-                            Serial.printf("ERROR: TCP Socket data <%ld> is bigger than buffer can hold\r\n", (len + idx));
+                            Serial_printf("ERROR: TCP Socket data <%ld> is bigger than buffer can hold\r\n", (len + idx));
                             idx = 0;
                             StopTimer(socketTimeoutTmr);
                             break;
@@ -798,7 +800,7 @@ void WIFI_Task(void *pvParameters)
                     }
                     else
                     {
-                        Serial.println("INFO: Waiting, NO TCP Socket data during this call");
+                        Serial_println("INFO: Waiting, NO TCP Socket data during this call");
                     }
 
                     vTaskDelay(pdMS_TO_TICKS(2));
@@ -815,7 +817,7 @@ void WIFI_Task(void *pvParameters)
                     uint16_t crc16;
 
                     WIFI_SeqNo = WIFI_RxBuff[0];
-                    Serial.printf("INFO: TCP Socket data <%ld> received\r\n", idx);
+                    Serial_printf("INFO: TCP Socket data <%ld> received\r\n", idx);
 
                     if (idx < sizeof(WIFI_TxBuff))
                     {
@@ -855,11 +857,33 @@ void WIFI_Task(void *pvParameters)
                 vTaskDelay(pdMS_TO_TICKS(1));
             }
 
-            Serial.println("INFO: TCP Socket Client disconnected");
+            Serial_println("INFO: TCP Socket Client disconnected");
             WIFI_Client.stop();
         }
         else
         {
+        }
+
+        keyEvt = KEY_Read();
+
+        if (keyEvt.EventType != KEY_EVENT_TYPE_NIL)
+        {
+            switch (keyEvt.KeyNo)
+            {
+            case KEY_NO_ERASE:
+                if (keyEvt.EventType == KEY_EVENT_TYPE_LONG)
+                {
+                    Preferences preferences;
+                    preferences.begin("config", false);
+                    preferences.putString("stSSID", String(""));
+                    preferences.putString("stPASS", String(""));
+                    preferences.end();
+                }
+                break;
+
+            default:
+                break;
+            }
         }
 
         vTaskDelay(pdMS_TO_TICKS(10));
@@ -913,11 +937,11 @@ void WIFI_TCP_Soc_Write(uint8_t *payLoad, uint16_t len)
         if (WIFI_Client.connected() == true)
         {
             WIFI_Client.write(WIFI_TxBuff, WIFI_TxLen);
-            Serial.println("INFO: App processed TCP Socket Data");
+            Serial_println("INFO: App processed TCP Socket Data");
         }
         else
         {
-            Serial.println("INFO: TCP Socket Client disconnected during send");
+            Serial_println("INFO: TCP Socket Client disconnected during send");
         }
 
         WIFI_TxLen = 0;

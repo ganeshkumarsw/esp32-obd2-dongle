@@ -84,5 +84,7 @@ void CreateTasks_Task(void *pvParameters)
         configASSERT(0);
     }
 
+    LED_SetLedState(HEART_BEAT_LED, LED_STATE_ON, LED_TOGGLE_RATE_NONE);
+
     vTaskDelete(NULL);
 }

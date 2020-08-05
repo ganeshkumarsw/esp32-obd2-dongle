@@ -46,13 +46,20 @@ typedef enum
     LED_OUT_MAX,
 }led_num_t;
 
+typedef enum
+{
+    KEY_NO_INVALID = -1,
+    KEY_NO_ERASE   = 0,
+    KEY_NO_MAX,
+}key_no_t;
+
 #define LED_RED         LED_OUT_1
 #define LED_BLUE        LED_OUT_2
-#define LED_COLOR_0     LED_OUT_3
-#define LED_COLOR_1     LED_OUT_4
-#define LED_YELLOW      LED_OUT_5
-#define LED_GREEN       LED_OUT_6
-#define LED_AMBER       LED_OUT_7
+#define LED_AMBER       LED_OUT_3
+#define LED_YELLOW      LED_OUT_4
+#define LED_GREEN       LED_OUT_5
+#define LED_COLOR_0     LED_OUT_6
+#define LED_COLOR_1     LED_OUT_7
 
 
 #define HEART_BEAT_LED  LED_BLUE
