@@ -2,6 +2,7 @@
 #include "config.h"
 #include "version.h"
 #include "a_led.h"
+#include "a_key.h"
 #include "a_ble.h"
 #include "a_uart.h"
 #include "a_can.h"
@@ -15,7 +16,7 @@ void setup()
 {
     Serial.begin(460800);
     Serial.setRxBufferSize(4096);
-    String ver = "\r\n\r\n\r\nOBDII USB/BT Dongle v" xstr(MAJOR_VERSION) "." xstr(MINOR_VERSION) "." xstr(SUB_VERSION) " <" SW_VERSION "> <";
+    String ver = "\r\n\r\n\r\nOBDII USB/Wifi Dongle v" xstr(MAJOR_VERSION) "." xstr(MINOR_VERSION) "." xstr(SUB_VERSION) " <" SW_VERSION "> <";
     ver = ver + ESP.getSdkVersion() + ">";
 
     Serial.println(ver);
@@ -52,15 +53,20 @@ void CreateTasks_Task(void *pvParameters)
         configASSERT(0);
     }
 
-    // if (xTaskCreate(WIFI_Task, "WIFI_Task", 10000, NULL, tskIDLE_PRIORITY + 4, NULL) != pdTRUE)
-    // {
-    //     configASSERT(0);
-    // }
-
-    if (xTaskCreate(BLE_Task, "BLE_Task", 10000, NULL, tskIDLE_PRIORITY + 4, NULL) != pdTRUE)
+    if (xTaskCreate(Key_Task, "Key_Task", 4000, NULL, tskIDLE_PRIORITY + 1, NULL) != pdTRUE)
     {
       configASSERT(0);
     }
+
+    if (xTaskCreate(WIFI_Task, "WIFI_Task", 10000, NULL, tskIDLE_PRIORITY + 4, NULL) != pdTRUE)
+    {
+        configASSERT(0);
+    }
+
+    // if (xTaskCreate(BLE_Task, "BLE_Task", 10000, NULL, tskIDLE_PRIORITY + 4, NULL) != pdTRUE)
+    // {
+    //   configASSERT(0);
+    // }
 
     if (xTaskCreate(APP_Task, "APP_Task", 10000, NULL, tskIDLE_PRIORITY + 3, NULL) != pdTRUE)
     {
@@ -71,8 +77,6 @@ void CreateTasks_Task(void *pvParameters)
     {
         configASSERT(0);
     }
-
-
 
     // if (xTaskCreate(MQTT_Task, "MQTT_Task", 20000, NULL, 8, NULL) != pdTRUE)
     // {

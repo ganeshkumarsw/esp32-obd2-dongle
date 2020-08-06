@@ -1,8 +1,10 @@
 #include <Arduino.h>
+#include <Preferences.h>
 #include "config.h"
 #include "util.h"
 #include "a_ble.h"
 #include "a_led.h"
+#include "a_key.h"
 #include "a_uart.h"
 #include "a_can.h"
 #include "a_mqtt.h"
@@ -20,24 +22,24 @@ static void APP_Frame5(uint8_t *p_buff, uint16_t len, uint8_t channel);
 static void APP_SendRespToFrame(uint8_t respType, uint8_t APP_RESP_nackNo, uint8_t *p_buff, uint16_t dataLen, uint8_t channel, bool cache);
 
 void (*cb_APP_FrameType[])(uint8_t *, uint16_t, uint8_t) =
-    {
-        APP_Frame0,
-        APP_Frame1,
-        APP_Frame2,
-        APP_Frame3,
-        APP_Frame4,
-        APP_Frame5};
+{
+    APP_Frame0,
+    APP_Frame1,
+    APP_Frame2,
+    APP_Frame3,
+    APP_Frame4,
+    APP_Frame5 };
 
 void (*cb_APP_Send[])(uint8_t *, uint16_t) =
-    {
-        UART_Write,
-        MQTT_Write,
-        BLE_Write,
-        WIFI_TCP_Soc_Write,
-        WIFI_WebSoc_Write};
+{
+    UART_Write,
+    MQTT_Write,
+    BLE_Write,
+    WIFI_TCP_Soc_Write,
+    WIFI_WebSoc_Write };
 
-uint8_t APP_CAN_RxBuff[4130] = {0};
-uint8_t APP_CAN_TxBuff[4130] = {0};
+uint8_t APP_CAN_RxBuff[4130] ={ 0 };
+uint8_t APP_CAN_TxBuff[4130] ={ 0 };
 uint16_t APP_BuffRxIndex;
 uint16_t APP_CAN_TxIndex;
 uint16_t APP_CAN_RxIndex;
@@ -82,7 +84,7 @@ uint32_t APP_Frame01_TimeOutTmr;
 uint32_t APP_SendToAppWaitTmr;
 
 bool APP_SecurityPassStatus;
-uint8_t APP_SecuityCode[] = {0x47, 0x56, 0x8A, 0xFE, 0x56, 0x21, 0x4E, 0x23, 0x80, 0x00};
+uint8_t APP_SecuityCode[] ={ 0x47, 0x56, 0x8A, 0xFE, 0x56, 0x21, 0x4E, 0x23, 0x80, 0x00 };
 
 uint32_t APP_AmberLedTmr;
 uint32_t APP_YellowLedTmr;
@@ -109,6 +111,8 @@ void APP_Init(void)
 
 void APP_SupportTask(void *pvParameters)
 {
+    KEY_event_t keyEvt;
+
     while (1)
     {
         if (((APP_Client_CommStatus == true) || (APP_YellowFlashCntr > 0)) &&
@@ -141,12 +145,35 @@ void APP_SupportTask(void *pvParameters)
 
             APP_GreenFlashCntr--;
 
-            LED_SetLedState(CAN_LED, LED_STATE_TOGGLE, LED_TOGGLE_RATE_5HZ);
+            LED_SetLedState(CAN_COMM_LED, LED_STATE_TOGGLE, LED_TOGGLE_RATE_5HZ);
             StartTimer(APP_GreenLedTmr, 100);
         }
         else if (APP_GreenFlashCntr == 0)
         {
-            LED_SetLedState(CAN_LED, LED_STATE_OFF, LED_TOGGLE_RATE_NONE);
+            LED_SetLedState(CAN_COMM_LED, LED_STATE_OFF, LED_TOGGLE_RATE_NONE);
+        }
+
+        keyEvt = KEY_Read();
+
+        if (keyEvt.EventType != KEY_EVENT_TYPE_NIL)
+        {
+            switch (keyEvt.KeyNo)
+            {
+            case KEY_NO_ERASE:
+                if (keyEvt.EventType == KEY_EVENT_TYPE_LONG)
+                {
+                    Preferences preferences;
+                    preferences.begin("config", false);
+                    preferences.putString("stSSID", String(""));
+                    preferences.putString("stPASS", String(""));
+                    preferences.end();
+                    ESP.restart();
+                }
+                break;
+
+            default:
+                break;
+            }
         }
 
         vTaskDelay(10 / portTICK_PERIOD_MS);
@@ -242,8 +269,8 @@ void APP_Task(void *pvParameters)
                             if ((tx_frame.FIR.B.DLC < 8) && (APP_CAN_PaddingByte & 0x0100))
                             {
                                 memset(((uint8_t *)&tx_frame.data.u8[0] + tx_frame.FIR.B.DLC),
-                                       (uint8_t)APP_CAN_PaddingByte,
-                                       (8 - tx_frame.FIR.B.DLC));
+                                    (uint8_t)APP_CAN_PaddingByte,
+                                    (8 - tx_frame.FIR.B.DLC));
                                 tx_frame.FIR.B.DLC = 8;
                             }
 
@@ -274,10 +301,10 @@ void APP_Task(void *pvParameters)
                             APP_ISO_FC_TxFlag = APP_CAN_ISO_FC_TM_CONT;
                             APP_CAN_ISO_State = APP_STATE_CAN_ISO_FC_WAIT_TIME;
                             APP_BuffLockedBy = APP_BUFF_LOCKED_BY_ISO_TP_TX_CF;
-#if SIMULATE
+                            #if SIMULATE
                             APP_ISO_FC_TxBlockSize = 0;
                             APP_CAN_ISO_State = APP_STATE_CAN_ISO_CONSECUTIVE;
-#endif
+                            #endif
                             APP_CAN_CommStatus = true;
                             CAN_WriteFrame(&tx_frame, portMAX_DELAY);
                         }
@@ -311,8 +338,8 @@ void APP_Task(void *pvParameters)
                                 if ((tx_frame.FIR.B.DLC < 8) && (APP_CAN_PaddingByte & 0x0100))
                                 {
                                     memset(((uint8_t *)&tx_frame.data.u8[0] + tx_frame.FIR.B.DLC),
-                                           (uint8_t)APP_CAN_PaddingByte,
-                                           (8 - tx_frame.FIR.B.DLC));
+                                        (uint8_t)APP_CAN_PaddingByte,
+                                        (8 - tx_frame.FIR.B.DLC));
                                     tx_frame.FIR.B.DLC = 8;
                                 }
 
@@ -503,8 +530,8 @@ void APP_Task(void *pvParameters)
                             if ((tx_frame.FIR.B.DLC < 8) && (APP_CAN_PaddingByte & 0x0100))
                             {
                                 memset(((uint8_t *)&tx_frame.data.u8[0] + tx_frame.FIR.B.DLC),
-                                       (uint8_t)APP_CAN_PaddingByte,
-                                       (8 - tx_frame.FIR.B.DLC));
+                                    (uint8_t)APP_CAN_PaddingByte,
+                                    (8 - tx_frame.FIR.B.DLC));
                                 tx_frame.FIR.B.DLC = 8;
                             }
 

@@ -16,6 +16,22 @@ extern "C" {
 #define Serial_printf(...)      
 #endif
 
+#define IsTimerElapsed(x) ((x > 0) && (x <= (xTaskGetTickCount() / portTICK_PERIOD_MS)))
+#define IsTimerRunning(x) ((x > 0) && (x > (xTaskGetTickCount() / portTICK_PERIOD_MS)))
+#define IsTimerEnabled(x) ((x) > 0)
+#define StartTimer(x, y)                                    \
+    {                                                       \
+        x = (xTaskGetTickCount() / portTICK_PERIOD_MS) + y; \
+    }
+#define ResetTimer(x, y)                                    \
+    {                                                       \
+        x = (xTaskGetTickCount() / portTICK_PERIOD_MS) + y; \
+    }
+#define StopTimer(x) \
+    {                \
+        x = 0;       \
+    }
+
 #define xstr(s) str(s)
 #define str(s) #s
 
@@ -62,11 +78,11 @@ typedef enum
 #define LED_COLOR_1     LED_OUT_7
 
 
-#define HEART_BEAT_LED  LED_BLUE
+#define HEART_BEAT_LED  LED_RED
 #define COMM_LED        LED_YELLOW
-#define WIFI_CONN_LED   LED_GREEN
+#define WIFI_CONN_LED   LED_BLUE
 #define SECURITY_LED    LED_AMBER
-#define ERROR_LED       LED_RED
+#define CAN_COMM_LED    LED_GREEN
 
 
 #ifdef __cplusplus

@@ -728,7 +728,6 @@ void WIFI_SupportTask(void *pvParameters)
 
 void WIFI_Task(void *pvParameters)
 {
-    key_event_t keyEvt;
     wl_status_t wifiStatus = WL_IDLE_STATUS;
     // UBaseType_t uxHighWaterMark;
     uint32_t socketTimeoutTmr;
@@ -764,7 +763,7 @@ void WIFI_Task(void *pvParameters)
             Serial_println("INFO: TCP Socket Client connected");
 
             while (WIFI_Client.connected())
-            {Serial_
+            {
                 StopTimer(socketTimeoutTmr);
                 idx = 0;
 
@@ -862,28 +861,6 @@ void WIFI_Task(void *pvParameters)
         }
         else
         {
-        }
-
-        keyEvt = KEY_Read();
-
-        if (keyEvt.EventType != KEY_EVENT_TYPE_NIL)
-        {
-            switch (keyEvt.KeyNo)
-            {
-            case KEY_NO_ERASE:
-                if (keyEvt.EventType == KEY_EVENT_TYPE_LONG)
-                {
-                    Preferences preferences;
-                    preferences.begin("config", false);
-                    preferences.putString("stSSID", String(""));
-                    preferences.putString("stPASS", String(""));
-                    preferences.end();
-                }
-                break;
-
-            default:
-                break;
-            }
         }
 
         vTaskDelay(pdMS_TO_TICKS(10));

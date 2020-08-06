@@ -1,15 +1,18 @@
 #include <Arduino.h>
 #include "config.h"
-#include "a_input.h"
+#include "a_key.h"
 
 const uint8_t KEY_InConfig[KEY_NO_MAX] = {
     // [KEY_NO_ERASE]
-    {GPIO_NUM_35},
-
+    GPIO_NUM_35,
 };
 
-uint8_t KEY_PrevState[BTN_IN_MAX];
-key_event_t KeyEvent;
+uint8_t KEY_PrevState[KEY_NO_MAX] = {
+    // [KEY_NO_ERASE]
+    0x01,
+};
+
+KEY_event_t KeyEvent;
 // Key de-bounce count is in 100ms resol
 uint8_t KeyDebCnt;
 uint32_t KeyTimer;
@@ -18,12 +21,12 @@ void Key_Init(void)
 {
     uint8_t idx;
 
-    KEY_PrevState[KEY_NO_UP] = 0x01;
+    KEY_PrevState[KEY_NO_ERASE] = 0x01;
     KeyEvent.EventType = KEY_EVENT_TYPE_NIL;
     KeyEvent.KeyNo = KEY_NO_INVALID;
     StartTimer(KeyTimer, 100);
 
-    for (idx = 0; idx < BTN_IN_MAX; idx++)
+    for (idx = 0; idx < KEY_NO_MAX; idx++)
     {
         pinMode(KEY_InConfig[idx], INPUT);
     }
@@ -82,9 +85,9 @@ void Key_Task(void *pvParameters)
  * 
  * @return key_event_t 
  */
-key_event_t KEY_Read(void)
+KEY_event_t KEY_Read(void)
 {
-    key_event_t temp;
+    KEY_event_t temp;
     
     if(KeyEvent.KeyNo != KEY_NO_INVALID)
     {
