@@ -16,7 +16,7 @@ void setup()
 {
     Serial.begin(460800);
     Serial.setRxBufferSize(4096);
-    String ver = "\r\n\r\n\r\nOBDII USB/Wifi Dongle v" xstr(MAJOR_VERSION) "." xstr(MINOR_VERSION) "." xstr(SUB_VERSION) " <" SW_VERSION "> <";
+    String ver = "\r\n\r\n\r\nOBDII USB/BLE Dongle v" xstr(MAJOR_VERSION) "." xstr(MINOR_VERSION) "." xstr(SUB_VERSION) " <" SW_VERSION "> <";
     ver = ver + ESP.getSdkVersion() + ">";
 
     Serial.println(ver);
