@@ -106,7 +106,7 @@ void APP_Init(void)
     APP_CAN_RqRspMaxTime = 500;
     APP_Channel = APP_MSG_CHANNEL_NONE;
 
-    LED_SetLedState(SECURITY_LED, LED_STATE_TOGGLE, LED_TOGGLE_RATE_5HZ);
+    LED_SetLedState(SECURITY_LED, LED_STATE_TOGGLE, LED_TOGGLE_RATE_1HZ);
 }
 
 void APP_SupportTask(void *pvParameters)

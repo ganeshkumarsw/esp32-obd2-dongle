@@ -28,11 +28,11 @@ const LED_Config_t LED_OutConfig[LED_OUT_MAX] = {
     // [LED_OUT_2]
     {GPIO_NUM_19, LED_STATE_OFF},
     // [LED_OUT_3]
-    {GPIO_NUM_26, LED_STATE_OFF}, 
+    {GPIO_NUM_27, LED_STATE_OFF}, 
     // [LED_OUT_4]
-    {GPIO_NUM_25, LED_STATE_OFF}, 
+    {GPIO_NUM_26, LED_STATE_OFF}, 
     // [LED_OUT_5]
-    {GPIO_NUM_27, LED_STATE_OFF},
+    {GPIO_NUM_25, LED_STATE_OFF},
     // [LED_OUT_6]
     {GPIO_NUM_33, LED_STATE_OFF},   // NO LED Connected
     // [LED_OUT_7]
