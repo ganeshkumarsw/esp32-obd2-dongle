@@ -48,32 +48,27 @@ void CreateTasks_Task(void *pvParameters)
     // uxHighWaterMark = uxTaskGetStackHighWaterMark(NULL);
     // ESP_LOGI("CREATE", "uxHighWaterMark = %d", uxHighWaterMark);
 
-    if (xTaskCreate(LED_Task, "LED_Task", 8000, NULL, tskIDLE_PRIORITY + 1, NULL) != pdTRUE)
+    if (xTaskCreate(LED_Task, "LED_Task", 4000, NULL, tskIDLE_PRIORITY + 2, NULL) != pdTRUE)
     {
         configASSERT(0);
     }
 
-    if (xTaskCreate(Key_Task, "Key_Task", 4000, NULL, tskIDLE_PRIORITY + 1, NULL) != pdTRUE)
-    {
-      configASSERT(0);
-    }
-
-    if (xTaskCreate(WIFI_Task, "WIFI_Task", 10000, NULL, tskIDLE_PRIORITY + 4, NULL) != pdTRUE)
+    if (xTaskCreate(WIFI_Task, "WIFI_Task", 10000, NULL, tskIDLE_PRIORITY + 5, NULL) != pdTRUE)
     {
         configASSERT(0);
     }
 
-    // if (xTaskCreate(BLE_Task, "BLE_Task", 10000, NULL, tskIDLE_PRIORITY + 4, NULL) != pdTRUE)
+    // if (xTaskCreate(BLE_Task, "BLE_Task", 10000, NULL, tskIDLE_PRIORITY + 5, NULL) != pdTRUE)
     // {
     //   configASSERT(0);
     // }
 
-    if (xTaskCreate(APP_Task, "APP_Task", 10000, NULL, tskIDLE_PRIORITY + 3, NULL) != pdTRUE)
+    if (xTaskCreate(APP_Task, "APP_Task", 10000, NULL, tskIDLE_PRIORITY + 4, NULL) != pdTRUE)
     {
         configASSERT(0);
     }
 
-    if (xTaskCreate(UART_Task, "UART_Task", 10000, NULL, tskIDLE_PRIORITY + 2, NULL) != pdTRUE)
+    if (xTaskCreate(UART_Task, "UART_Task", 10000, NULL, tskIDLE_PRIORITY + 3, NULL) != pdTRUE)
     {
         configASSERT(0);
     }
@@ -83,9 +78,24 @@ void CreateTasks_Task(void *pvParameters)
     //   configASSERT(0);
     // }
 
-    if (xTaskCreate(CAN_Task, "CAN_Task", 10000, NULL, tskIDLE_PRIORITY + 5, NULL) != pdTRUE)
+    if (xTaskCreate(CAN_Task, "CAN_Task", 10000, NULL, tskIDLE_PRIORITY + 6, NULL) != pdTRUE)
     {
         configASSERT(0);
+    }
+
+    // if (xTaskCreate(LED_Task, "LED_Task1", 4000, NULL, tskIDLE_PRIORITY + 4, NULL) != pdTRUE)
+    // {
+    //     configASSERT(0);
+    // }
+
+    // if (xTaskCreate(LED_Task, "LED_Task2", 4000, NULL, tskIDLE_PRIORITY + 4, NULL) != pdTRUE)
+    // {
+    //     configASSERT(0);
+    // }
+
+    if (xTaskCreate(Key_Task, "Key_Task", 2000, NULL, tskIDLE_PRIORITY + 1, NULL) != pdTRUE)
+    {
+      configASSERT(0);
     }
 
     LED_SetLedState(HEART_BEAT_LED, LED_STATE_ON, LED_TOGGLE_RATE_NONE);

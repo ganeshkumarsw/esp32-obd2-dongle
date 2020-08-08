@@ -160,15 +160,15 @@ void APP_SupportTask(void *pvParameters)
             switch (keyEvt.KeyNo)
             {
             case KEY_NO_ERASE:
-                if (keyEvt.EventType == KEY_EVENT_TYPE_LONG)
-                {
-                    Preferences preferences;
-                    preferences.begin("config", false);
-                    preferences.putString("stSSID", String(""));
-                    preferences.putString("stPASS", String(""));
-                    preferences.end();
-                    ESP.restart();
-                }
+                // if (keyEvt.EventType == KEY_EVENT_TYPE_LONG)
+                // {
+                //     Preferences preferences;
+                //     preferences.begin("config", false);
+                //     preferences.putString("stSSID", String(""));
+                //     preferences.putString("stPASS", String(""));
+                //     preferences.end();
+                //     ESP.restart();
+                // }
                 break;
 
             default:
