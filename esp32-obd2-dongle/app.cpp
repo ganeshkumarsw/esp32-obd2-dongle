@@ -164,8 +164,8 @@ void APP_SupportTask(void *pvParameters)
                 {
                     Preferences preferences;
                     preferences.begin("config", false);
-                    preferences.putString("stSSID", String(""));
-                    preferences.putString("stPASS", String(""));
+                    preferences.putString("stSSID[1]", String(""));
+                    preferences.putString("stPASS[1]", String(""));
                     preferences.end();
                     ESP.restart();
                 }
@@ -1191,7 +1191,11 @@ void APP_Frame2(uint8_t *p_buff, uint16_t len, uint8_t channel)
             }
             p_buff[len - 1] = 0;
 
-            WIFI_Set_STA_SSID((char *)&p_buff[1]);
+            if (WIFI_Set_STA_SSID(p_buff[1], (char *)&p_buff[2]) == false)
+            {
+                respType = APP_RESP_NACK;
+                respNo = APP_RESP_NACK_13;
+            }
             break;
 
         case APP_REQ_CMD_SET_STA_PASSWORD:
@@ -1203,7 +1207,11 @@ void APP_Frame2(uint8_t *p_buff, uint16_t len, uint8_t channel)
             }
 
             p_buff[len - 1] = 0;
-            WIFI_Set_STA_Pass((char *)&p_buff[1]);
+            if (WIFI_Set_STA_Pass(p_buff[1], (char *)&p_buff[2]) == false)
+            {
+                respType = APP_RESP_NACK;
+                respNo = APP_RESP_NACK_13;
+            }
             break;
 
         case APP_REQ_CMD_ENABLE_CAN_TX_DELAY:

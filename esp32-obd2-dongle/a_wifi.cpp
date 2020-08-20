@@ -70,11 +70,11 @@ void WIFI_Init(void)
     sprintf(WIFI_AP_SSID, "%s-%02X%02X", AP_WIFI_SSID, mac[4], mac[5]);
     Serial_printf("INFO: SSID <%s>\r\n", WIFI_AP_SSID);
 
-    if ((preferences.getString("stSSID") != "") && (strnlen(preferences.getString("stSSID").c_str(), 50) < 50))
+    if ((preferences.getString("stSSID[1]") != "") && (strnlen(preferences.getString("stSSID[1]").c_str(), 50) < 50))
     {
-        if ((preferences.getString("stPASS") != "") && (strnlen(preferences.getString("stPASS").c_str(), 50) < 50))
+        if ((preferences.getString("stPASS[1]") != "") && (strnlen(preferences.getString("stPASS[1]").c_str(), 50) < 50))
         {
-            WiFi.begin((char *)preferences.getString("stSSID").c_str(), (char *)preferences.getString("stPASS").c_str());
+            WiFi.begin((char *)preferences.getString("stSSID[1]").c_str(), (char *)preferences.getString("stPASS[1]").c_str());
 #if STA_STATIC_IP
             WiFi.config(IPAddress(192, 168, 43, 77), IPAddress(192, 168, 43, 1), IPAddress(255, 255, 255, 0), IPAddress(8, 8, 8, 8));
 #endif
@@ -82,11 +82,28 @@ void WIFI_Init(void)
         else
         {
             Serial_println("INFO: ST mode PASSWORD is missing. Update password");
+            goto ST_Default_Config;
         }
     }
     else
     {
         Serial_println("INFO: ST mode SSID Key is missing. Update SSID");
+    ST_Default_Config:
+        if ((preferences.getString("stSSID[0]") != "") && (strnlen(preferences.getString("stSSID[0]").c_str(), 50) < 50))
+        {
+            if ((preferences.getString("stPASS[0]") != "") && (strnlen(preferences.getString("stPASS[0]").c_str(), 50) < 50))
+            {
+                WiFi.begin((char *)preferences.getString("stSSID[0]").c_str(), (char *)preferences.getString("stPASS[0]").c_str());
+#if STA_STATIC_IP
+                WiFi.config(IPAddress(192, 168, 43, 77), IPAddress(192, 168, 43, 1), IPAddress(255, 255, 255, 0), IPAddress(8, 8, 8, 8));
+#endif
+            }
+            else
+            {
+                Serial_println("INFO: ST mode PASSWORD is missing. Update password");
+                goto ST_Default_Config;
+            }
+        }
     }
 
     if (MDNS.begin("obd2") == false)
@@ -985,24 +1002,41 @@ void WIFI_WebSoc_Write(uint8_t *payLoad, uint16_t len)
     xSemaphoreGive(WIFI_SemWebSocTxComplete);
 }
 
-void WIFI_Set_STA_SSID(char *p_str)
+bool WIFI_Set_STA_SSID(uint8_t idx, char *p_str)
 {
-    Preferences preferences;
+    bool ret = false;
+    char key[20];
 
-    preferences.begin("config", false);
-    preferences.putString("stSSID", p_str);
+    if (idx < 2)
+    {
+        Preferences preferences;
+        snprintf(key, sizeof(key), "stSSID[%d]", idx);
 
-    preferences.end();
+        preferences.begin("config", false);
+        preferences.putString((const char *)key, p_str);
+
+        preferences.end();
+    }
+    return ret;
 }
 
-void WIFI_Set_STA_Pass(char *p_str)
+bool WIFI_Set_STA_Pass(uint8_t idx, char *p_str)
 {
-    Preferences preferences;
+    bool ret = false;
+    char key[20];
 
-    preferences.begin("config", false);
-    preferences.putString("stPASS", p_str);
+    if (idx < 2)
+    {
+        Preferences preferences;
+        snprintf(key, sizeof(key), "stPASS[%d]", idx);
 
-    preferences.end();
+        preferences.begin("config", false);
+        preferences.putString((const char *)key, p_str);
+
+        preferences.end();
+    }
+
+    return ret;
 }
 
 void WIFI_EventCb(system_event_id_t event)
