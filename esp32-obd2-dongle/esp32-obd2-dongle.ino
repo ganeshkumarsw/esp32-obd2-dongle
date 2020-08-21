@@ -83,16 +83,6 @@ void CreateTasks_Task(void *pvParameters)
         configASSERT(0);
     }
 
-    // if (xTaskCreate(LED_Task, "LED_Task1", 4000, NULL, tskIDLE_PRIORITY + 4, NULL) != pdTRUE)
-    // {
-    //     configASSERT(0);
-    // }
-
-    // if (xTaskCreate(LED_Task, "LED_Task2", 4000, NULL, tskIDLE_PRIORITY + 4, NULL) != pdTRUE)
-    // {
-    //     configASSERT(0);
-    // }
-
     if (xTaskCreate(Key_Task, "Key_Task", 2000, NULL, tskIDLE_PRIORITY + 1, NULL) != pdTRUE)
     {
       configASSERT(0);
