@@ -1011,11 +1011,10 @@ bool WIFI_Set_STA_SSID(uint8_t idx, char *p_str)
     {
         Preferences preferences;
         snprintf(key, sizeof(key), "stSSID[%d]", idx);
-
         preferences.begin("config", false);
         preferences.putString((const char *)key, p_str);
-
         preferences.end();
+        ret = true;
     }
     return ret;
 }
@@ -1029,11 +1028,10 @@ bool WIFI_Set_STA_Pass(uint8_t idx, char *p_str)
     {
         Preferences preferences;
         snprintf(key, sizeof(key), "stPASS[%d]", idx);
-
         preferences.begin("config", false);
         preferences.putString((const char *)key, p_str);
-
         preferences.end();
+        ret = true;
     }
 
     return ret;
