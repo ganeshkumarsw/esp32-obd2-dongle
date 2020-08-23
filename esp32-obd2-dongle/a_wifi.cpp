@@ -35,6 +35,7 @@ uint8_t WIFI_RxBuff[4130];
 uint8_t WIFI_TxBuff[4130];
 uint16_t WIFI_TxLen;
 bool UDP_Status = false;
+bool UserModeSSID_Fail = false;
 
 static void WIFI_RestartTask(void *pvParameters);
 static void WIFI_ScanTask(void *pvParameters);
@@ -70,39 +71,51 @@ void WIFI_Init(void)
     sprintf(WIFI_AP_SSID, "%s-%02X%02X", AP_WIFI_SSID, mac[4], mac[5]);
     Serial_printf("INFO: SSID <%s>\r\n", WIFI_AP_SSID);
 
+    Serial_printf("INFO: User mode SSID <%s>\r\n", preferences.getString("stSSID[1]").c_str());
+    Serial_printf("INFO: Default mode SSID <%s>\r\n", preferences.getString("stSSID[0]").c_str());
+
     if ((preferences.getString("stSSID[1]") != "") && (strnlen(preferences.getString("stSSID[1]").c_str(), 50) < 50))
     {
         if ((preferences.getString("stPASS[1]") != "") && (strnlen(preferences.getString("stPASS[1]").c_str(), 50) < 50))
         {
             WiFi.begin((char *)preferences.getString("stSSID[1]").c_str(), (char *)preferences.getString("stPASS[1]").c_str());
+            Serial_println("INFO: Connecting to user mode SSID");
 #if STA_STATIC_IP
             WiFi.config(IPAddress(192, 168, 43, 77), IPAddress(192, 168, 43, 1), IPAddress(255, 255, 255, 0), IPAddress(8, 8, 8, 8));
 #endif
         }
         else
         {
-            Serial_println("INFO: ST mode PASSWORD is missing. Update password");
-            goto ST_Default_Config;
+            Serial_println("WARNING: ST user mode PASSWORD is missing. Update user password");
+            UserModeSSID_Fail = true;
         }
     }
     else
     {
-        Serial_println("INFO: ST mode SSID Key is missing. Update SSID");
-    ST_Default_Config:
+        Serial_println("WARNING: ST user mode SSID Key is missing. Update user SSID");
+        UserModeSSID_Fail = true;
+    }
+
+    if (UserModeSSID_Fail == true)
+    {
         if ((preferences.getString("stSSID[0]") != "") && (strnlen(preferences.getString("stSSID[0]").c_str(), 50) < 50))
         {
             if ((preferences.getString("stPASS[0]") != "") && (strnlen(preferences.getString("stPASS[0]").c_str(), 50) < 50))
             {
                 WiFi.begin((char *)preferences.getString("stSSID[0]").c_str(), (char *)preferences.getString("stPASS[0]").c_str());
+                Serial_println("INFO: Connecting to default mode SSID");
 #if STA_STATIC_IP
                 WiFi.config(IPAddress(192, 168, 43, 77), IPAddress(192, 168, 43, 1), IPAddress(255, 255, 255, 0), IPAddress(8, 8, 8, 8));
 #endif
             }
             else
             {
-                Serial_println("INFO: ST mode PASSWORD is missing. Update password");
-                goto ST_Default_Config;
+                Serial_println("WARNING: ST default mode PASSWORD is missing. Update default password");
             }
+        }
+        else
+        {
+            Serial_println("WARNING: ST default mode SSID Key is missing. Update default SSID");
         }
     }
 
@@ -433,8 +446,8 @@ void WIFI_Init(void)
                         Preferences preferences;
 
                         preferences.begin("config", false);
-                        preferences.putString("stSSID", request->arg("ssid").c_str());
-                        preferences.putString("stPASS", request->arg("password").c_str());
+                        preferences.putString("stSSID[1]", request->arg("ssid").c_str());
+                        preferences.putString("stPASS[1]", request->arg("password").c_str());
                         Serial_println("INFO: AP credentials saved");
                         request->send(200, "text/plain", "Restart to join into the configured AP");
                     }
@@ -728,13 +741,15 @@ void WIFI_SupportTask(void *pvParameters)
             {
                 WIFI_Client.stop();
                 wifiConnect = false;
-                WiFi.begin((char *)preferences.getString("stSSID").c_str(), (char *)preferences.getString("stPASS").c_str());
 
-                // Serial_println("INFO: WIFI AP begin");
-                // if (WiFi.softAP(WIFI_AP_SSID, WIFI_AP_Password) == false)
-                // {
-                //     Serial_println("INFO: SoftAP failed to start!");
-                // }
+                if (UserModeSSID_Fail == true)
+                {
+                    WiFi.begin((char *)preferences.getString("stSSID[0]").c_str(), (char *)preferences.getString("stPASS[0]").c_str());
+                }
+                else
+                {
+                    WiFi.begin((char *)preferences.getString("stSSID[1]").c_str(), (char *)preferences.getString("stPASS[1]").c_str());
+                }
             }
         }
 
@@ -1014,6 +1029,7 @@ bool WIFI_Set_STA_SSID(uint8_t idx, char *p_str)
         preferences.begin("config", false);
         preferences.putString((const char *)key, p_str);
         preferences.end();
+        Serial_printf("Updated SSID at <%d>\r\n", idx);
         ret = true;
     }
     return ret;
@@ -1032,6 +1048,7 @@ bool WIFI_Set_STA_Pass(uint8_t idx, char *p_str)
         preferences.putString((const char *)key, p_str);
         preferences.end();
         ret = true;
+        Serial_printf("Updated Password at <%d>\r\n", idx);
     }
 
     return ret;
