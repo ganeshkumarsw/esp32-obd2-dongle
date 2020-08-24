@@ -116,7 +116,7 @@ void APP_SupportTask(void *pvParameters)
     while (1)
     {
         if (((APP_Client_CommStatus == true) || (APP_YellowFlashCntr > 0)) &&
-            IsTimerElapsed(APP_YellowLedTmr))
+            (IsTimerElapsed(APP_YellowLedTmr) || (IsTimerRunning(APP_YellowLedTmr) == false)))
         {
             if (APP_Client_CommStatus == true)
             {
@@ -135,11 +135,11 @@ void APP_SupportTask(void *pvParameters)
         }
 
         if (((APP_CAN_CommStatus == true) || (APP_GreenFlashCntr > 0)) &&
-            IsTimerElapsed(APP_GreenLedTmr))
+            (IsTimerElapsed(APP_GreenLedTmr) || (IsTimerRunning(APP_GreenLedTmr) == false)))
         {
             if (APP_CAN_CommStatus == true)
             {
-                APP_CAN_CommStatus = 0;
+                APP_CAN_CommStatus = false;
                 APP_GreenFlashCntr = 4;
             }
 
@@ -608,6 +608,7 @@ void APP_ProcessData(uint8_t *p_buff, uint16_t len, APP_CHANNEL_t channel)
     uint8_t respBuff[50];
 
     APP_Client_CommStatus = true;
+    APP_CAN_CommStatus = true;
 
     respLen = 0;
     respType = APP_RESP_ACK;

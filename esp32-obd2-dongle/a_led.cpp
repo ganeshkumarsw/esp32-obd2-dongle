@@ -28,15 +28,15 @@ const LED_Config_t LED_OutConfig[LED_OUT_MAX] = {
     // [LED_OUT_2]
     {GPIO_NUM_19, LED_STATE_OFF},
     // [LED_OUT_3]
-    {GPIO_NUM_27, LED_STATE_OFF}, 
+    {GPIO_NUM_27, LED_STATE_OFF},
     // [LED_OUT_4]
-    {GPIO_NUM_26, LED_STATE_OFF}, 
+    {GPIO_NUM_26, LED_STATE_OFF},
     // [LED_OUT_5]
     {GPIO_NUM_25, LED_STATE_OFF},
     // [LED_OUT_6]
-    {GPIO_NUM_33, LED_STATE_OFF},   // NO LED Connected
+    {GPIO_NUM_33, LED_STATE_OFF}, // NO LED Connected
     // [LED_OUT_7]
-    {GPIO_NUM_32, LED_STATE_OFF},   // NO LED Connected
+    {GPIO_NUM_32, LED_STATE_OFF}, // NO LED Connected
 };
 #endif
 struct
@@ -118,7 +118,11 @@ void LED_SetLedState(led_num_t gpio, LED_State_t state, LED_Toggle_Rate_t toggle
     if (gpio < LED_OUT_MAX)
     {
         // Serial_printf("INFO: LED <%d>, State <%d>, Freq <%d>\r\n", gpio, state, toggleRate);
-        LED_OutParams[gpio].IO_State = state;
         LED_OutParams[gpio].ToggleRate = toggleRate;
+
+        if (toggleRate == LED_TOGGLE_RATE_NONE)
+        {
+            LED_OutParams[gpio].IO_State = state;
+        }
     }
 }

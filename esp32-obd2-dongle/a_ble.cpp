@@ -71,7 +71,7 @@ void BLE_Task(void *pvParameters)
         }
         else
         {
-            LED_SetLedState(WIFI_CONN_LED, LED_STATE_ON, LED_TOGGLE_RATE_1HZ);
+            LED_SetLedState(WIFI_CONN_LED, LED_STATE_TOGGLE, LED_TOGGLE_RATE_1HZ);
         }
 
         vTaskDelay(5 / portTICK_PERIOD_MS);
