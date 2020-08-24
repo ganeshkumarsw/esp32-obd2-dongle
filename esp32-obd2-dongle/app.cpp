@@ -120,7 +120,7 @@ void APP_SupportTask(void *pvParameters)
         {
             if (APP_Client_CommStatus == true)
             {
-                APP_Client_CommStatus = 0;
+                APP_Client_CommStatus = false;
                 APP_YellowFlashCntr = 4;
             }
 
@@ -608,7 +608,6 @@ void APP_ProcessData(uint8_t *p_buff, uint16_t len, APP_CHANNEL_t channel)
     uint8_t respBuff[50];
 
     APP_Client_CommStatus = true;
-    APP_CAN_CommStatus = true;
 
     respLen = 0;
     respType = APP_RESP_ACK;
