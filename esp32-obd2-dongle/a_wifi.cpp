@@ -64,7 +64,7 @@ void WIFI_Init(void)
 
     preferences.begin("config", false);
 
-    LED_SetLedState(WIFI_CONN_LED, LED_STATE_ON, LED_TOGGLE_RATE_1HZ);
+    LED_SetLedState(WIFI_CONN_LED, LED_STATE_TOGGLE, LED_TOGGLE_RATE_1HZ);
     ESP_LOGI("WIFI", "MAC: %s", WiFi.macAddress().c_str());
 
     WiFi.macAddress((uint8_t *)mac);
@@ -154,7 +154,7 @@ void WIFI_Init(void)
         Serial_println("INFO: WIFI AP begin");
         if (WiFi.softAP(WIFI_AP_SSID, WIFI_AP_Password) == false)
         {
-            LED_SetLedState(WIFI_CONN_LED, LED_STATE_ON, LED_TOGGLE_RATE_5HZ);
+            LED_SetLedState(WIFI_CONN_LED, LED_STATE_TOGGLE, LED_TOGGLE_RATE_5HZ);
             Serial_println("INFO: SoftAP failed to start!");
         }
     }
@@ -705,7 +705,7 @@ void WIFI_SupportTask(void *pvParameters)
 
             case WL_DISCONNECTED:
                 Serial_println("INFO: " str(WL_DISCONNECTED));
-                LED_SetLedState(WIFI_CONN_LED, LED_STATE_ON, LED_TOGGLE_RATE_1HZ);
+                LED_SetLedState(WIFI_CONN_LED, LED_STATE_TOGGLE, LED_TOGGLE_RATE_1HZ);
                 wifiConnect = true;
                 break;
 
@@ -1026,7 +1026,6 @@ bool WIFI_Set_STA_SSID(uint8_t idx, char *p_str)
     {
         Preferences preferences;
         snprintf(key, sizeof(key), "stSSID[%d]", idx);
-
         preferences.begin("config", false);
         preferences.putString((const char *)key, p_str);
         preferences.end();

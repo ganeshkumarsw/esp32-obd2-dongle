@@ -1,6 +1,7 @@
 #include <Arduino.h>
 #include "config.h"
 #include "app.h"
+#include "a_led.h"
 #include "BluetoothSerial.h"
 #include "a_ble.h"
 
@@ -61,7 +62,16 @@ void BLE_Task(void *pvParameters)
 
         if (len != 0)
         {
-             APP_ProcessData(BLE_Buff, idx, APP_MSG_CHANNEL_BLE);
+            APP_ProcessData(BLE_Buff, idx, APP_MSG_CHANNEL_BLE);
+        }
+
+        if (SerialBT.hasClient() == true)
+        {
+            LED_SetLedState(WIFI_CONN_LED, LED_STATE_ON, LED_TOGGLE_RATE_NONE);
+        }
+        else
+        {
+            LED_SetLedState(WIFI_CONN_LED, LED_STATE_TOGGLE, LED_TOGGLE_RATE_1HZ);
         }
 
         vTaskDelay(5 / portTICK_PERIOD_MS);
@@ -77,7 +87,7 @@ void BLE_Write(uint8_t *payLoad, uint16_t len)
 
     xSemaphoreTake(BLE_SemTxComplete, portMAX_DELAY);
 
-    if(SerialBT.hasClient() == true)
+    if (SerialBT.hasClient() == true)
     {
         SerialBT.write(payLoad, len);
     }

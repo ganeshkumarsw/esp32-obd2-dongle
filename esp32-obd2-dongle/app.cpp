@@ -116,11 +116,11 @@ void APP_SupportTask(void *pvParameters)
     while (1)
     {
         if (((APP_Client_CommStatus == true) || (APP_YellowFlashCntr > 0)) &&
-            IsTimerElapsed(APP_YellowLedTmr))
+            (IsTimerElapsed(APP_YellowLedTmr) || (IsTimerRunning(APP_YellowLedTmr) == false)))
         {
             if (APP_Client_CommStatus == true)
             {
-                APP_Client_CommStatus = 0;
+                APP_Client_CommStatus = false;
                 APP_YellowFlashCntr = 4;
             }
 
@@ -135,11 +135,11 @@ void APP_SupportTask(void *pvParameters)
         }
 
         if (((APP_CAN_CommStatus == true) || (APP_GreenFlashCntr > 0)) &&
-            IsTimerElapsed(APP_GreenLedTmr))
+            (IsTimerElapsed(APP_GreenLedTmr) || (IsTimerRunning(APP_GreenLedTmr) == false)))
         {
             if (APP_CAN_CommStatus == true)
             {
-                APP_CAN_CommStatus = 0;
+                APP_CAN_CommStatus = false;
                 APP_GreenFlashCntr = 4;
             }
 

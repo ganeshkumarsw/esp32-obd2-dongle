@@ -61,7 +61,7 @@ void Key_Task(void *pvParameters)
         for (i = 0; i < KEY_NO_MAX; i++)
         {
             keyCurrState = digitalRead(KEY_InConfig[i]);
-            Serial_printf("INFO: KEY <%hhd>, state <%d>\r\n", i, keyCurrState);
+            // Serial_printf("INFO: KEY <%hhd>, state <%d>\r\n", i, keyCurrState);
 
             if ((keyCurrState == 0) && (KEY_PrevState[i] == 1))
             {
@@ -95,7 +95,7 @@ void Key_Task(void *pvParameters)
             KEY_PrevState[i] = keyCurrState;
         }
 
-        Serial_println("INFO: KEY Task sleep");
+        // Serial_println("INFO: KEY Task sleep");
         vTaskDelay(pdMS_TO_TICKS(100));
     }
 }
