@@ -262,11 +262,11 @@ void APP_Task(void *pvParameters)
                     case APP_STATE_CAN_ISO_SINGLE:
                         if (APP_BuffLockedBy == APP_BUFF_LOCKED_BY_ISO_TP_TX_SF)
                         {
-                            crc16 = UTIL_CRC16_CCITT(0, APP_CAN_TxBuff, sizeof(APP_CAN_TxBuff) - 2);
-                            if (*(uint16_t *)&APP_CAN_TxBuff[sizeof(APP_CAN_TxBuff) - 2] != crc16)
-                            {
-                                Serial.println("ERROR: CAN send buffer is corrupted");
-                            }
+                            // crc16 = UTIL_CRC16_CCITT(0, APP_CAN_TxBuff, sizeof(APP_CAN_TxBuff) - 2);
+                            // if (*(uint16_t *)&APP_CAN_TxBuff[sizeof(APP_CAN_TxBuff) - 2] != crc16)
+                            // {
+                            //     Serial.println("ERROR: CAN send buffer is corrupted");
+                            // }
 
                             tx_frame.FIR.B.DLC = APP_CAN_TxDataLen + 1;
                             tx_frame.data.u8[0] = 0x0F & (tx_frame.FIR.B.DLC - 1);
@@ -287,17 +287,18 @@ void APP_Task(void *pvParameters)
 
                             APP_CAN_CommStatus = true;
                             CAN_WriteFrame(&tx_frame, portMAX_DELAY);
+                            delayMicroseconds(250);
                         }
                         break;
 
                     case APP_STATE_CAN_ISO_FIRST:
                         if (APP_BuffLockedBy == APP_BUFF_LOCKED_BY_ISO_TP_TX_FF)
                         {
-                            crc16 = UTIL_CRC16_CCITT(0, APP_CAN_TxBuff, sizeof(APP_CAN_TxBuff) - 2);
-                            if (*(uint16_t *)&APP_CAN_TxBuff[sizeof(APP_CAN_TxBuff) - 2] != crc16)
-                            {
-                                Serial.println("ERROR: CAN send buffer is corrupted");
-                            }
+                            // crc16 = UTIL_CRC16_CCITT(0, APP_CAN_TxBuff, sizeof(APP_CAN_TxBuff) - 2);
+                            // if (*(uint16_t *)&APP_CAN_TxBuff[sizeof(APP_CAN_TxBuff) - 2] != crc16)
+                            // {
+                            //     Serial.println("ERROR: CAN send buffer is corrupted");
+                            // }
 
                             Serial_println("INFO: " str(APP_STATE_CAN_ISO_FIRST));
                             tx_frame.FIR.B.DLC = 8;
@@ -319,6 +320,7 @@ void APP_Task(void *pvParameters)
 #endif
                             APP_CAN_CommStatus = true;
                             CAN_WriteFrame(&tx_frame, portMAX_DELAY);
+                            delayMicroseconds(250);
                         }
                         break;
 
@@ -328,11 +330,11 @@ void APP_Task(void *pvParameters)
                         case APP_CAN_ISO_FC_TM_CONT:
                             while (APP_BuffLockedBy == APP_BUFF_LOCKED_BY_ISO_TP_TX_CF)
                             {
-                                crc16 = UTIL_CRC16_CCITT(0, APP_CAN_TxBuff, sizeof(APP_CAN_TxBuff) - 2);
-                                if (*(uint16_t *)&APP_CAN_TxBuff[sizeof(APP_CAN_TxBuff) - 2] != crc16)
-                                {
-                                    Serial.println("ERROR: CAN send buffer is corrupted");
-                                }
+                                // crc16 = UTIL_CRC16_CCITT(0, APP_CAN_TxBuff, sizeof(APP_CAN_TxBuff) - 2);
+                                // if (*(uint16_t *)&APP_CAN_TxBuff[sizeof(APP_CAN_TxBuff) - 2] != crc16)
+                                // {
+                                //     Serial.println("ERROR: CAN send buffer is corrupted");
+                                // }
 
                                 Serial_println("INFO: " str(APP_STATE_CAN_ISO_CONSECUTIVE));
 
@@ -374,6 +376,7 @@ void APP_Task(void *pvParameters)
                                 //               tx_frame.data.u8[6],
                                 //               tx_frame.data.u8[7]);
                                 CAN_WriteFrame(&tx_frame, portMAX_DELAY);
+                                delayMicroseconds(250);
 
                                 if ((APP_ISO_FC_TxBlockSize > 0) && (APP_ISO_TxBlockCounter == APP_ISO_FC_TxBlockSize))
                                 {
@@ -555,6 +558,7 @@ void APP_Task(void *pvParameters)
 
                             APP_CAN_CommStatus = true;
                             CAN_WriteFrame(&tx_frame, portMAX_DELAY);
+                            delayMicroseconds(250);
                             break;
 
                         case APP_CAN_ISO_TYPE_CONSECUTIVE:
@@ -583,6 +587,7 @@ void APP_Task(void *pvParameters)
 
                                 APP_CAN_CommStatus = true;
                                 CAN_WriteFrame(&tx_frame, portMAX_DELAY);
+                                delayMicroseconds(250);
                             }
                             break;
 
@@ -801,14 +806,14 @@ void APP_Frame1(uint8_t *p_buff, uint16_t len, uint8_t channel)
                         APP_CAN_ISO_State = APP_STATE_CAN_ISO_FIRST;
                     }
 
-                    crc16 = UTIL_CRC16_CCITT(0, APP_CAN_TxBuff, sizeof(APP_CAN_TxBuff) - 2);
-                    *(uint16_t *)&APP_CAN_TxBuff[sizeof(APP_CAN_TxBuff) - 2] = crc16;
+                    // crc16 = UTIL_CRC16_CCITT(0, APP_CAN_TxBuff, sizeof(APP_CAN_TxBuff) - 2);
+                    // *(uint16_t *)&APP_CAN_TxBuff[sizeof(APP_CAN_TxBuff) - 2] = crc16;
                 }
                 else if (APP_CAN_Protocol == APP_CAN_PROTOCOL_NORMAL)
                 {
                     StartTimer(APP_CAN_TxMinTmr, APP_CAN_TxMinTime);
-                    crc16 = UTIL_CRC16_CCITT(0, APP_CAN_TxBuff, sizeof(APP_CAN_TxBuff) - 2);
-                    *(uint16_t *)&APP_CAN_TxBuff[sizeof(APP_CAN_TxBuff) - 2] = crc16;
+                    // crc16 = UTIL_CRC16_CCITT(0, APP_CAN_TxBuff, sizeof(APP_CAN_TxBuff) - 2);
+                    // *(uint16_t *)&APP_CAN_TxBuff[sizeof(APP_CAN_TxBuff) - 2] = crc16;
                 }
 
                 StartTimer(APP_RxResp_TimeOutTmr, APP_CAN_RqRspMaxTime);
@@ -1334,8 +1339,8 @@ void APP_Frame4(uint8_t *p_buff, uint16_t len, uint8_t channel)
                 if (APP_CAN_TxDataLen < 8)
                 {
                     APP_CAN_ISO_State = APP_STATE_CAN_ISO_SINGLE;
-                    crc16 = UTIL_CRC16_CCITT(0, APP_CAN_TxBuff, sizeof(APP_CAN_TxBuff) - 2);
-                    *(uint16_t *)&APP_CAN_TxBuff[sizeof(APP_CAN_TxBuff) - 2] = crc16;
+                    // crc16 = UTIL_CRC16_CCITT(0, APP_CAN_TxBuff, sizeof(APP_CAN_TxBuff) - 2);
+                    // *(uint16_t *)&APP_CAN_TxBuff[sizeof(APP_CAN_TxBuff) - 2] = crc16;
                     APP_BuffLockedBy = APP_BUFF_LOCKED_BY_ISO_TP_TX_SF;
                 }
             }
@@ -1343,8 +1348,8 @@ void APP_Frame4(uint8_t *p_buff, uint16_t len, uint8_t channel)
             {
                 StartTimer(APP_CAN_TxMinTmr, 1);
                 APP_BuffLockedBy = APP_BUFF_LOCKED_BY_CAN_TX;
-                crc16 = UTIL_CRC16_CCITT(0, APP_CAN_TxBuff, sizeof(APP_CAN_TxBuff) - 2);
-                *(uint16_t *)&APP_CAN_TxBuff[sizeof(APP_CAN_TxBuff) - 2] = crc16;
+                // crc16 = UTIL_CRC16_CCITT(0, APP_CAN_TxBuff, sizeof(APP_CAN_TxBuff) - 2);
+                // *(uint16_t *)&APP_CAN_TxBuff[sizeof(APP_CAN_TxBuff) - 2] = crc16;
             }
 
             APP_CAN_TxIndex = 0;

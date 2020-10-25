@@ -1,7 +1,7 @@
  #ifndef __VERSION_H__
  #define __VERSION_H__
     
- #define SW_VERSION	"heads/Mukund/Hardware_v2/BLE/Master-0-g56e9b6d"
+ #define SW_VERSION	"heads/Mukund/Hardware_v2/WIFI/Master-0-gff8208a"
    
   
   
