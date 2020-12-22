@@ -76,7 +76,7 @@ void WIFI_Init(void)
 
     if ((preferences.getString("stSSID[1]") != "") && (strnlen(preferences.getString("stSSID[1]").c_str(), 50) < 50))
     {
-        //if ((preferences.getString("stPASS[1]") != "") && (strnlen(preferences.getString("stPASS[1]").c_str(), 50) < 50))
+        // if ((preferences.getString("stPASS[1]") != "") && (strnlen(preferences.getString("stPASS[1]").c_str(), 50) < 50))
         {
             WiFi.begin((char *)preferences.getString("stSSID[1]").c_str(), (char *)preferences.getString("stPASS[1]").c_str());
             Serial_println("INFO: Connecting to user mode SSID");
@@ -84,11 +84,11 @@ void WIFI_Init(void)
             WiFi.config(IPAddress(192, 168, 43, 77), IPAddress(192, 168, 43, 1), IPAddress(255, 255, 255, 0), IPAddress(8, 8, 8, 8));
 #endif
         }
-        else
-        {
-            Serial_println("WARNING: ST user mode PASSWORD is missing. Update user password");
-            UserModeSSID_Fail = true;
-        }
+        // else
+        // {
+        //     Serial_println("WARNING: ST user mode PASSWORD is missing. Update user password");
+        //     UserModeSSID_Fail = true;
+        // }
     }
     else
     {
