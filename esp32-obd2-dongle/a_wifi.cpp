@@ -69,14 +69,14 @@ void WIFI_Init(void)
 
     WiFi.macAddress((uint8_t *)mac);
     sprintf(WIFI_AP_SSID, "%s-%02X%02X", AP_WIFI_SSID, mac[4], mac[5]);
-    Serial_printf("INFO: SSID <%s>\r\n", WIFI_AP_SSID);
+    Serial_printf("INFO: AP SSID <%s>\r\n", WIFI_AP_SSID);
 
-    Serial_printf("INFO: User mode SSID <%s>\r\n", preferences.getString("stSSID[1]").c_str());
-    Serial_printf("INFO: Default mode SSID <%s>\r\n", preferences.getString("stSSID[0]").c_str());
+    Serial_printf("INFO: User mode station SSID <%s>\r\n", preferences.getString("stSSID[1]").c_str());
+    Serial_printf("INFO: Default mode station SSID <%s>\r\n", preferences.getString("stSSID[0]").c_str());
 
     if ((preferences.getString("stSSID[1]") != "") && (strnlen(preferences.getString("stSSID[1]").c_str(), 50) < 50))
     {
-        if ((preferences.getString("stPASS[1]") != "") && (strnlen(preferences.getString("stPASS[1]").c_str(), 50) < 50))
+        //if ((preferences.getString("stPASS[1]") != "") && (strnlen(preferences.getString("stPASS[1]").c_str(), 50) < 50))
         {
             WiFi.begin((char *)preferences.getString("stSSID[1]").c_str(), (char *)preferences.getString("stPASS[1]").c_str());
             Serial_println("INFO: Connecting to user mode SSID");
