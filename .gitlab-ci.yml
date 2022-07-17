@@ -18,14 +18,14 @@ build:
   #   - apt update && apt -y install make autoconf
   script:
     - pio run -d ./Firmware/emb1002
-  artifacts:
-    paths:
+  #artifacts:
+    #paths:
       # depending on your build setup it's most likely a good idea to cache outputs to reduce the build time
       # cache:
       #   paths:
       #     - "*.o"
 
 # run tests using the binary built before
-test:
-  stage: test
-  script:
+#test:
+  #stage: test
+  #script:
