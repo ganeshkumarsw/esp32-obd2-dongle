@@ -93,12 +93,12 @@ void CAN_ConfigFilterterMask(uint32_t acceptance_code, bool extId)
         if (extId == true)
         {
             acceptance_code = (acceptance_code << (32 - 29));
-            acceptance_mask = ~(CAN_EXTD_ID_MASK << (32 - 29));
+            acceptance_mask = ~(TWAI_EXTD_ID_MASK << (32 - 29));
         }
         else
         {
             acceptance_code = (acceptance_code << (32 - 11));
-            acceptance_mask = ~(CAN_STD_ID_MASK << (32 - 11));
+            acceptance_mask = ~(TWAI_STD_ID_MASK << (32 - 11));
         }
     }
 

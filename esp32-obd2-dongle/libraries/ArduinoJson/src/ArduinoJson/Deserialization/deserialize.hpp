@@ -1,5 +1,5 @@
-// ArduinoJson - arduinojson.org
-// Copyright Benoit Blanchon 2014-2020
+// ArduinoJson - https://arduinojson.org
+// Copyright © 2014-2022, Benoit BLANCHON
 // MIT License
 
 #pragma once
@@ -34,7 +34,7 @@ deserialize(JsonDocument &doc, const TString &input, NestingLimit nestingLimit,
   doc.clear();
   return makeDeserializer<TDeserializer>(
              doc.memoryPool(), reader,
-             makeStringStorage(doc.memoryPool(), input))
+             makeStringStorage(input, doc.memoryPool()))
       .parse(doc.data(), filter, nestingLimit);
 }
 //
@@ -50,7 +50,7 @@ DeserializationError deserialize(JsonDocument &doc, TChar *input,
   doc.clear();
   return makeDeserializer<TDeserializer>(
              doc.memoryPool(), reader,
-             makeStringStorage(doc.memoryPool(), input))
+             makeStringStorage(input, doc.memoryPool()))
       .parse(doc.data(), filter, nestingLimit);
 }
 //
@@ -64,7 +64,7 @@ DeserializationError deserialize(JsonDocument &doc, TStream &input,
   doc.clear();
   return makeDeserializer<TDeserializer>(
              doc.memoryPool(), reader,
-             makeStringStorage(doc.memoryPool(), input))
+             makeStringStorage(input, doc.memoryPool()))
       .parse(doc.data(), filter, nestingLimit);
 }
 

@@ -100,7 +100,7 @@ void APP_Init(void)
 {
     APP_CAN_Baud = CAN_SPEED_500KBPS;
     APP_CAN_TxId = 0x7E0;
-    APP_CAN_TxIdType = CAN_MSG_FLAG_NONE;
+    APP_CAN_TxIdType = TWAI_MSG_FLAG_NONE;
     APP_CAN_ISO_State = APP_STATE_CAN_ISO_IDLE;
     APP_CAN_Protocol = APP_CAN_PROTOCOL_ISO15765;
     APP_CAN_RqRspMaxTime = 500;
@@ -933,11 +933,11 @@ void APP_Frame2(uint8_t *p_buff, uint16_t len, uint8_t channel)
 
             if ((p_buff[1] - offset) % 2)
             {
-                APP_CAN_TxIdType = CAN_MSG_FLAG_EXTD;
+                APP_CAN_TxIdType = TWAI_MSG_FLAG_EXTD;
             }
             else
             {
-                APP_CAN_TxIdType = CAN_MSG_FLAG_NONE; // Standard frame;
+                APP_CAN_TxIdType = TWAI_MSG_FLAG_NONE; // Standard frame;
             }
 
             if (respType == APP_RESP_ACK)
@@ -998,7 +998,7 @@ void APP_Frame2(uint8_t *p_buff, uint16_t len, uint8_t channel)
             }
 
             // Standard frame
-            if (APP_CAN_TxIdType == CAN_MSG_FLAG_NONE)
+            if (APP_CAN_TxIdType == TWAI_MSG_FLAG_NONE)
             {
                 respBuff[0] = (uint8_t)(APP_CAN_TxId >> 8);
                 respBuff[1] = (uint8_t)APP_CAN_TxId;
@@ -1044,7 +1044,7 @@ void APP_Frame2(uint8_t *p_buff, uint16_t len, uint8_t channel)
             }
 
             // Standard frame
-            if (APP_CAN_RxFilterIdType == CAN_MSG_FLAG_NONE)
+            if (APP_CAN_RxFilterIdType == TWAI_MSG_FLAG_NONE)
             {
                 respBuff[0] = (uint8_t)(APP_CAN_RxFilterId >> 8);
                 respBuff[1] = (uint8_t)APP_CAN_RxFilterId;

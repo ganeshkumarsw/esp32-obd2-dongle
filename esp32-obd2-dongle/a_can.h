@@ -5,7 +5,7 @@
 extern "C" {
 #endif
 
-#include "driver/can.h"
+#include "driver/twai.h"
 #include <CAN_config.h>
 #include "CAN.h"
 

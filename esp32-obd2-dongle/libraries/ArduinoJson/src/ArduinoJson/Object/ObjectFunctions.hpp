@@ -1,5 +1,5 @@
-// ArduinoJson - arduinojson.org
-// Copyright Benoit Blanchon 2014-2020
+// ArduinoJson - https://arduinojson.org
+// Copyright © 2014-2022, Benoit BLANCHON
 // MIT License
 
 #pragma once
@@ -8,12 +8,13 @@
 
 namespace ARDUINOJSON_NAMESPACE {
 
-template <typename Visitor>
-void objectAccept(const CollectionData *obj, Visitor &visitor) {
+template <typename TVisitor>
+typename TVisitor::result_type objectAccept(const CollectionData *obj,
+                                            TVisitor &visitor) {
   if (obj)
-    visitor.visitObject(*obj);
+    return visitor.visitObject(*obj);
   else
-    visitor.visitNull();
+    return visitor.visitNull();
 }
 
 inline bool objectEquals(const CollectionData *lhs, const CollectionData *rhs) {
@@ -39,12 +40,13 @@ void objectRemove(CollectionData *obj, TAdaptedString key) {
   obj->removeMember(key);
 }
 
-template <typename TAdaptedString>
+template <typename TAdaptedString, typename TStoragePolicy>
 inline VariantData *objectGetOrAddMember(CollectionData *obj,
-                                         TAdaptedString key, MemoryPool *pool) {
+                                         TAdaptedString key, MemoryPool *pool,
+                                         TStoragePolicy storage_policy) {
   if (!obj)
     return 0;
 
-  return obj->getOrAddMember(key, pool);
+  return obj->getOrAddMember(key, pool, storage_policy);
 }
 }  // namespace ARDUINOJSON_NAMESPACE

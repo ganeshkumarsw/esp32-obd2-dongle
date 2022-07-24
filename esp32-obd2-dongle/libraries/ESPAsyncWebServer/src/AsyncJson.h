@@ -41,7 +41,9 @@
 #if ARDUINOJSON_VERSION_MAJOR == 5
   #define ARDUINOJSON_5_COMPATIBILITY
 #else
-  #define DYNAMIC_JSON_DOCUMENT_SIZE  1024
+  #ifndef DYNAMIC_JSON_DOCUMENT_SIZE
+    #define DYNAMIC_JSON_DOCUMENT_SIZE  1024
+  #endif
 #endif
 
 constexpr const char* JSON_MIMETYPE = "application/json";
@@ -142,7 +144,11 @@ class AsyncJsonResponse: public AsyncAbstractResponse {
 
 class PrettyAsyncJsonResponse: public AsyncJsonResponse {	
 public:
-	PrettyAsyncJsonResponse (bool isArray=false) : AsyncJsonResponse{isArray} {}	
+#ifdef ARDUINOJSON_5_COMPATIBILITY
+	PrettyAsyncJsonResponse (bool isArray=false) : AsyncJsonResponse{isArray} {}
+#else
+	PrettyAsyncJsonResponse (bool isArray=false, size_t maxJsonBufferSize = DYNAMIC_JSON_DOCUMENT_SIZE) : AsyncJsonResponse{isArray, maxJsonBufferSize} {}
+#endif
 	size_t setLength () {
 #ifdef ARDUINOJSON_5_COMPATIBILITY
 		_contentLength = _root.measurePrettyLength ();
@@ -162,7 +168,6 @@ public:
 		return len;
 	}
 };
-#endif
 
 typedef std::function<void(AsyncWebServerRequest *request, JsonVariant &json)> ArJsonRequestHandlerFunction;
 
@@ -246,3 +251,4 @@ public:
   }
   virtual bool isRequestHandlerTrivial() override final {return _onRequest ? false : true;}
 };
+#endif

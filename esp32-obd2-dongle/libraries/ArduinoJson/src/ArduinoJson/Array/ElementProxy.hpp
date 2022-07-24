@@ -1,26 +1,31 @@
-// ArduinoJson - arduinojson.org
-// Copyright Benoit Blanchon 2014-2020
+// ArduinoJson - https://arduinojson.org
+// Copyright © 2014-2022, Benoit BLANCHON
 // MIT License
 
 #pragma once
 
 #include <ArduinoJson/Configuration.hpp>
-#include <ArduinoJson/Operators/VariantOperators.hpp>
+#include <ArduinoJson/Variant/VariantOperators.hpp>
+#include <ArduinoJson/Variant/VariantShortcuts.hpp>
 #include <ArduinoJson/Variant/VariantTo.hpp>
 
 #ifdef _MSC_VER
-#pragma warning(push)
-#pragma warning(disable : 4522)
+#  pragma warning(push)
+#  pragma warning(disable : 4522)
 #endif
 
 namespace ARDUINOJSON_NAMESPACE {
 
 template <typename TArray>
 class ElementProxy : public VariantOperators<ElementProxy<TArray> >,
-                     public Visitable {
+                     public VariantShortcuts<ElementProxy<TArray> >,
+                     public Visitable,
+                     public VariantTag {
   typedef ElementProxy<TArray> this_type;
 
  public:
+  typedef VariantRef variant_type;
+
   FORCE_INLINE ElementProxy(TArray array, size_t index)
       : _array(array), _index(index) {}
 
@@ -51,14 +56,6 @@ class ElementProxy : public VariantOperators<ElementProxy<TArray> >,
     return *this;
   }
 
-  FORCE_INLINE bool operator==(VariantConstRef rhs) const {
-    return static_cast<VariantConstRef>(getUpstreamElement()) == rhs;
-  }
-
-  FORCE_INLINE bool operator!=(VariantConstRef rhs) const {
-    return static_cast<VariantConstRef>(getUpstreamElement()) != rhs;
-  }
-
   FORCE_INLINE void clear() const {
     getUpstreamElement().clear();
   }
@@ -68,8 +65,16 @@ class ElementProxy : public VariantOperators<ElementProxy<TArray> >,
   }
 
   template <typename T>
-  FORCE_INLINE typename VariantAs<T>::type as() const {
+  FORCE_INLINE typename enable_if<!is_same<T, char*>::value, T>::type as()
+      const {
     return getUpstreamElement().template as<T>();
+  }
+
+  template <typename T>
+  FORCE_INLINE typename enable_if<is_same<T, char*>::value, const char*>::type
+  ARDUINOJSON_DEPRECATED("Replace as<char*>() with as<const char*>()")
+      as() const {
+    return as<const char*>();
   }
 
   template <typename T>
@@ -104,13 +109,17 @@ class ElementProxy : public VariantOperators<ElementProxy<TArray> >,
     return getOrAddUpstreamElement().set(value);
   }
 
-  template <typename Visitor>
-  void accept(Visitor& visitor) const {
+  template <typename TVisitor>
+  typename TVisitor::result_type accept(TVisitor& visitor) const {
     return getUpstreamElement().accept(visitor);
   }
 
   FORCE_INLINE size_t size() const {
     return getUpstreamElement().size();
+  }
+
+  FORCE_INLINE size_t memoryUsage() const {
+    return getUpstreamElement().memoryUsage();
   }
 
   template <typename TNestedKey>
@@ -141,6 +150,10 @@ class ElementProxy : public VariantOperators<ElementProxy<TArray> >,
     return getOrAddUpstreamElement().getElement(index);
   }
 
+  VariantRef getOrAddElement(size_t index) const {
+    return getOrAddUpstreamElement().getOrAddElement(index);
+  }
+
   FORCE_INLINE void remove(size_t index) const {
     getUpstreamElement().remove(index);
   }
@@ -169,6 +182,10 @@ class ElementProxy : public VariantOperators<ElementProxy<TArray> >,
     return _array.getOrAddElement(_index);
   }
 
+  friend void convertToJson(const this_type& src, VariantRef dst) {
+    dst.set(src.getUpstreamElement());
+  }
+
   TArray _array;
   const size_t _index;
 };
@@ -176,5 +193,5 @@ class ElementProxy : public VariantOperators<ElementProxy<TArray> >,
 }  // namespace ARDUINOJSON_NAMESPACE
 
 #ifdef _MSC_VER
-#pragma warning(pop)
+#  pragma warning(pop)
 #endif

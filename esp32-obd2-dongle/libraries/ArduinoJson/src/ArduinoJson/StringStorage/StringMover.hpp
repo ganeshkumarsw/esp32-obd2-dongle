@@ -1,45 +1,47 @@
-// ArduinoJson - arduinojson.org
-// Copyright Benoit Blanchon 2014-2020
+// ArduinoJson - https://arduinojson.org
+// Copyright © 2014-2022, Benoit BLANCHON
 // MIT License
 
 #pragma once
 
 #include <ArduinoJson/Namespace.hpp>
+#include <ArduinoJson/Strings/String.hpp>
 
 namespace ARDUINOJSON_NAMESPACE {
 
 class StringMover {
  public:
-  class StringBuilder {
-   public:
-    StringBuilder(char** ptr) : _writePtr(ptr), _startPtr(*ptr) {}
+  StringMover(char* ptr) : _writePtr(ptr) {}
 
-    void append(char c) {
-      *(*_writePtr)++ = char(c);
-    }
-
-    char* complete() const {
-      *(*_writePtr)++ = 0;
-      return _startPtr;
-    }
-
-   private:
-    char** _writePtr;
-    char* _startPtr;
-  };
-
-  StringMover(char* ptr) : _ptr(ptr) {}
-
-  StringBuilder startString() {
-    return StringBuilder(&_ptr);
+  void startString() {
+    _startPtr = _writePtr;
   }
 
-  // recover memory from last string
-  void reclaim(const char* str) {
-    _ptr = const_cast<char*>(str);
+  FORCE_INLINE String save() {
+    String s = str();
+    _writePtr++;
+    return s;
+  }
+
+  void append(char c) {
+    *_writePtr++ = c;
+  }
+
+  bool isValid() const {
+    return true;
+  }
+
+  String str() const {
+    _writePtr[0] = 0;  // terminator
+    return String(_startPtr, size(), String::Linked);
+  }
+
+  size_t size() const {
+    return size_t(_writePtr - _startPtr);
   }
 
  private:
-  char* _ptr;
+  char* _writePtr;
+  char* _startPtr;
 };
 }  // namespace ARDUINOJSON_NAMESPACE

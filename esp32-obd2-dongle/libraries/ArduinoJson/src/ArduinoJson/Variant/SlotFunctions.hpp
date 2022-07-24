@@ -1,5 +1,5 @@
-// ArduinoJson - arduinojson.org
-// Copyright Benoit Blanchon 2014-2020
+// ArduinoJson - https://arduinojson.org
+// Copyright © 2014-2022, Benoit BLANCHON
 // MIT License
 
 #pragma once
@@ -9,40 +9,26 @@
 
 namespace ARDUINOJSON_NAMESPACE {
 
-template <typename TAdaptedString>
-inline bool slotSetKey(VariantSlot* var, TAdaptedString key, MemoryPool* pool) {
+struct SlotKeySetter {
+  SlotKeySetter(VariantSlot* instance) : _instance(instance) {}
+
+  template <typename TStoredString>
+  void operator()(TStoredString s) {
+    if (!s)
+      return;
+    ARDUINOJSON_ASSERT(_instance != 0);
+    _instance->setKey(s);
+  }
+
+  VariantSlot* _instance;
+};
+
+template <typename TAdaptedString, typename TStoragePolicy>
+inline bool slotSetKey(VariantSlot* var, TAdaptedString key, MemoryPool* pool,
+                       TStoragePolicy storage) {
   if (!var)
     return false;
-  return slotSetKey(var, key, pool, typename TAdaptedString::storage_policy());
-}
-
-template <typename TAdaptedString>
-inline bool slotSetKey(VariantSlot* var, TAdaptedString key, MemoryPool* pool,
-                       storage_policy::decide_at_runtime) {
-  if (key.isStatic()) {
-    return slotSetKey(var, key, pool, storage_policy::store_by_address());
-  } else {
-    return slotSetKey(var, key, pool, storage_policy::store_by_copy());
-  }
-}
-
-template <typename TAdaptedString>
-inline bool slotSetKey(VariantSlot* var, TAdaptedString key, MemoryPool*,
-                       storage_policy::store_by_address) {
-  ARDUINOJSON_ASSERT(var);
-  var->setLinkedKey(make_not_null(key.data()));
-  return true;
-}
-
-template <typename TAdaptedString>
-inline bool slotSetKey(VariantSlot* var, TAdaptedString key, MemoryPool* pool,
-                       storage_policy::store_by_copy) {
-  const char* dup = key.save(pool);
-  if (!dup)
-    return false;
-  ARDUINOJSON_ASSERT(var);
-  var->setOwnedKey(make_not_null(dup));
-  return true;
+  return storage.store(key, pool, SlotKeySetter(var));
 }
 
 inline size_t slotSize(const VariantSlot* var) {
