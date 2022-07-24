@@ -35,4 +35,4 @@ before_script:
 
 job:
   stage: build
-  script: "pio run -d /esp32-obd2-dongle -e esp32dev"
+  script: "pio run --project-dir esp32-obd2-dongle -e esp32dev"
