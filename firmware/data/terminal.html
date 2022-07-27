@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <title>Dongle Terminal</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+  <style>
+    .table-custom {
+      position: relative;
+      font-family: Segoe UI, Tahoma, Geneva, Verdana, sans-serif;
+      overflow: auto;
+    }
+
+    input,
+    tbody td {
+      font-family: 'consolas', Segoe UI, Tahoma, Geneva, Verdana, sans-serif;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container-fluid">
+    <div class="row ml-0 mt-2 mr-3 input-group">
+      <div class="input-group-prepend">
+        <select class="custom-select" id="select-cmd-id">
+          <option value="0">0</option>
+          <option value="1">1</option>
+          <option selected value="2">2</option>
+          <option value="3">3</option>
+          <option value="4">4</option>
+          <option value="5">5</option>
+          <option value="6">6</option>
+          <option value="7">7</option>
+          <option value="8">8</option>
+          <option value="9">9</option>
+          <option value="10">A</option>
+          <option value="11">B</option>
+          <option value="12">C</option>
+          <option value="13">D</option>
+          <option value="14">E</option>
+          <option value="15">F</option>
+        </select>
+      </div>
+      <input type="text" class="form-control" id="input-send" data-toggle="tooltip" data-placement="bottom"
+        title="data only without length (all in HEX), seperate each byte by space">
+      <div class="input-group-append">
+        <button type="submit" id="btn-send" class="btn btn-success">Send</button>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-xl mt-2">
+        <div class="input-group btn-group">
+          <div class="input-group-prepend font-weight-bold">
+            <div class="input-group-text">CAN Protocol</div>
+          </div>
+          <select class="custom-select" id="select-can-protocol">
+            <option selected value="255">Select CAN Protocol</option>
+            <option value="0">ISO15765-250KB-11BIT-CAN</option>
+            <option value="1">ISO15765-250Kb-29BIT-CAN</option>
+            <option value="2">ISO15765-500KB-11BIT-CAN</option>
+            <option value="3">ISO15765-500KB-29BIT-CAN</option>
+            <option value="4">ISO15765-1MB-11BIT-CAN</option>
+            <option value="5">ISO15765-1MB-29BIT-CAN</option>
+            <option value="6">250KB-11BIT-CAN</option>
+            <option value="7">250Kb-29BIT-CAN</option>
+            <option value="8">500KB-11BIT-CAN</option>
+            <option value="9">500KB-29BIT-CAN</option>
+            <option value="10">1MB-11BIT-CAN</option>
+            <option value="11">1MB-29BIT-CAN</option>
+            <option value="12">OE-IVN-250KBPS-11BIT-CAN</option>
+            <option value="13">OE-IVN-250KBPS-29BIT-CAN</option>
+            <option value="14">OE-IVN-500KBPS-11BIT-CAN</option>
+            <option value="15">OE-IVN-500KBPS-29BIT-CAN</option>
+            <option value="16">OE-IVN-1MBPS-11BIT-CAN </option>
+            <option value="17">OE-IVN-1MBPS-29BIT-CAN </option>
+          </select>
+          <span class="btn-group" role="group">
+            <button type="submit" id="btn-can-protocol-s" class="btn btn-success">S</button>
+            <button type="submit" id="btn-can-protocol-r" class="btn btn-warning">R</button>
+          </span>
+        </div>
+      </div>
+      <div class="col-xl mt-2">
+        <div class="input-group btn-group">
+          <div class="input-group-prepend font-weight-bold">
+            <div class="input-group-text">Rx CAN ID</div>
+          </div>
+          <input type="text" class="form-control" id="input-rx-can-id" data-toggle="tooltip" data-placement="bottom"
+            title="in HEX, seperate each byte by space">
+          <span class="btn-group" role="group">
+            <button type="submit" id="btn-rx-can-id-s" class="btn btn-success">S</button>
+            <button type="submit" id="btn-rx-can-id-r" class="btn btn-warning">R</button>
+          </span>
+        </div>
+      </div>
+      <div class="col-xl mt-2">
+        <div class="input-group btn-group">
+          <div class="input-group-prepend font-weight-bold">
+            <div class="input-group-text">Tx CAN ID</div>
+          </div>
+          <input type="text" class="form-control" id="input-tx-can-id" data-toggle="tooltip" data-placement="bottom"
+            title="in HEX, seperate each byte by space">
+          <span class="btn-group" role="group">
+            <button type="submit" id="btn-tx-can-id-s" class="btn btn-success">S</button>
+            <button type="submit" id="btn-tx-can-id-r" class="btn btn-warning">R</button>
+          </span>
+        </div>
+      </div>
+    </div>
+    <div class="row ml-0 mt-2 mr-3 input-group">
+      <input type="text" class="form-control" id="input-send-raw" data-toggle="tooltip" data-placement="bottom"
+        title="Send raw data (all in HEX), seperate each byte by space">
+      <div class="input-group-append">
+        <button type="submit" id="btn-send-raw" class="btn btn-success">Send</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="container-fluid">
+    <div class="mt-2 card table-custom">
+      <!-- <textarea class="form-control mt-2" id="response"></textarea> -->
+      <table id="table-output" class="table table-sm table-striped">
+        <thead class="thead-dark rounded-left  rounded-right">
+          <tr>
+            <th class="sticky-top" scope="col">#</th>
+            <th class="sticky-top " scope="col">Dir</th>
+            <th class="sticky-top" scope="col">
+              Message
+              <div style="display:inline; float:right; ">
+                <span id="connectionStatus" class="badge badge-pill badge-success"></span>
+                <span id="messageTx" class="badge badge-success">0</span>
+                <span id="messageRx" class="badge badge-warning">0</span>
+                <button type="submit" id="save" class="btn badge btn-primary">Save</button>
+                <button type="submit" id="clear" class="btn badge btn-primary">Clear</button>
+              </div>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Modal -->
+  <div class="modal fade" id="ModalDisp" tabindex="-1" role="dialog" aria-labelledby="ModalLabel" aria-hidden="true">
+    <div class="modal-dialog sucess" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="ModalLabel"></h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          ...
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    var DOMReady = function (callback) {
+      if (document.readyState === "interactive" || document.readyState === "complete") {
+        callback();
+      } else if (document.addEventListener) {
+        document.addEventListener('DOMContentLoaded', callback());
+      } else if (document.attachEvent) {
+        document.attachEvent('onreadystatechange', function () {
+          if (document.readyState != 'loading') {
+            callback();
+          }
+        });
+      }
+    };
+
+    var JSTimer;
+
+    function LoadJquery(url, callback) {
+      const script = document.createElement('script');
+      script.src = url; // URL for the third-party library being loaded.
+      script.id = url; // e.g., googleMaps or stripe
+      document.body.appendChild(script);
+      JSTimer = setTimeout(function () {
+        LoadJquery(url);
+      }, 3000);
+
+      script.onload = () => {
+        clearTimeout(JSTimer);
+        if (callback) callback();
+      }
+    }
+
+    function defer(method) {
+      LoadJquery("jquery.min.js", method);
+    }
+
+    var LoadScripts = function (done) {
+      $.getScript("bootstrap.bundle.min.js", function () {
+        done();
+      });
+    }
+
+    var LoadCSS = function (href, done) {
+      $.ajax({
+        url: href,
+        dataType: 'text',
+        success: function (data) {
+          $('<style type="text/css">\n' + data + '</style>').appendTo("head");
+          if (done) {
+          done();
+        }
+        }
+      });
+    }
+
+    DOMReady(function () {
+      defer(function () {
+        LoadScripts(function () {
+          LoadCSS("bootstrap.min.css", function () {
+            ScriptLoaded();
+          });
+        });
+      });
+    });
+
+    var ScriptLoaded = function () {
+      var tableToJSON = [];
+      var socket;
+      var MesgCnt = 0;
+      var pro_seqnum = 0;
+      var RxMessageCount = 0;
+      var TxMessageCount = 0;
+      var cmdRequested = 0;
+      var AppCmd = {
+        AppCmd_CAN_Protocol: 2,
+        AppCmd_CAN_Protocol_R: 3,
+        AppCmd_CAN_TxId: 4,
+        AppCmd_CAN_TxId_R: 5,
+        AppCmd_CAN_RxId: 6,
+        AppCmd_CAN_RxId_R: 7,
+      };
+
+      var AppError = {
+        0x00: "Positive Response",
+        0x01: "Negative Response",
+        0x10: "Command Not Supported",
+        0x12: "Input Not supported",
+        0x13: "Invalid format or incorrect message length of input",
+        0x14: "Invalid operation",
+        0x15: "CRC failure",
+        0x16: "Protocol not set",
+        0x22: "Conditions not correct",
+        0x31: "Request out of range",
+        0x33: "security access denied",
+        0x78: "response pending",
+        0x24: "request sequence error",
+        0x35: "Invalid Key",
+        0x36: "exceeded number of attempts",
+        0x37: "required time delay not expired",
+        0x72: "General programming failure",
+        0x7E: "sub fn not supported in this diag session",
+      };
+
+
+
+      $('[data-toggle="tooltip"]').tooltip();
+      Set_ConnectionStatus('Closed');
+      Set_RxMessageCount(RxMessageCount);
+      Set_TxMessageCount(TxMessageCount);
+      AdjustMessageareaHeight();
+      $(window).resize(AdjustMessageareaHeight);
+      WebSocketCheck();
+
+      function create_UUID() {
+        var dt = new Date().getTime();
+        var uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+          var r = (dt + Math.random() * 16) % 16 | 0;
+          dt = Math.floor(dt / 16);
+          return (c == 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+        });
+        return uuid;
+      }
+
+      function crc16(data) {
+        var crc = 0xFFFF;
+        for (i = 0; i < data.length; ++i) {
+          crc ^= data[i] << 8;
+          for (j = 0; j < 8; ++j) {
+            crc = (crc & 0x8000) > 0 ? (crc << 1) ^ 0x1021 : crc << 1;
+          }
+        }
+        return crc & 0xFFFF;
+      }
+
+      function GeneratePDU(data) {
+        var pro_len = 0;
+        var pro_time = (new Date()).getTime().toString(16);
+        pro_time = (pro_time.length % 2) === 0 ? pro_time : "0" + pro_time;
+        var body;
+        var idx = 0;
+
+        var message = new Uint8Array(1 + 2 + 4 + 4 + 1 + data.length + 2 + 2);
+        message[idx++] = pro_seqnum++;
+        message[idx++] = data.length >> 8;
+        message[idx++] = data.length;
+        message.set(pro_time.match(/[\w]{1,2}/g).slice(0, 8), idx);
+        idx = idx + 8;
+        message[idx++] = ((data[0] << 4) & 0xF0) | (((data.length - 1) + 2) >> 8);
+        message[idx++] = ((data.length - 1) + 2);
+        message.set(data.subarray(1), idx);
+        idx = idx + (data.length - 1);
+        var crc1 = crc16(data.subarray(1));
+        message[idx++] = crc1 >> 8;
+        message[idx++] = crc1;
+        var crc2 = crc16(message.slice(0, idx));
+        message[idx++] = crc2 >> 8;
+        message[idx++] = crc2;
+
+        return message;
+      }
+
+      function Set_ConnectionStatus(status) {
+        $("#connectionStatus").removeClass('badge-danger badge-warning badge-success');
+        switch (status) {
+          case 'Closed':
+            $("#connectionStatus").addClass('badge-warning');
+            break;
+
+          case 'Error':
+            $("#connectionStatus").addClass('badge-danger');
+            break;
+
+          case 'Connected':
+            $("#connectionStatus").addClass('badge-success');
+            break;
+        }
+        $("#connectionStatus").text(status);
+      }
+
+      function Set_RxMessageCount(cnt) {
+        $("#messageRx").text(cnt);
+      }
+
+      function Set_TxMessageCount(cnt) {
+        $("#messageTx").text(cnt);
+      }
+
+      async function ParseRxMessage(data) {
+
+        switch ((data[0] & 0xF0)) {
+          case 0x20:
+            if (data[2] == 0x00) {
+              var len = ((data[0] & 0x0F) << 8) + data[1];
+              len = len - 3;
+
+              switch (cmdRequested) {
+                case AppCmd["AppCmd_CAN_Protocol_R"]:
+                  $('#select-can-protocol').val(data[3]);
+                  break;
+
+                case AppCmd["AppCmd_CAN_RxId_R"]:
+
+                  $('#input-rx-can-id').val(len);
+                  break;
+
+                case AppCmd["AppCmd_CAN_TxId_R"]:
+                  $('#input-tx-can-id').val(len);
+                  break;
+              }
+            }
+            else {
+              ModalDisp("error", AppError[data[3]], -1);
+            }
+            break;
+        }
+
+        cmdRequested = -1;
+      }
+
+      function WebsocketStart() {
+        // Create WebSocket connection.
+        // socket = new WebSocket("ws://" + "192.168.178.33" + "/ws");
+        socket = new WebSocket("ws://" + location.host + "/ws");
+        socket.binaryType = 'arraybuffer';
+
+        // Connection opened
+        socket.addEventListener('open', function (event) {
+          Set_ConnectionStatus('Connected');
+        });
+
+        socket.addEventListener('error', function (event) {
+          Set_ConnectionStatus('Error');
+        });
+
+        socket.addEventListener('close', function (event) {
+          Set_ConnectionStatus('Closed');
+        });
+
+        // Listen for messages
+        socket.addEventListener('message', function (event) {
+          var data = new Uint8Array(event.data);
+          var crcAct = data[data.length - 2] << 8 | data[data.length - 1];
+          var crcCalc = crc16(data.slice(0, data.length - 2));
+
+          if (crcAct != crcCalc) {
+            ModalDisp("error", "CRC Mismatch", -1);
+            return;
+          }
+
+          ParseRxMessage(data.slice(11));
+
+          var temp = "";
+          data.forEach(function (val, idx, arr) {
+            var hex = val.toString(16).toUpperCase();
+            temp = temp + (hex.length < 2 ? "0" : "") + hex + " ";
+          });
+
+          tableToJSON.push({ msg: MesgCnt, dir: 1, data: temp });
+          $('#table-output').children('tbody').append('<tr><th scope="row">' + (MesgCnt++) + '</th><td><span class="badge badge-warning"><-</span></td><td>' + temp + '</td></tr>');
+          // $('#response').val($('#response').val() + temp + "\n");
+          $('.table-custom').scrollTop($('.table-custom')[0].scrollHeight);
+          Set_RxMessageCount(++RxMessageCount);
+        });
+      }
+
+      function WebSocketCheck() {
+        if ("WebSocket" in window) {
+          ModalDisp("info", "WebSocket is supported by your Browser!");
+          WebsocketStart();
+        }
+        else {
+          // The browser doesn't support WebSocket
+          ModalDisp("error", "WebSocket NOT supported by your Browser!", -1);
+        }
+      }
+
+      $('#save').click(function () {
+        var a = document.createElement('a');
+        var file = new Blob([JSON.stringify(tableToJSON)], { type: 'application/json' });
+        a.href = URL.createObjectURL(file);
+        a.download = "data.json";
+        a.click();
+      });
+
+      $('#clear').click(function () {
+        tableToJSON = [];
+        $('#table-output').children('tbody').empty();
+        TxMessageCount = 0;
+        RxMessageCount = 0;
+        Set_RxMessageCount(RxMessageCount);
+        Set_TxMessageCount(TxMessageCount);
+      });
+
+      $('button').click(function () {
+        var send = false;
+        switch (this.id) {
+          case "btn-send":
+            var data = new Uint8Array($('#input-send').val().match(/[\w]{1,2}/g).map(bin => parseInt(bin, 16)));
+            var pdu = new Uint8Array(1 + data.length);
+            pdu.set($('#select-cmd-id').val(), 0);
+            pdu.set(data, 1);
+            var message = GeneratePDU(pdu);
+            send = true;
+            break;
+          case "btn-can-protocol-r":
+            cmdRequested = parseInt(AppCmd["AppCmd_CAN_Protocol"], 16) + 1;
+            var message = GeneratePDU(new Uint8Array([2, cmdRequested]));
+            send = true;
+            break;
+
+          case "btn-can-protocol-s":
+            cmdRequested = parseInt(AppCmd["AppCmd_CAN_Protocol"], 16);
+            var message = GeneratePDU(new Uint8Array([2, cmdRequested, $('#select-can-protocol').val()]));
+            send = true;
+            break;
+
+          case "btn-rx-can-id-r":
+            cmdRequested = parseInt(AppCmd["AppCmd_CAN_RxId"], 16) + 1;
+            var message = GeneratePDU(new Uint8Array([2, cmdRequested]));
+            send = true;
+            break;
+
+          case "btn-rx-can-id-s":
+            cmdRequested = parseInt(AppCmd["AppCmd_CAN_RxId"], 16);
+            var input = new Uint8Array($('#input-rx-can-id').val().match(/[\w]{1,2}/g).map(bin => parseInt(bin, 16)));
+            var temp = new Uint8Array(2 + input.length);
+            temp.set([2, cmdRequested], 0);
+            temp.set(input, 2);
+            var message = GeneratePDU(temp);
+            send = true;
+            break;
+          case "btn-tx-can-id-r":
+            cmdRequested = parseInt(AppCmd["AppCmd_CAN_TxId"], 16) + 1;
+            var message = GeneratePDU(new Uint8Array([2, cmdRequested]));
+            send = true;
+            break;
+
+          case "btn-tx-can-id-s":
+            cmdRequested = parseInt(AppCmd["AppCmd_CAN_TxId"], 16);
+            var input = new Uint8Array($('#input-tx-can-id').val().match(/[\w]{1,2}/g).map(bin => parseInt(bin, 16)));
+            var temp = new Uint8Array(2 + input.length);
+            temp.set([2, cmdRequested], 0);
+            temp.set(input, 2);
+            var message = GeneratePDU(temp);
+            send = true;
+            break;
+
+          case "btn-send-raw":
+            var message = new Uint8Array($('#input-send-raw').val().match(/[\w]{1,2}/g).map(bin => parseInt(bin, 16)));
+            send = true;
+            break;
+
+          case "btn9":
+            break;
+
+        }
+
+        if (send) {
+          try {
+            socket.send(message);
+          }
+          catch (error) {
+            WebsocketStart();
+            socket.send(message);
+          }
+          var temp = "";
+          message.map(function (val) {
+            var hex = val.toString(16).toUpperCase();
+            temp = temp + (hex.length < 2 ? "0" : "") + hex + " ";
+          });
+          tableToJSON.push({ msg: MesgCnt, dir: 0, data: temp });
+          $('#table-output').children('tbody').append('<tr><th scope="row">' + (MesgCnt++) + '</th><td><span class="badge badge-success">-></span></td><td>' + temp + '</td></tr>');
+          $('.table-custom').scrollTop($('.table-custom')[0].scrollHeight);
+          Set_TxMessageCount(++TxMessageCount);
+        }
+      });
+
+      function ModalDisp(title, text, timout = 1000) {
+        if (title === "error") {
+          $('#ModalDisp').find('.modal-header').addClass('alert-danger');
+        }
+        else {
+          $('#ModalDisp').find('.modal-header').addClass('alert-success');
+        }
+
+        $('#ModalDisp').find('.modal-title').text(title);
+        $('#ModalDisp').find('.modal-body').text(text);
+        $('#ModalDisp').modal('show');
+
+        if (timout > 0) {
+          setTimeout(function () {
+            $('#ModalDisp').modal('hide');
+          }, timout);
+        }
+      }
+
+      function AdjustMessageareaHeight() {
+        // $('div textarea').css('height', window.innerHeight - parseInt($('div').css('height')) - 30);
+        $('.table-custom').css('height', window.innerHeight - parseInt($('div').css('height')) - 30);
+      }
+
+      var BodyLoad = function () {
+
+      }
+    };
+  </script>
+</body>
+
+</html>
