@@ -1,11 +1,11 @@
 {
 	"folders": [
 		{
-			"path": ".."
-		},
-		{
 			"name": "esp32-obd2-dongle",
 			"path": "."
+		},
+		{
+			"path": ".."
 		}
 	],
     "settings": {}
