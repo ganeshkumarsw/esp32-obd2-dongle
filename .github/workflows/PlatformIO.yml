@@ -26,4 +26,4 @@ jobs:
         python -m pip install --upgrade pip
         pip install --upgrade platformio
     - name: Run PlatformIO
-      run: pio run -d /firmware
+      run: pio run -d ./firmware
